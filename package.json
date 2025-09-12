@@ -1,0 +1,21 @@
+{
+  "name": "hypo",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "three": "^0.168.0",
+    "pixi.js": "^8.4.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/three": "^0.180.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vite-plugin-singlefile": "^2.3.0"
+  }
+}
