@@ -2,10 +2,13 @@ import * as THREE from "three";
 import { Projectiles } from "../combat/Projectiles";
 import { Keyboard } from "../input/Keyboard";
 import { Hud } from "../ui/Hud";
+import { SkillTreeUI } from "../ui/SkillTreeUI";
+import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
 import { Loop } from "./Loop";
+import { SkillSystem } from "./SkillSystem";
 
 export class Game {
   readonly scene = new THREE.Scene();
@@ -20,7 +23,10 @@ export class Game {
   xp = 0;
   xpToNext = 5;
   readonly loop = new Loop();
+  readonly skillSystem = new SkillSystem();
   hud!: Hud;
+  skillTreeUI!: SkillTreeUI;
+  characterSwitchUI!: CharacterSwitchUI;
   yaw = Math.PI * 0.25;
   pitch = 1.5;
   dist = 10;
@@ -113,6 +119,12 @@ export class Game {
     this.hud = new Hud(hudApp);
     this.hud.setHealth(this.hp, 10);
     this.hud.setXP(this.level, this.xp, this.xpToNext);
+    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
+    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
+
+    // Initialize skill UI components
+    this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
+    this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
 
     // UI button bindings
     this.hud.onAuto = (v) => {
@@ -122,10 +134,47 @@ export class Game {
     this.hud.onAlt = () => this.doAttack("alt");
     this.hud.onDash = () => this.doDash();
     this.hud.onBlock = () => this.doBlock();
+    this.hud.onSkills = () => this.showSkillTree();
+    this.hud.onCharacterSwitch = () => this.showCharacterSwitch();
 
     addEventListener("resize", () => this.onResize());
     this.loop.add((dt, t) => this.update(dt, t));
     this.loop.start();
+
+    // Setup skill system event handlers
+    this.setupSkillSystemHandlers();
+  }
+
+  setupSkillSystemHandlers(): void {
+    this.skillSystem.onSkillPointsChange = (skillPoints) => {
+      this.hud.setSkillPoints(skillPoints);
+    };
+    
+    this.skillSystem.onCharacterChange = (characterId) => {
+      const character = this.skillSystem.getCharacter(characterId);
+      this.hud.setCurrentCharacter(character.data.name, character.data.color);
+      this.hud.setStatus(`Switched to ${character.data.name}`);
+    };
+    
+    this.skillTreeUI.onClose = () => {
+      // Resume game when skill tree is closed
+    };
+    
+    this.characterSwitchUI.onClose = () => {
+      // Resume game when character switch is closed
+    };
+    
+    this.characterSwitchUI.onCharacterSwitch = () => {
+      // Character switching is handled by the skill system
+    };
+  }
+
+  showSkillTree(): void {
+    this.skillTreeUI.show();
+  }
+
+  showCharacterSwitch(): void {
+    this.characterSwitchUI.show();
   }
 
   // (removed duplicate and misplaced code)
@@ -133,6 +182,14 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
+    
+    // Resize skill UI components
+    if (this.skillTreeUI) {
+      this.skillTreeUI.resize();
+    }
+    if (this.characterSwitchUI) {
+      this.characterSwitchUI.resize();
+    }
   }
   update(dt: number, t: number) {
     this.player.update(dt);
@@ -247,6 +304,9 @@ export class Game {
       this.xp = 0;
       this.xpToNext = Math.floor(this.xpToNext * 1.4) + 2;
       this.hud.setStatus(`Leveled to ${this.level}`);
+      
+      // Notify skill system of level up
+      this.skillSystem.onLevelUp(this.level);
     }
     this.hud.setXP(this.level, this.xp, this.xpToNext);
   }
@@ -283,6 +343,11 @@ export class Game {
     this.hud.setStatus("You Died - Respawning");
     this.hp = 10;
     this.player.mesh.position.set(0, 0.4, 0);
+    
+    // Reset skill system on death
+    this.skillSystem.reset();
+    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
+    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
   }
 
   playerHit() {
