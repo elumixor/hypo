@@ -1,12 +1,16 @@
 import * as THREE from "three";
+import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
 import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
 import { Hud } from "../ui/Hud";
+import { SkillTreeUI } from "../ui/SkillTreeUI";
+import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
 import { Loop } from "./Loop";
+import { SkillSystem } from "./SkillSystem";
 
 export class Game {
   readonly scene = new THREE.Scene();
@@ -17,12 +21,16 @@ export class Game {
   readonly spawner = new Spawner(this.scene);
   readonly projectiles = new Projectiles();
   readonly effects = new EffectsManager(this.scene, this.camera);
+  readonly characterManager = new CharacterManager();
   xpCrystals: THREE.Mesh[] = [];
   level = 1;
   xp = 0;
   xpToNext = 5;
   readonly loop = new Loop();
+  readonly skillSystem = new SkillSystem();
   hud!: Hud;
+  skillTreeUI!: SkillTreeUI;
+  characterSwitchUI!: CharacterSwitchUI;
   yaw = Math.PI * 0.25;
   pitch = 1.5;
   dist = 10;
@@ -33,6 +41,9 @@ export class Game {
   autoAttack = true;
   lastDash = false;
   lastBlock = false;
+  lastR = false;
+  lastT = false;
+  lastC = false;
 
   constructor(readonly root: HTMLElement) {}
   doAttack(type: "easy" | "alt") {
@@ -121,6 +132,12 @@ export class Game {
     this.hud = new Hud(hudApp);
     this.hud.setHealth(this.hp, 10);
     this.hud.setXP(this.level, this.xp, this.xpToNext);
+    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
+    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
+
+    // Initialize skill UI components
+    this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
+    this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
 
     // UI button bindings
     this.hud.onAuto = (v) => {
@@ -130,10 +147,47 @@ export class Game {
     this.hud.onAlt = () => this.doAttack("alt");
     this.hud.onDash = () => this.doDash();
     this.hud.onBlock = () => this.doBlock();
+    this.hud.onSkills = () => this.showSkillTree();
+    this.hud.onCharacterSwitch = () => this.showCharacterSwitch();
 
     addEventListener("resize", () => this.onResize());
     this.loop.add((dt, t) => this.update(dt, t));
     this.loop.start();
+
+    // Setup skill system event handlers
+    this.setupSkillSystemHandlers();
+  }
+
+  setupSkillSystemHandlers(): void {
+    this.skillSystem.onSkillPointsChange = (skillPoints) => {
+      this.hud.setSkillPoints(skillPoints);
+    };
+    
+    this.skillSystem.onCharacterChange = (characterId) => {
+      const character = this.skillSystem.getCharacter(characterId);
+      this.hud.setCurrentCharacter(character.data.name, character.data.color);
+      this.hud.setStatus(`Switched to ${character.data.name}`);
+    };
+    
+    this.skillTreeUI.onClose = () => {
+      // Resume game when skill tree is closed
+    };
+    
+    this.characterSwitchUI.onClose = () => {
+      // Resume game when character switch is closed
+    };
+    
+    this.characterSwitchUI.onCharacterSwitch = () => {
+      // Character switching is handled by the skill system
+    };
+  }
+
+  showSkillTree(): void {
+    this.skillTreeUI.show();
+  }
+
+  showCharacterSwitch(): void {
+    this.characterSwitchUI.show();
   }
 
   // (removed duplicate and misplaced code)
@@ -141,6 +195,14 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
+    
+    // Resize skill UI components
+    if (this.skillTreeUI) {
+      this.skillTreeUI.resize();
+    }
+    if (this.characterSwitchUI) {
+      this.characterSwitchUI.resize();
+    }
   }
   update(dt: number, t: number) {
     this.player.update(dt);
@@ -163,6 +225,34 @@ export class Game {
       this.doBlock();
     } else {
       this.lastBlock = false;
+    }
+
+    // Character system controls
+    if (this.keyboard.has("r")) {
+      if (!this.lastR) {
+        this.toggleSafeZone();
+        this.lastR = true;
+      }
+    } else {
+      this.lastR = false;
+    }
+
+    if (this.keyboard.has("t")) {
+      if (!this.lastT) {
+        this.demonstrateCharacterInteraction();
+        this.lastT = true;
+      }
+    } else {
+      this.lastT = false;
+    }
+
+    if (this.keyboard.has("c")) {
+      if (!this.lastC) {
+        this.switchToNextCharacter();
+        this.lastC = true;
+      }
+    } else {
+      this.lastC = false;
     }
     if (this.autoAttack) this.autoShoot(dt);
     // collect XP crystals when near
@@ -273,6 +363,9 @@ export class Game {
       this.xp = 0;
       this.xpToNext = Math.floor(this.xpToNext * 1.4) + 2;
       this.hud.setStatus(`Leveled to ${this.level}`);
+      
+      // Notify skill system of level up
+      this.skillSystem.onLevelUp(this.level);
     }
     this.hud.setXP(this.level, this.xp, this.xpToNext);
   }
@@ -301,14 +394,149 @@ export class Game {
     return best;
   }
   updateHud() {
+    const activeChar = this.characterManager.getActiveCharacter();
+    const partyCount = this.characterManager.getPartyMembers().length;
+
     this.hud.setStatus(
-      `HP:${this.hp} Enemies:${this.spawner.enemies.length} Proj:${this.projectiles.list.length} FPS:${this.loop.fps.toFixed(0)}`,
+      `HP:${this.hp} Enemies:${this.spawner.enemies.length} Proj:${this.projectiles.list.length} ` +
+        `Active:${activeChar?.name || "None"} Party:${partyCount} FPS:${this.loop.fps.toFixed(0)}`,
     );
   }
   respawn() {
     this.hud.setStatus("You Died - Respawning");
     this.hp = 10;
     this.player.mesh.position.set(0, 0.4, 0);
+    
+    // Reset skill system on death
+    this.skillSystem.reset();
+    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
+    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
+  }
+
+  // Character interaction methods
+  toggleSafeZone() {
+    if (this.characterManager.getAvailableForInteraction().length === 0) {
+      // Enter safe zone
+      this.characterManager.enterSafeZone();
+
+      // Demo: unlock companion characters after some time
+      if (this.level >= 2) {
+        this.characterManager.unlockCharacter("kai");
+        this.characterManager.addToParty("kai");
+      }
+      if (this.level >= 4) {
+        this.characterManager.unlockCharacter("iris");
+        this.characterManager.addToParty("iris");
+      }
+      if (this.level >= 6) {
+        this.characterManager.unlockCharacter("lucy");
+        this.characterManager.addToParty("lucy");
+      }
+
+      this.hud.setStatus("Entered Safe Zone - Press T to interact with characters");
+    } else {
+      // Exit safe zone
+      this.characterManager.exitSafeZone();
+      this.hud.setStatus("Exited Safe Zone");
+    }
+  }
+
+  demonstrateCharacterInteraction() {
+    const availableChars = this.characterManager.getAvailableForInteraction();
+    if (availableChars.length === 0) {
+      this.hud.setStatus("No characters available for interaction");
+      return;
+    }
+
+    // Find the first character we can interact with (not ourselves)
+    const activeChar = this.characterManager.getActiveCharacter();
+    const targetChar = availableChars.find((char) => char !== activeChar?.type);
+
+    if (!targetChar) {
+      this.hud.setStatus("No other characters available for interaction");
+      return;
+    }
+
+    // Get available interaction options
+    const options = this.characterManager.getInteractionOptions(targetChar);
+    if (options.length === 0) {
+      this.hud.setStatus(`No interaction options available for ${targetChar}`);
+      return;
+    }
+
+    // Use the first available interaction
+    const firstOption = options[0];
+    if (!firstOption) {
+      this.hud.setStatus("No interaction options available");
+      return;
+    }
+
+    const result = this.characterManager.interact(targetChar, firstOption.id);
+
+    if (result.success) {
+      let message = result.message;
+
+      if (result.skillsUnlocked && result.skillsUnlocked.length > 0) {
+        message += ` | New skills unlocked: ${result.skillsUnlocked.join(", ")}`;
+      }
+
+      if (result.traitsUnlocked && result.traitsUnlocked.length > 0) {
+        message += ` | New traits unlocked: ${result.traitsUnlocked.join(", ")}`;
+      }
+
+      this.hud.setStatus(message);
+
+      // Log relationship summary
+      log("Game", this.characterManager.getRelationshipSummary(activeChar?.type || "helios"));
+    } else {
+      this.hud.setStatus(result.message);
+    }
+  }
+
+  switchToNextCharacter() {
+    const partyMembers = this.characterManager.getPartyMembers();
+    if (partyMembers.length <= 1) {
+      this.hud.setStatus("Only one character in party");
+      return;
+    }
+
+    const activeChar = this.characterManager.getActiveCharacter();
+    const currentIndex = partyMembers.findIndex((char) => char.type === activeChar?.type);
+    const nextIndex = (currentIndex + 1) % partyMembers.length;
+    const nextChar = partyMembers[nextIndex];
+
+    if (!nextChar) {
+      this.hud.setStatus("Error switching character");
+      return;
+    }
+
+    if (this.characterManager.switchCharacter(nextChar.type)) {
+      this.hud.setStatus(`Switched to ${nextChar.name}`);
+
+      // Show character stats
+      const stats = nextChar.getEffectiveStats();
+      log("Game", `${nextChar.name} stats:`, stats);
+
+      // Show available skills
+      const skills = nextChar.getAvailableSkills();
+      if (skills.length > 0) {
+        log(
+          "Game",
+          `${nextChar.name} available skills:`,
+          skills.map((s) => s.name),
+        );
+      }
+
+      // Show available traits
+      const traits = nextChar.getAvailablePassiveTraits();
+      if (traits.length > 0) {
+        log(
+          "Game",
+          `${nextChar.name} active traits:`,
+          traits.map((t) => t.name),
+        );
+      }
+    }
   }
 
   playerHit() {
