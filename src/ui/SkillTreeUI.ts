@@ -209,7 +209,7 @@ export class SkillTreeUI {
     const categorySpacing = 160;
 
     categories.forEach((category) => {
-      if (category.skills.length === 0) return;
+      if (category.skills.isEmpty) return;
 
       // Category header
       const categoryHeader = new Text({

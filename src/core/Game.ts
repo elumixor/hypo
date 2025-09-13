@@ -104,8 +104,8 @@ export class Game {
 
   loadCurrentLevel() {
     // Clear existing scene
-    while (this.scene.children.length > 0) {
-      const child = this.scene.children[0];
+    while (this.scene.children.nonEmpty) {
+      const child = this.scene.children.first;
       if (child) {
         this.scene.remove(child);
       }
@@ -183,7 +183,7 @@ export class Game {
       }
     } else {
       // Check if all enemies are defeated
-      if (this.spawner.enemies.length === 0) {
+      if (this.spawner.enemies.isEmpty) {
         this.completeLevelProgression();
       }
     }
@@ -278,7 +278,12 @@ export class Game {
     this.dialogueUI.startDialogue("greeting");
   }
 
-  async init() {
+  /**
+   * Initialize the game asynchronously
+   * NOTE: This method exists because it requires async operations (Pixi.js initialization)
+   * that cannot be performed in the constructor. Call immediately after construction.
+   */
+  async init(): Promise<void> {
     this.renderer.setPixelRatio(devicePixelRatio);
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.domElement.style.display = "block";
@@ -560,7 +565,7 @@ export class Game {
         }
       }
 
-      if (Object.keys(skills).length > 0) {
+      if (Object.keys(skills).nonEmpty) {
         this.gameStateManager.getState().characterSkills[characterId] = skills;
       }
     }
@@ -953,7 +958,7 @@ export class Game {
 
   demonstrateCharacterInteraction() {
     const availableChars = this.characterManager.getAvailableForInteraction();
-    if (availableChars.length === 0) {
+    if (availableChars.isEmpty) {
       this.hud.setStatus("No characters available for interaction");
       return;
     }
