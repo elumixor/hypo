@@ -2,6 +2,7 @@ import { type Application, Container, Graphics, Text } from "pixi.js";
 
 export class Hud {
   readonly info: Text;
+  readonly ui: Container; // Add reference to UI container
   private readonly btns: Partial<{
     auto: HTMLButtonElement;
     easy: HTMLButtonElement;
@@ -12,6 +13,7 @@ export class Hud {
     character: HTMLButtonElement;
     dialogue: HTMLButtonElement;
   }> = {};
+  private buttonPanel: HTMLElement | null = null; // Reference to DOM button panel
   private readonly hpBg: Graphics;
   private readonly hpFg: Graphics;
   private readonly energyBg: Graphics;
@@ -30,49 +32,49 @@ export class Hud {
   onDialogue?: () => void;
   auto = true;
   constructor(readonly app: Application) {
-    const ui = new Container();
-    this.app.stage.addChild(ui);
+    this.ui = new Container();
+    this.app.stage.addChild(this.ui);
     this.info = new Text({ text: "", style: { fill: "#fff", fontSize: 14, letterSpacing: 1 } });
     this.info.x = 12;
     this.info.y = 10;
-    ui.addChild(this.info);
+    this.ui.addChild(this.info);
 
     // health bar
     this.hpBg = new Graphics();
     this.hpBg.beginFill(0x222222);
     this.hpBg.drawRect(12, 34, 160, 12);
     this.hpBg.endFill();
-    ui.addChild(this.hpBg);
+    this.ui.addChild(this.hpBg);
     this.hpFg = new Graphics();
-    ui.addChild(this.hpFg);
+    this.ui.addChild(this.hpFg);
 
     // energy bar
     this.energyBg = new Graphics();
     this.energyBg.beginFill(0x222222);
     this.energyBg.drawRect(12, 50, 160, 10);
     this.energyBg.endFill();
-    ui.addChild(this.energyBg);
+    this.ui.addChild(this.energyBg);
     this.energyFg = new Graphics();
-    ui.addChild(this.energyFg);
+    this.ui.addChild(this.energyFg);
 
     this.lvlText = new Text({ text: "Lv:1", style: { fill: "#fff", fontSize: 13 } });
     this.lvlText.x = 12;
     this.lvlText.y = 66;
-    ui.addChild(this.lvlText);
+    this.ui.addChild(this.lvlText);
     this.xpText = new Text({ text: "XP:0/5", style: { fill: "#fff", fontSize: 13 } });
     this.xpText.x = 80;
     this.xpText.y = 66;
-    ui.addChild(this.xpText);
+    this.ui.addChild(this.xpText);
 
     this.skillPointsText = new Text({ text: "SP:0", style: { fill: "#4ec9ff", fontSize: 13 } });
     this.skillPointsText.x = 12;
     this.skillPointsText.y = 72;
-    ui.addChild(this.skillPointsText);
+    this.ui.addChild(this.skillPointsText);
 
     this.characterText = new Text({ text: "Helio", style: { fill: "#4ec9ff", fontSize: 13, fontWeight: "bold" } });
     this.characterText.x = 80;
     this.characterText.y = 72;
-    ui.addChild(this.characterText);
+    this.ui.addChild(this.characterText);
 
     // DOM overlay for buttons
     const panel = document.createElement("div");
@@ -87,6 +89,7 @@ export class Hud {
     panel.style.userSelect = "none";
     panel.style.touchAction = "manipulation";
     document.body.append(panel);
+    this.buttonPanel = panel;
 
     const makeBtn = (label: string, id: keyof Hud["btns"], cb: () => void) => {
       const b = document.createElement("button");
@@ -186,5 +189,22 @@ export class Hud {
   setCurrentCharacter(characterName: string, color: string) {
     this.characterText.text = characterName;
     this.characterText.style.fill = color;
+  }
+
+  /**
+   * Show or hide the HUD
+   */
+  setVisible(visible: boolean): void {
+    this.ui.visible = visible;
+    if (this.buttonPanel) {
+      this.buttonPanel.style.display = visible ? "flex" : "none";
+    }
+  }
+
+  /**
+   * Check if HUD is visible
+   */
+  isVisible(): boolean {
+    return this.ui.visible;
   }
 }
