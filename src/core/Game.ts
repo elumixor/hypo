@@ -330,16 +330,16 @@ export class Game {
 
       // Demo: unlock companion characters after some time
       if (this.level >= 2) {
-        this.characterManager.unlockCharacter("companion1");
-        this.characterManager.addToParty("companion1");
+        this.characterManager.unlockCharacter("kai");
+        this.characterManager.addToParty("kai");
       }
       if (this.level >= 4) {
-        this.characterManager.unlockCharacter("companion2");
-        this.characterManager.addToParty("companion2");
+        this.characterManager.unlockCharacter("iris");
+        this.characterManager.addToParty("iris");
       }
       if (this.level >= 6) {
-        this.characterManager.unlockCharacter("companion3");
-        this.characterManager.addToParty("companion3");
+        this.characterManager.unlockCharacter("lucy");
+        this.characterManager.addToParty("lucy");
       }
 
       this.hud.setStatus("Entered Safe Zone - Press T to interact with characters");

@@ -51,75 +51,75 @@ export class CharacterManager {
 
     this.characters.set("helios", helios);
 
-    // Initialize Companion 1
-    const companion1 = new Character("companion1", "Kai", "A skilled archer from the world of Envy", {
+    // Initialize Companion 1 - Kai
+    const kai = new Character("kai", "Kai", "A skilled archer from the world of Envy", {
       attack: 12,
       defense: 6,
       speed: 10,
       health: 80,
     });
 
-    // Companion 1 skills - require bond with Helios
-    companion1.addSkill(new LightAttackSkill([{ character: "helios", minimumBond: 20 }]));
-    companion1.addSkill(
+    // Kai skills - require bond with Helios
+    kai.addSkill(new LightAttackSkill([{ character: "helios", minimumBond: 20 }]));
+    kai.addSkill(
       new SpecialSkill("piercing_shot", "Piercing Shot", "A shot that pierces through enemies", "special1", [
         { character: "helios", minimumBond: 40 },
       ]),
     );
 
-    companion1.addPassiveTrait(new SwiftnessTrait([{ character: "helios", minimumBond: 30 }]));
+    kai.addPassiveTrait(new SwiftnessTrait([{ character: "helios", minimumBond: 30 }]));
 
-    this.characters.set("companion1", companion1);
+    this.characters.set("kai", kai);
 
-    // Initialize Companion 2
-    const companion2 = new Character("companion2", "Iris", "A defensive warrior from the world of Attachment", {
+    // Initialize Companion 2 - Iris
+    const iris = new Character("iris", "Iris", "A defensive warrior from the world of Attachment", {
       attack: 8,
       defense: 14,
       speed: 4,
       health: 120,
     });
 
-    companion2.addSkill(new HeavyAttackSkill([{ character: "helios", minimumBond: 25 }]));
-    companion2.addSkill(
+    iris.addSkill(new HeavyAttackSkill([{ character: "helios", minimumBond: 25 }]));
+    iris.addSkill(
       new SpecialSkill("shield_bash", "Shield Bash", "A powerful defensive counter-attack", "special1", [
         { character: "helios", minimumBond: 50 },
       ]),
     );
 
-    companion2.addPassiveTrait(new FortitudeTrait([{ character: "helios", minimumBond: 35 }]));
-    companion2.addPassiveTrait(new VitalityTrait([{ character: "helios", minimumBond: 60 }]));
+    iris.addPassiveTrait(new FortitudeTrait([{ character: "helios", minimumBond: 35 }]));
+    iris.addPassiveTrait(new VitalityTrait([{ character: "helios", minimumBond: 60 }]));
 
-    this.characters.set("companion2", companion2);
+    this.characters.set("iris", iris);
 
-    // Initialize Companion 3
-    const companion3 = new Character("companion3", "Lucy", "A mysterious mage from the world of Greed", {
+    // Initialize Companion 3 - Lucy
+    const lucy = new Character("lucy", "Lucy", "A mysterious mage from the world of Greed", {
       attack: 14,
       defense: 5,
       speed: 8,
       health: 70,
     });
 
-    companion3.addSkill(
+    lucy.addSkill(
       new SpecialSkill("arcane_blast", "Arcane Blast", "Powerful magical attack", "special1", [
         { character: "helios", minimumBond: 45 },
       ]),
     );
 
-    companion3.addSkill(
+    lucy.addSkill(
       new SpecialSkill("meteor", "Meteor", "Devastating area attack", "special2", [
         { character: "helios", minimumBond: 70 },
-        { character: "companion1", minimumBond: 30 },
+        { character: "kai", minimumBond: 30 },
       ]),
     );
 
-    companion3.addPassiveTrait(
+    lucy.addPassiveTrait(
       new CombatMasteryTrait([
         { character: "helios", minimumBond: 60 },
-        { character: "companion2", minimumBond: 40 },
+        { character: "iris", minimumBond: 40 },
       ]),
     );
 
-    this.characters.set("companion3", companion3);
+    this.characters.set("lucy", lucy);
   }
 
   /**

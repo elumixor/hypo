@@ -1,7 +1,7 @@
 import type { PassiveTrait } from "./PassiveTrait";
 import type { Skill } from "./Skill";
 
-export type CharacterType = "helios" | "companion1" | "companion2" | "companion3";
+export type CharacterType = "helios" | "kai" | "iris" | "lucy";
 
 export interface CharacterStats {
   attack: number;
