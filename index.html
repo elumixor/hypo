@@ -2,9 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icon.png" />
     <meta
       name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
     />
     <title>HYPO</title>
     <style>
@@ -17,31 +18,12 @@
         font-family: system-ui, sans-serif;
         overscroll-behavior: none;
       }
-      #overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        pointer-events: none;
-      }
-      .hint {
-        position: absolute;
-        bottom: 1rem;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 0.75rem;
-        opacity: 0.6;
-        letter-spacing: 0.1em;
-      }
       canvas {
         touch-action: none;
       }
     </style>
   </head>
   <body>
-    <div id="overlay">
-      <div class="hint">HYPO prototype booting...</div>
-    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

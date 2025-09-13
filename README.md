@@ -1,5 +1,7 @@
 # HYPO
 
+[Playable Version (latest build)](https://elumixor.github.io/hypo/)
+
 Early prototype scaffold for the HYPO action roguelike RPG. Futuristic sci‑fi + fantasy universe of 6+ worlds ruled by the Empire of Pride. You rise from Wrath to overthrow it.
 
 ## Stack
