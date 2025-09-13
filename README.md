@@ -1,3 +1,5 @@
+
+![Build & Lint Status](https://github.com/elumixor/hypo/actions/workflows/deploy.yml/badge.svg)
 # HYPO
 
 [Playable Version (latest build)](https://elumixor.github.io/hypo/)
