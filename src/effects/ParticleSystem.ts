@@ -17,12 +17,7 @@ export class Particle {
   maxLife: number;
   size: number;
 
-  constructor(
-    position: THREE.Vector3,
-    velocity: THREE.Vector3,
-    life: number,
-    size: number
-  ) {
+  constructor(position: THREE.Vector3, velocity: THREE.Vector3, life: number, size: number) {
     this.position = position.clone();
     this.velocity = velocity.clone();
     this.life = life;
@@ -51,15 +46,18 @@ export class ParticleSystem {
   private colors: Float32Array;
   private sizes: Float32Array;
 
-  constructor(private scene: THREE.Scene, maxParticles = 1000) {
+  constructor(
+    private scene: THREE.Scene,
+    maxParticles = 1000,
+  ) {
     this.positions = new Float32Array(maxParticles * 3);
     this.colors = new Float32Array(maxParticles * 3);
     this.sizes = new Float32Array(maxParticles);
 
     this.geometry = new THREE.BufferGeometry();
-    this.geometry.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
-    this.geometry.setAttribute('color', new THREE.BufferAttribute(this.colors, 3));
-    this.geometry.setAttribute('size', new THREE.BufferAttribute(this.sizes, 1));
+    this.geometry.setAttribute("position", new THREE.BufferAttribute(this.positions, 3));
+    this.geometry.setAttribute("color", new THREE.BufferAttribute(this.colors, 3));
+    this.geometry.setAttribute("size", new THREE.BufferAttribute(this.sizes, 1));
 
     this.material = new THREE.PointsMaterial({
       size: 0.1,
@@ -74,25 +72,17 @@ export class ParticleSystem {
   }
 
   emit(origin: THREE.Vector3, options: ParticleOptions = {}) {
-    const {
-      count = 10,
-      life = 1.0,
-      speed = 5.0,
-      size = 0.1,
-      color = new THREE.Color(1, 1, 1),
-      spread = Math.PI / 3,
-      gravity = -9.8
-    } = options;
+    const { count = 10, life = 1.0, speed = 5.0, size = 0.1, spread = Math.PI / 3 } = options;
 
     for (let i = 0; i < count; i++) {
       // Random direction within spread cone
       const angle = Math.random() * Math.PI * 2;
       const elevation = Math.random() * spread - spread / 2 + Math.PI / 2;
-      
+
       const velocity = new THREE.Vector3(
         Math.cos(angle) * Math.cos(elevation) * speed,
         Math.sin(elevation) * speed,
-        Math.sin(angle) * Math.cos(elevation) * speed
+        Math.sin(angle) * Math.cos(elevation) * speed,
       );
 
       // Add some randomness to velocity
@@ -102,7 +92,7 @@ export class ParticleSystem {
         origin.clone(),
         velocity,
         life * (0.5 + Math.random() * 0.5),
-        size * (0.5 + Math.random() * 0.5)
+        size * (0.5 + Math.random() * 0.5),
       );
 
       this.particles.push(particle);
@@ -113,7 +103,7 @@ export class ParticleSystem {
     // Update particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const particle = this.particles[i];
-      if (!particle.update(dt)) {
+      if (particle && !particle.update(dt)) {
         this.particles.splice(i, 1);
       }
     }
@@ -127,6 +117,8 @@ export class ParticleSystem {
 
     for (let i = 0; i < particleCount; i++) {
       const particle = this.particles[i];
+      if (!particle) continue;
+
       const index = i * 3;
 
       this.positions[index] = particle.position.x;
@@ -149,9 +141,13 @@ export class ParticleSystem {
       this.sizes[i] = 0;
     }
 
-    this.geometry.attributes.position.needsUpdate = true;
-    this.geometry.attributes.color.needsUpdate = true;
-    this.geometry.attributes.size.needsUpdate = true;
+    const positionAttribute = this.geometry.attributes["position"];
+    const colorAttribute = this.geometry.attributes["color"];
+    const sizeAttribute = this.geometry.attributes["size"];
+
+    if (positionAttribute) positionAttribute.needsUpdate = true;
+    if (colorAttribute) colorAttribute.needsUpdate = true;
+    if (sizeAttribute) sizeAttribute.needsUpdate = true;
     this.geometry.setDrawRange(0, particleCount);
   }
 

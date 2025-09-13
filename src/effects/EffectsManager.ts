@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { CameraShake } from "./CameraShake";
-import { ParticleSystem, type ParticleOptions } from "./ParticleSystem";
+import { type ParticleOptions, ParticleSystem } from "./ParticleSystem";
 import { ScreenFlash } from "./ScreenFlash";
 
 export class EffectsManager {
@@ -8,10 +8,7 @@ export class EffectsManager {
   private particleSystem: ParticleSystem;
   private screenFlash: ScreenFlash;
 
-  constructor(
-    private scene: THREE.Scene,
-    private camera: THREE.Camera
-  ) {
+  constructor(scene: THREE.Scene, camera: THREE.Camera) {
     this.cameraShake = new CameraShake(camera);
     this.particleSystem = new ParticleSystem(scene);
     this.screenFlash = new ScreenFlash(scene, camera);

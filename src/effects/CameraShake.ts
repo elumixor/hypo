@@ -19,7 +19,7 @@ export class CameraShake {
     if (this.duration <= 0) return;
 
     this.elapsed += dt;
-    
+
     if (this.elapsed >= this.duration) {
       this.duration = 0;
       this.intensity = 0;
@@ -35,7 +35,7 @@ export class CameraShake {
     this.offset.set(
       (Math.random() - 0.5) * currentIntensity,
       (Math.random() - 0.5) * currentIntensity,
-      (Math.random() - 0.5) * currentIntensity * 0.5
+      (Math.random() - 0.5) * currentIntensity * 0.5,
     );
   }
 

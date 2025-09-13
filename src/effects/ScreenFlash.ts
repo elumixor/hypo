@@ -7,7 +7,10 @@ export class ScreenFlash {
   private elapsed = 0;
   private maxOpacity = 0;
 
-  constructor(private scene: THREE.Scene, private camera: THREE.Camera) {
+  constructor(
+    _scene: THREE.Scene,
+    private camera: THREE.Camera,
+  ) {
     const geometry = new THREE.PlaneGeometry(2, 2);
     this.material = new THREE.MeshBasicMaterial({
       color: 0xffffff,
@@ -16,11 +19,11 @@ export class ScreenFlash {
       depthTest: false,
       depthWrite: false,
     });
-    
+
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.mesh.position.z = -0.5; // In front of camera
     this.mesh.visible = false;
-    
+
     // Add to camera so it moves with it
     this.camera.add(this.mesh);
   }
@@ -40,7 +43,7 @@ export class ScreenFlash {
     }
 
     this.elapsed += dt;
-    
+
     if (this.elapsed >= this.duration) {
       this.duration = 0;
       this.mesh.visible = false;

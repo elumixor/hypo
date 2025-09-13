@@ -173,7 +173,7 @@ export class Game {
         this.collectXP(i);
       }
     }
-    
+
     // Update effects system first
     const p = this.player.mesh.position;
     const baseCameraPos = new THREE.Vector3(
@@ -182,7 +182,7 @@ export class Game {
       p.z + Math.sin(this.yaw) * this.dist,
     );
     this.effects.update(dt, baseCameraPos);
-    
+
     // Update camera (effects may modify camera position for shake)
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
