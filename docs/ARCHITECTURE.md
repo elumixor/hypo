@@ -1,10 +1,12 @@
-# HYPO - Refactored Architecture
+# HYPO Architecture
 
-This document explains the architecture for the HYPO game.
+> **Clean, maintainable service-based architecture with component systems**
 
-## Architecture Overview
+## Overview
 
-The game has been refactored into a clean, maintainable service-based architecture with component systems:
+This document explains the architecture for the HYPO game, which has been refactored into a clean, maintainable service-based architecture with component systems.
+
+## Core Components
 
 ### Services (`src/services/`)
 
@@ -80,20 +82,7 @@ const healthService = Services.get(HealthService);
 healthService.takeDamage(5);
 ```
 
-## Migration Guide
-
-### From Old to New
-
-- **Game.ts** → **GameNew.ts**: Uses service architecture
-- **Player.ts** → **PlayerNew.ts**: Component-based with health, movement, shield
-- **Enemy.ts** → **EnemyNew.ts**: Component-based health system
-- **main.ts** → **mainNew.ts**: Uses new game class
-
-### Running the New Version
-
-To test the refactored version, update your entry point to use `mainNew.ts` instead of `main.ts`.
-
-## Benefits of New Architecture
+## Architecture Benefits
 
 1. **Separation of Concerns**: Each service handles one responsibility
 2. **Event-Driven**: Loose coupling between systems
@@ -102,6 +91,22 @@ To test the refactored version, update your entry point to use `mainNew.ts` inst
 5. **Type Safety**: Full TypeScript support with proper interfaces
 6. **Scalable**: Easy to add new features and systems
 7. **Testable**: Services and components can be tested in isolation
+1. **Separation of Concerns**: Each service handles one responsibility
+2. **Event-Driven**: Loose coupling between systems
+3. **Component-Based**: Modular, reusable entity behaviors
+4. **GSAP Integration**: Professional timing with slow motion support
+5. **Type Safety**: Full TypeScript support with proper interfaces
+6. **Scalable**: Easy to add new features and systems
+7. **Testable**: Services and components can be tested in isolation
+
+## Migration Guide
+
+### From Old to New
+
+- **Game.ts** → **GameNew.ts**: Uses service architecture
+- **Player.ts** → **PlayerNew.ts**: Component-based with health, movement, shield
+- **Enemy.ts** → **EnemyNew.ts**: Component-based health system
+- **main.ts** → **mainNew.ts**: Uses new game class
 
 ## Usage Examples
 
@@ -135,4 +140,4 @@ class AttackComponent extends Component {
 player.components.addComponent(new AttackComponent(config));
 ```
 
-This architecture provides a solid foundation for implementing the full game design outlined in the game-info.md document.
+This architecture provides a solid foundation for implementing the full game design outlined in the `docs/game-info.md` document.

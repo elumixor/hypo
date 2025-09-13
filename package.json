@@ -10,7 +10,9 @@
     "lint": "biome check . --fix",
     "format": "biome format . --write",
     "preview": "vite preview",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "assets": "bun run scripts/launch-viewer.ts",
+    "test-resources": "open http://localhost:5173/hypo/scripts/test-resources.html"
   },
   "dependencies": {
     "@elumixor/frontils": "^2.14.1",
