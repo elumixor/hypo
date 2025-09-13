@@ -326,7 +326,7 @@ export class Game {
         e.tShoot = t + 900 + Math.random() * 600;
       }
     }
-    
+
     // Only spawn new waves if not in a safe zone
     if (!this.isInSafeZone) {
       this.spawner.ensureWave(5);

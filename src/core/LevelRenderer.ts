@@ -222,19 +222,20 @@ export class LevelRenderer {
   }
 
   private createTarget(scene: THREE.Scene, position: THREE.Vector3) {
-    const geometry = new THREE.CylinderGeometry(this.tileSize * 0.3, this.tileSize * 0.3, 0.1, 16);
+    // Create a more visible target with a tall cylinder and glowing effect
+    const geometry = new THREE.CylinderGeometry(this.tileSize * 0.4, this.tileSize * 0.4, 1.5, 16);
     const material = this.materials.get("target")!;
     const target = new THREE.Mesh(geometry, material);
     target.position.copy(position);
-    target.position.y = 0.05;
+    target.position.y = 0.75; // Raise it up so it's more visible
     scene.add(target);
 
-    // Add a glowing effect
-    const glowGeometry = new THREE.RingGeometry(this.tileSize * 0.3, this.tileSize * 0.5, 16);
+    // Add a glowing ring at the base
+    const glowGeometry = new THREE.RingGeometry(this.tileSize * 0.4, this.tileSize * 0.6, 16);
     const glowMaterial = new THREE.MeshBasicMaterial({
       color: "#33ff33",
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.5,
       side: THREE.DoubleSide,
     });
     const glow = new THREE.Mesh(glowGeometry, glowMaterial);
@@ -242,6 +243,20 @@ export class LevelRenderer {
     glow.position.copy(position);
     glow.position.y = 0.01;
     scene.add(glow);
+
+    // Add a second ring that pulses
+    const pulseGeometry = new THREE.RingGeometry(this.tileSize * 0.6, this.tileSize * 0.8, 16);
+    const pulseMaterial = new THREE.MeshBasicMaterial({
+      color: "#88ff88",
+      transparent: true,
+      opacity: 0.3,
+      side: THREE.DoubleSide,
+    });
+    const pulse = new THREE.Mesh(pulseGeometry, pulseMaterial);
+    pulse.rotation.x = -Math.PI / 2;
+    pulse.position.copy(position);
+    pulse.position.y = 0.02;
+    scene.add(pulse);
   }
 
   private createSpawnMarker(scene: THREE.Scene, position: THREE.Vector3) {
