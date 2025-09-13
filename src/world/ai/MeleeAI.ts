@@ -63,7 +63,8 @@ export class MeleeAI extends EnemyAI {
           // Check if we hit the player (damage will be handled by projectile system later)
           if (distToPlayer <= this.attackRange) {
             this.switchState(AIState.ATTACK, 0.2); // Brief attack animation
-            // Deal damage to player (we'll implement this later)
+            // Deal damage to player
+            this.game.damagePlayer(1);
           }
 
           // If dash is complete, check for combo

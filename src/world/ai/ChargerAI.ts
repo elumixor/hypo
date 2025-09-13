@@ -73,8 +73,8 @@ export class ChargerAI extends EnemyAI {
         // Check if we hit the player
         if (distToPlayer <= 0.8) {
           // Hit player - deal damage and continue charge slightly
+          this.game.damagePlayer(2); // Charger deals more damage
           console.log("Charger hit player!");
-          // TODO: Deal damage to player
         }
 
         // Check if we hit other enemies
@@ -83,8 +83,8 @@ export class ChargerAI extends EnemyAI {
 
           const distToOther = this.enemy.mesh.position.distanceTo(otherEnemy.mesh.position);
           if (distToOther <= 0.8) {
+            this.game.damageEnemy(otherEnemy, 2);
             console.log("Charger hit other enemy!");
-            // TODO: Deal damage to other enemy
           }
         }
 

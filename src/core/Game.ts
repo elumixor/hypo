@@ -256,4 +256,28 @@ export class Game {
       this.hud.setXP(this.level, this.xp, this.xpToNext);
     }
   }
+
+  // Damage dealing methods for AI to use
+  damagePlayer(amount: number) {
+    if (this.player.shieldActive) {
+      log("Game", "player-damage-blocked", amount);
+      return;
+    }
+    this.hp -= amount;
+    log("Game", "player-damaged", amount, this.hp);
+    this.hud.setHealth(this.hp, 10);
+    if (this.hp <= 0) {
+      this.level = 1;
+      this.xp = 0;
+      this.xpToNext = 5;
+      this.hud.setXP(this.level, this.xp, this.xpToNext);
+    }
+  }
+
+  damageEnemy(enemy: Enemy, amount: number) {
+    const killed = enemy.takeDamage(amount);
+    if (killed) {
+      this.removeEnemy(enemy);
+    }
+  }
 }

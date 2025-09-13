@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { Game } from "../../core/Game";
 import type { Enemy } from "../Enemy";
 import { AIState, EnemyAI, EnemyType } from "./EnemyAI";
+import { ProjectileType } from "../../combat/Projectiles";
 
 export class NukerAI extends EnemyAI {
   private readonly aoeRange = 6.0; // Max range for AOE attack
@@ -144,14 +145,16 @@ export class NukerAI extends EnemyAI {
   }
 
   private fireAOEProjectile(targetPos: THREE.Vector3) {
-    // For now, use the existing projectile system
-    // TODO: Create special AOE projectile that explodes on impact
+    // Fire AOE projectile that can damage other enemies
     const direction = targetPos.clone().sub(this.enemy.mesh.position).normalize();
     this.game.projectiles.add(
       this.enemy.mesh.position.clone().add(new THREE.Vector3(0, 0.4, 0)),
       direction,
       false,
       this.game.scene,
+      ProjectileType.AOE,
+      2, // Higher damage
+      true // Can hit other enemies
     );
   }
 
@@ -161,7 +164,7 @@ export class NukerAI extends EnemyAI {
 
     // Check damage to player
     if (tramplePos.distanceTo(this.getPlayerPosition()) <= this.trampleRange) {
-      // TODO: Deal damage to player
+      this.game.damagePlayer(2); // Heavy trample damage
       console.log("Nuker trample hit player!");
     }
 
@@ -170,7 +173,7 @@ export class NukerAI extends EnemyAI {
       if (otherEnemy === this.enemy || otherEnemy.dead) continue;
 
       if (tramplePos.distanceTo(otherEnemy.mesh.position) <= this.trampleRange) {
-        // TODO: Deal damage to other enemy
+        this.game.damageEnemy(otherEnemy, 2);
         console.log("Nuker trample hit other enemy!");
       }
     }
