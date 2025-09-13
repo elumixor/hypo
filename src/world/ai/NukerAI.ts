@@ -1,8 +1,8 @@
 import * as THREE from "three";
+import { ProjectileType } from "../../combat/Projectiles";
 import type { Game } from "../../core/Game";
 import type { Enemy } from "../Enemy";
 import { AIState, EnemyAI, EnemyType } from "./EnemyAI";
-import { ProjectileType } from "../../combat/Projectiles";
 
 export class NukerAI extends EnemyAI {
   private readonly aoeRange = 6.0; // Max range for AOE attack
@@ -154,7 +154,7 @@ export class NukerAI extends EnemyAI {
       this.game.scene,
       ProjectileType.AOE,
       2, // Higher damage
-      true // Can hit other enemies
+      true, // Can hit other enemies
     );
   }
 

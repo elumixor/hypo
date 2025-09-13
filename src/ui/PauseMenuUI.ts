@@ -13,19 +13,19 @@ export interface PauseMenuCallbacks {
 }
 
 export class PauseMenuUI {
-  private container: Container;
-  private background: Graphics;
+  private readonly container: Container;
+  private readonly background: Graphics;
   private titleText!: Text; // Use definite assignment assertion
-  private buttonContainer: Container;
-  private saveLoadContainer: Container;
+  private readonly buttonContainer: Container;
+  private readonly saveLoadContainer: Container;
   private buttons: Graphics[] = [];
   private visible = false;
   private showingSaveSlots = false;
   private showingLoadSlots = false;
 
   constructor(
-    private app: Application,
-    private callbacks: PauseMenuCallbacks,
+    private readonly app: Application,
+    private readonly callbacks: PauseMenuCallbacks,
   ) {
     this.container = new Container();
     this.background = new Graphics();
@@ -82,7 +82,7 @@ export class PauseMenuUI {
 
     // Add exit button if callback provided (for electron/desktop)
     if (this.callbacks.onExit) {
-      buttonData.push({ text: "Exit Game", action: () => this.callbacks.onExit!() });
+      buttonData.push({ text: "Exit Game", action: () => this.callbacks.onExit?.() });
     }
 
     this.buttons = [];

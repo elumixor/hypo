@@ -1,14 +1,14 @@
 import * as THREE from "three";
 import { GameConfig } from "../config/GameConfig";
-import { gameEvents } from "../events/GameEvents";
 import type { EffectsManager } from "../effects/EffectsManager";
+import { gameEvents } from "../events/GameEvents";
 import type { Enemy } from "../world/Enemy";
 import type { Player } from "../world/Player";
 
 export enum ProjectileType {
   NORMAL = "normal",
   AOE = "aoe",
-  MELEE = "melee"
+  MELEE = "melee",
 }
 
 export class Projectile {
@@ -18,7 +18,7 @@ export class Projectile {
     readonly fromPlayer: boolean,
     readonly type: ProjectileType = ProjectileType.NORMAL,
     readonly damage: number = 1,
-    readonly canHitEnemies: boolean = false // For enemy-to-enemy damage
+    readonly canHitEnemies: boolean = false, // For enemy-to-enemy damage
   ) {}
 }
 
@@ -42,13 +42,13 @@ export class Projectiles {
    * Add a new projectile
    */
   add(
-    from: THREE.Vector3, 
-    dir: THREE.Vector3, 
-    fromPlayer: boolean, 
+    from: THREE.Vector3,
+    dir: THREE.Vector3,
+    fromPlayer: boolean,
     scene: THREE.Scene,
     type: ProjectileType = ProjectileType.NORMAL,
-    damage: number = 1, 
-    canHitEnemies: boolean = false
+    damage: number = 1,
+    canHitEnemies: boolean = false,
   ): void {
     const mesh = new THREE.Mesh(this.geometry, fromPlayer ? this.playerMaterial : this.enemyMaterial);
     mesh.position.copy(from);
@@ -116,12 +116,12 @@ export class Projectiles {
       if (distance < GameConfig.COMBAT.HIT_DISTANCE) {
         // Deal damage to enemy
         enemy.takeDamage(projectile.damage);
-        
+
         // Add projectile impact effect
         if (effects) {
           effects.projectileImpactEffect(projectile.mesh.position, true);
         }
-        
+
         this.disposeAt(projectileIndex, scene);
 
         if (!enemy.isAlive()) {
@@ -173,7 +173,7 @@ export class Projectiles {
     if (projectile.canHitEnemies) {
       for (const enemy of enemies) {
         if (!enemy.isAlive()) continue;
-        
+
         const distance = projectile.mesh.position.distanceTo(enemy.mesh.position);
         if (distance < GameConfig.COMBAT.HIT_DISTANCE) {
           const killed = enemy.takeDamage(projectile.damage);

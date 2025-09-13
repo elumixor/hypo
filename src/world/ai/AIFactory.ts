@@ -1,11 +1,11 @@
+import type { Game } from "../../core/Game";
+import type { Enemy } from "../Enemy";
+import { ChargerAI } from "./ChargerAI";
+import type { EnemyAI } from "./EnemyAI";
 import { EnemyType } from "./EnemyAI";
-import { RangeAI } from "./RangeAI";
 import { MeleeAI } from "./MeleeAI";
 import { NukerAI } from "./NukerAI";
-import { ChargerAI } from "./ChargerAI";
-import type { Enemy } from "../Enemy";
-import type { Game } from "../../core/Game";
-import type { EnemyAI } from "./EnemyAI";
+import { RangeAI } from "./RangeAI";
 
 export class AIFactory {
   static createAI(enemy: Enemy, game: Game): EnemyAI {

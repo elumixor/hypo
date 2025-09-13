@@ -26,5 +26,6 @@
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
     "baseUrl": "./src"
-  }
+  },
+  "include": ["src/**/*", "scripts/**/*"]
 }

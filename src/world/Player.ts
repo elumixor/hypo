@@ -5,56 +5,51 @@ import type { Keyboard } from "../input/Keyboard";
 
 /**
  * Player wrapper class for backwards compatibility
- * Delegates to the current active character (initially Helio) 
+ * Delegates to the current active character (initially Helio)
  * but also includes direct energy and movement systems from main branch
  */
 export class Player {
   private currentCharacter: Helio;
   readonly mesh: THREE.Mesh;
   speed = GameConfig.PLAYER.MOVEMENT_SPEED;
-  
+
   // dash state
-  private readonly dashSpeed = GameConfig.PLAYER.DASH_SPEED;
   private dashTime = 0;
   private readonly dashDuration = GameConfig.PLAYER.DASH_DURATION;
   private readonly dashCooldown = GameConfig.PLAYER.DASH_COOLDOWN;
   private dashCooldownTimer = 0;
-  
+
   // shield
   private readonly shieldMesh?: THREE.Mesh;
   shieldActive = false;
-  
+
   // energy system
-  energy = GameConfig.PLAYER.MAX_ENERGY;
-  readonly maxEnergy = GameConfig.PLAYER.MAX_ENERGY;
+  energy: number = GameConfig.PLAYER.MAX_ENERGY;
+  readonly maxEnergy: number = GameConfig.PLAYER.MAX_ENERGY;
   private readonly energyRegenRate = GameConfig.PLAYER.ENERGY_REGEN_RATE;
   private readonly shieldEnergyCost = GameConfig.PLAYER.SHIELD_ENERGY_COST;
 
   constructor(keyboard: Keyboard, yaw: number) {
     // Create character for advanced features
     this.currentCharacter = new Helio(keyboard, yaw);
-    
+
     // Create direct mesh for immediate compatibility
-    const geo = new THREE.BoxGeometry(
-      GameConfig.PLAYER.SIZE,
-      GameConfig.PLAYER.SIZE, 
-      GameConfig.PLAYER.SIZE
-    );
-    const mat = new THREE.MeshStandardMaterial({ 
+    const geo = new THREE.BoxGeometry(GameConfig.PLAYER.SIZE, GameConfig.PLAYER.SIZE, GameConfig.PLAYER.SIZE);
+    const mat = new THREE.MeshStandardMaterial({
       color: GameConfig.COLORS.PLAYER,
-      roughness: 0.4 
+      roughness: 0.4,
     });
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.position.set(0, GameConfig.PLAYER.HEIGHT_OFFSET, 0);
-    
+
     // create shield but keep hidden
     const shieldRadius = GameConfig.PLAYER.SHIELD_RADIUS;
     const sgeo = new THREE.SphereGeometry(shieldRadius, 16, 12);
-    const smat = new THREE.MeshStandardMaterial({ 
-      color: GameConfig.COLORS.SHIELD, 
-      transparent: true, 
-      opacity: 0.25, 
-      depthWrite: false 
+    const smat = new THREE.MeshStandardMaterial({
+      color: GameConfig.COLORS.SHIELD,
+      transparent: true,
+      opacity: 0.25,
+      depthWrite: false,
     });
     this.shieldMesh = new THREE.Mesh(sgeo, smat);
     this.shieldMesh.visible = false;
@@ -68,10 +63,18 @@ export class Player {
   update(dt: number) {
     // Update character system
     this.currentCharacter.update(dt);
-    
+
     // Sync mesh position with character (for backwards compatibility)
     this.mesh.position.copy(this.currentCharacter.mesh.position);
-    
+
+    // Update dash timers
+    if (this.dashTime > 0) {
+      this.dashTime -= dt;
+    }
+    if (this.dashCooldownTimer > 0) {
+      this.dashCooldownTimer -= dt;
+    }
+
     // Update energy system
     this.updateEnergy(dt);
   }
@@ -84,10 +87,10 @@ export class Player {
     this.dashTime = this.dashDuration;
     this.dashCooldownTimer = this.dashCooldown;
     this.energy -= dashEnergyCost;
-    
+
     // Also trigger character dash
     this.currentCharacter.startDash();
-    
+
     return true;
   }
 
@@ -99,7 +102,7 @@ export class Player {
 
     this.shieldActive = active;
     if (this.shieldMesh) this.shieldMesh.visible = active;
-    
+
     // Also update character shield
     this.currentCharacter.setShield(active);
   }

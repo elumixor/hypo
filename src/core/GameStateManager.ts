@@ -10,9 +10,9 @@ export type GameStateEvent =
   | "world_completed";
 
 export class GameStateManager {
-  private saveLoadSystem = new SaveLoadSystem();
+  private readonly saveLoadSystem = new SaveLoadSystem();
   private currentState: GameState;
-  private eventHandlers: Record<GameStateEvent, Array<(data?: any) => void>> = {
+  private readonly eventHandlers: Record<GameStateEvent, Array<(data?: any) => void>> = {
     state_loaded: [],
     state_saved: [],
     character_unlocked: [],

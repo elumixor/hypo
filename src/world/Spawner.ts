@@ -111,11 +111,11 @@ export class Spawner {
     const aiType = this.getRandomAIType();
     const position = new THREE.Vector3(x, 0.4, z);
     const enemy = Enemy.create(enemyType, aiType, position);
-    
+
     if (game) {
       enemy.initializeAI(game);
     }
-    
+
     this.enemies.push(enemy);
     this.scene.add(enemy.mesh);
   }

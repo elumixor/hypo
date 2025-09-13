@@ -2,8 +2,8 @@ import * as THREE from "three";
 import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
 import { GameConfig } from "../config/GameConfig";
-import { gameEvents } from "../events/GameEvents";
 import { EffectsManager } from "../effects/EffectsManager";
+import { gameEvents } from "../events/GameEvents";
 import { Keyboard } from "../input/Keyboard";
 import { gameState } from "../state/GameState";
 import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
@@ -56,7 +56,7 @@ export class Game {
   yaw = GameConfig.CAMERA.YAW;
   pitch = GameConfig.CAMERA.PITCH;
   dist = GameConfig.CAMERA.DISTANCE;
-  hp = GameConfig.PLAYER.MAX_HP;
+  hp: number = GameConfig.PLAYER.MAX_HP;
   autoShootTimer = 0;
   tmp = new THREE.Vector3();
   tAccum = 0;
@@ -164,7 +164,7 @@ export class Game {
         this.spawner.spawnAtPosition(
           spawnInfo.position.x + (Math.random() - 0.5) * 0.5,
           spawnInfo.position.z + (Math.random() - 0.5) * 0.5,
-          this // Pass game reference for AI initialization
+          this, // Pass game reference for AI initialization
         );
       }
     }
@@ -271,7 +271,7 @@ export class Game {
       this.effects.blockEffect(this.player.mesh.position);
     }
   }
-  
+
   startDialogue() {
     log("Game", "dialogue-start");
     this.hud.setStatus("Starting dialogue...");
@@ -321,7 +321,7 @@ export class Game {
     hudApp.canvas.style.pointerEvents = "none";
     this.root.append(hudApp.canvas);
     this.hud = new Hud(hudApp);
-    
+
     // Initialize HUD with current state
     const state = gameState.current;
     this.hud.setHealth(state.player.hp, state.player.maxHp);
@@ -333,7 +333,7 @@ export class Game {
     // Initialize skill UI components
     this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
     this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
-    
+
     // Initialize dialogue UI
     this.dialogueUI = new DialogueUI(hudApp, this.dialogueSystem);
 
@@ -580,7 +580,7 @@ export class Game {
     this.xp = gameState.player.xp;
     this.xpToNext = gameState.player.xpToNext;
     this.hp = gameState.player.health as number;
-    this.player.energy = gameState.player.energy;
+    this.player.energy = gameState.player.energy as number;
     // maxEnergy is readonly, so we'll need to work around this limitation
 
     // Update world progress - for now, we'll use the current level system as-is
@@ -681,7 +681,7 @@ export class Game {
   }
   update(dt: number) {
     gameState.updateGameTime(dt);
-    
+
     // Handle pause/menu keyboard input
     if (this.keyboard.has("Escape")) {
       if (!this.lastEscape) {
@@ -747,7 +747,7 @@ export class Game {
     } else {
       this.lastC = false;
     }
-    
+
     // Dialogue system input handling
     if (this.dialogueSystem.isActive()) {
       // Handle number key presses for dialogue options
@@ -835,7 +835,7 @@ export class Game {
     this.effects.enemyHitEffect(pos);
     this.spawner.remove(e);
     this.spawnXP(pos);
-    
+
     gameEvents.emit("combat:enemy:killed", {
       position: { x: pos.x, y: pos.y, z: pos.z },
     });
@@ -860,17 +860,16 @@ export class Game {
   collectXP(index: number) {
     const c = this.xpCrystals[index];
     if (!c) return;
-    
+
     // Add XP collection visual effects
     this.effects.xpCollectEffect(c.position);
     this.scene.remove(c);
     this.xpCrystals.splice(index, 1);
-    
+
     // Use GameState to handle XP logic
-    const oldXp = gameState.current.player.xp;
     gameState.addExperience(1);
     const newXp = gameState.current.player.xp;
-    
+
     gameEvents.emit("xp:collected", {
       amount: 1,
       totalXp: newXp,
@@ -914,7 +913,7 @@ export class Game {
     gameState.respawn();
     this.player.mesh.position.set(0, 0.4, 0);
 
-    // Reset to start of Wrath world  
+    // Reset to start of Wrath world
     this.levelSystem.reset();
     this.loadCurrentLevel();
 

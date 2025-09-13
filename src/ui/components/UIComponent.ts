@@ -87,7 +87,7 @@ export abstract class UIComponent {
  * UI Manager to handle all UI components
  */
 export class UIManager {
-  private components = new Map<string, UIComponent>();
+  private readonly components = new Map<string, UIComponent>();
   private readonly app: Application;
   private readonly rootContainer: Container;
 

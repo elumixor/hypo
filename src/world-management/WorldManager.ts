@@ -34,7 +34,7 @@ export interface WorldData {
  * Manages world progression and level transitions
  */
 export class WorldManager {
-  private worlds: WorldData[];
+  private readonly worlds: WorldData[];
   private currentWorldId = 1;
   private currentLevelId = 1;
 
@@ -60,7 +60,7 @@ export class WorldManager {
       },
       {
         id: 2,
-        name: "Crystal Caves", 
+        name: "Crystal Caves",
         theme: "underground_crystal",
         levels: this.generateLevels(2, ["basic", "fast"]),
         boss: {
@@ -76,7 +76,7 @@ export class WorldManager {
         levels: this.generateLevels(3, ["basic", "fast"]),
         boss: {
           type: "storm_elemental",
-          name: "Storm Elemental", 
+          name: "Storm Elemental",
           abilities: ["lightning_storm", "wind_blast", "tornado"],
         },
       },
@@ -94,7 +94,7 @@ export class WorldManager {
       {
         id: 5,
         name: "Frozen Wastes",
-        theme: "ice_tundra", 
+        theme: "ice_tundra",
         levels: this.generateLevels(5, ["basic", "fast", "tank"]),
         boss: {
           type: "frost_king",
@@ -115,7 +115,7 @@ export class WorldManager {
       },
       {
         id: 7,
-        name: "Celestial Gardens", 
+        name: "Celestial Gardens",
         theme: "heavenly_realm",
         levels: this.generateLevels(7, ["basic", "fast", "tank"]),
         boss: {
@@ -143,7 +143,7 @@ export class WorldManager {
    */
   private generateLevels(worldId: number, enemyTypes: string[]): LevelData[] {
     const levels: LevelData[] = [];
-    
+
     // Add safe zone at the start
     levels.push({
       id: 1,
@@ -180,7 +180,7 @@ export class WorldManager {
    * Get current world data
    */
   getCurrentWorld(): WorldData | undefined {
-    return this.worlds.find(w => w.id === this.currentWorldId);
+    return this.worlds.find((w) => w.id === this.currentWorldId);
   }
 
   /**
@@ -188,7 +188,7 @@ export class WorldManager {
    */
   getCurrentLevel(): LevelData | undefined {
     const world = this.getCurrentWorld();
-    return world?.levels.find(l => l.id === this.currentLevelId);
+    return world?.levels.find((l) => l.id === this.currentLevelId);
   }
 
   /**
@@ -206,16 +206,16 @@ export class WorldManager {
       // Move to next world
       this.currentWorldId++;
       this.currentLevelId = 1;
-      
+
       if (this.currentWorldId > GameConfig.WORLD_COUNT) {
         // Game completed!
         gameEvents.emit("game:over", {});
         return false;
       }
 
-      gameEvents.emit("world:transition", { 
-        from: this.currentWorldId - 1, 
-        to: this.currentWorldId 
+      gameEvents.emit("world:transition", {
+        from: this.currentWorldId - 1,
+        to: this.currentWorldId,
       });
     } else {
       // Move to next level in same world
@@ -232,13 +232,13 @@ export class WorldManager {
     const currentLevel = this.getCurrentLevel();
     if (!currentLevel) return;
 
-    gameEvents.emit("level:complete", { 
-      worldId: this.currentWorldId, 
-      levelId: this.currentLevelId 
+    gameEvents.emit("level:complete", {
+      worldId: this.currentWorldId,
+      levelId: this.currentLevelId,
     });
 
     if (currentLevel.type === "boss") {
-      gameEvents.emit("boss:defeated", { 
+      gameEvents.emit("boss:defeated", {
         worldId: this.currentWorldId,
         bossId: `boss_world_${this.currentWorldId}`,
       });
@@ -260,7 +260,7 @@ export class WorldManager {
   getLevelProgress(): number {
     const currentWorld = this.getCurrentWorld();
     if (!currentWorld) return 0;
-    
+
     return (this.currentLevelId - 1) / currentWorld.levels.length;
   }
 

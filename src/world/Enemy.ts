@@ -6,7 +6,7 @@ export enum EnemyType {
   RANGE = "range",
   MELEE = "melee",
   NUKER = "nuker",
-  CHARGER = "charger"
+  CHARGER = "charger",
 }
 
 /**
@@ -122,7 +122,7 @@ export class Enemy {
   /**
    * Initialize AI if available
    */
-  initializeAI(game?: Game) {
+  initializeAI(_game?: Game) {
     // AI initialization will be handled by systems that have access to AI factory
     // This is a placeholder for the interface
   }
