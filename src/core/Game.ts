@@ -5,10 +5,13 @@ import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
 import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import { Hud } from "../ui/Hud";
+import { MainMenuUI } from "../ui/MainMenuUI";
+import { PauseMenuUI } from "../ui/PauseMenuUI";
 import { SkillTreeUI } from "../ui/SkillTreeUI";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
+import { GameStateManager } from "./GameStateManager";
 import { LevelRenderer, type LevelSceneConfig } from "./LevelRenderer";
 import { LevelSystem, LevelType } from "./LevelSystem";
 import { Loop } from "./Loop";
@@ -26,6 +29,7 @@ export class Game {
   readonly levelRenderer = new LevelRenderer();
   readonly effects = new EffectsManager(this.scene, this.camera);
   readonly characterManager = new CharacterManager();
+  readonly gameStateManager = new GameStateManager();
   xpCrystals: THREE.Mesh[] = [];
   level = 1;
   xp = 0;
@@ -35,6 +39,8 @@ export class Game {
   hud!: Hud;
   skillTreeUI!: SkillTreeUI;
   characterSwitchUI!: CharacterSwitchUI;
+  mainMenuUI!: MainMenuUI;
+  pauseMenuUI!: PauseMenuUI;
   yaw = Math.PI * 0.25;
   pitch = 1.5;
   dist = 10;
@@ -48,6 +54,8 @@ export class Game {
   lastR = false;
   lastT = false;
   lastC = false;
+  lastEscape = false;
+  gameState: "menu" | "playing" | "paused" = "menu";
 
   // Level progression state
   currentLevelConfig: LevelSceneConfig | null = null;
@@ -250,12 +258,34 @@ export class Game {
     this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
     this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
 
-    // Load the first level after HUD is ready
-    this.loadCurrentLevel();
+    // Initialize menu systems
+    this.mainMenuUI = new MainMenuUI(hudApp, {
+      onNewGame: () => this.startNewGame(),
+      onContinueGame: () => this.continueGame(),
+      onLoadGame: (slotId) => this.loadGame(slotId),
+      onSettings: () => this.showSettings(),
+    });
+
+    this.pauseMenuUI = new PauseMenuUI(hudApp, {
+      onResume: () => this.resumeGame(),
+      onQuickSave: () => this.quickSave(),
+      onQuickLoad: () => this.quickLoad(),
+      onSaveGame: (slotId) => this.saveGame(slotId),
+      onLoadGame: (slotId) => this.loadGame(slotId),
+      onSettings: () => this.showSettings(),
+      onMainMenu: () => this.returnToMainMenu(),
+    });
+
+    // Setup game state event handlers
+    this.setupGameStateHandlers();
+
+    // Start in main menu
+    this.showMainMenu();
 
     // UI button bindings
     this.hud.onAuto = (v) => {
       this.autoAttack = v;
+      this.gameStateManager.updateSettings({ autoAttack: v });
     };
     this.hud.onEasy = () => this.doAttack("easy");
     this.hud.onAlt = () => this.doAttack("alt");
@@ -270,6 +300,255 @@ export class Game {
 
     // Setup skill system event handlers
     this.setupSkillSystemHandlers();
+  }
+
+  setupGameStateHandlers(): void {
+    // Handle game state events to update UI
+    this.gameStateManager.on("state_loaded", () => {
+      this.syncGameStateToSystems();
+      this.hud.setStatus("Game loaded successfully");
+    });
+
+    this.gameStateManager.on("state_saved", () => {
+      this.hud.setStatus("Game saved successfully");
+    });
+
+    this.gameStateManager.on("character_unlocked", (data) => {
+      this.hud.setStatus(`Character unlocked: ${data.characterId}`);
+    });
+
+    this.gameStateManager.on("quest_completed", (data) => {
+      this.hud.setStatus(`Quest completed: ${data.quest.name}`);
+    });
+  }
+
+  showMainMenu(): void {
+    this.gameState = "menu";
+    this.mainMenuUI.show();
+    // Hide game HUD
+    this.hud.setVisible(false);
+  }
+
+  startNewGame(): void {
+    this.gameStateManager.newGame();
+    this.syncGameStateToSystems();
+    this.gameState = "playing";
+    this.mainMenuUI.hide();
+    // Show game HUD
+    this.hud.setVisible(true);
+    this.loadCurrentLevel();
+    log("Game", "Started new game");
+  }
+
+  continueGame(): void {
+    if (this.gameStateManager.hasSave()) {
+      if (this.gameStateManager.load()) {
+        this.syncGameStateToSystems();
+        this.gameState = "playing";
+        this.mainMenuUI.hide();
+        this.hud.setVisible(true);
+        this.loadCurrentLevel();
+        log("Game", "Continued game from quick save");
+      } else {
+        this.hud.setStatus("Failed to load save game");
+      }
+    } else {
+      this.hud.setStatus("No save game found");
+    }
+  }
+
+  loadGame(slotId: string): void {
+    if (this.gameStateManager.load(slotId)) {
+      this.syncGameStateToSystems();
+      this.gameState = "playing";
+      this.mainMenuUI.hide();
+      this.pauseMenuUI.hide();
+      this.hud.setVisible(true);
+      this.loadCurrentLevel();
+      log("Game", `Loaded game from slot: ${slotId}`);
+    } else {
+      this.hud.setStatus("Failed to load game from slot");
+    }
+  }
+
+  showSettings(): void {
+    // Placeholder for settings menu - could be implemented later
+    this.hud.setStatus("Settings menu not yet implemented");
+  }
+
+  pauseGame(): void {
+    if (this.gameState === "playing") {
+      this.gameState = "paused";
+      this.pauseMenuUI.show();
+      this.pauseMenuUI.updateSaveSlots(this.gameStateManager.getSaveSlots());
+    }
+  }
+
+  resumeGame(): void {
+    this.gameState = "playing";
+    this.pauseMenuUI.hide();
+  }
+
+  quickSave(): void {
+    this.syncSystemsToGameState();
+    if (this.gameStateManager.save()) {
+      this.pauseMenuUI.hide();
+      this.gameState = "playing";
+      this.hud.setStatus("Quick save successful");
+    } else {
+      this.hud.setStatus("Quick save failed");
+    }
+  }
+
+  quickLoad(): void {
+    if (this.gameStateManager.hasSave()) {
+      if (this.gameStateManager.load()) {
+        this.syncGameStateToSystems();
+        this.pauseMenuUI.hide();
+        this.gameState = "playing";
+        this.loadCurrentLevel();
+        this.hud.setStatus("Quick load successful");
+      } else {
+        this.hud.setStatus("Quick load failed");
+      }
+    } else {
+      this.hud.setStatus("No quick save found");
+    }
+  }
+
+  saveGame(slotId: string): void {
+    this.syncSystemsToGameState();
+    if (this.gameStateManager.save(slotId)) {
+      this.pauseMenuUI.hide();
+      this.gameState = "playing";
+      this.hud.setStatus(`Game saved to slot ${slotId.split("_")[1]}`);
+    } else {
+      this.hud.setStatus("Save failed");
+    }
+  }
+
+  returnToMainMenu(): void {
+    // Ask for confirmation? For now, just return to menu
+    this.gameState = "menu";
+    this.pauseMenuUI.hide();
+    this.hud.setVisible(false);
+    this.showMainMenu();
+  }
+
+  syncSystemsToGameState(): void {
+    // Update game state with current system values
+    this.gameStateManager.updatePlayer({
+      level: this.level,
+      xp: this.xp,
+      xpToNext: this.xpToNext,
+      health: this.hp,
+      maxHealth: 10, // TODO: make this variable
+      energy: Math.floor(this.player.energy),
+      maxEnergy: this.player.maxEnergy,
+      skillPoints: this.skillSystem.getSkillPoints(),
+    });
+
+    this.gameStateManager.updateWorld({
+      currentWorldIndex: this.levelSystem.getCurrentWorld(),
+      currentLevelIndex: this.levelSystem.getCurrentLevelIndex(),
+      // completedWorlds and completedLevels would need tracking in level system
+    });
+
+    this.gameStateManager.switchCharacter(this.skillSystem.getCurrentCharacterType());
+
+    // Update character skills
+    for (const character of this.skillSystem.getAllCharacters()) {
+      const characterId = character.data.id;
+      const skills: Record<string, number> = {};
+
+      // Extract all skills from character skill trees
+      const skillTrees = character.data.skillTrees;
+      const allSkills = [
+        ...skillTrees.lightAttack,
+        ...skillTrees.heavyAttack,
+        ...skillTrees.block,
+        ...skillTrees.dodge,
+        ...skillTrees.unique,
+      ];
+
+      for (const skill of allSkills) {
+        const level = character.getSkillLevel(skill.id);
+        if (level > 0) {
+          skills[skill.id] = level;
+        }
+      }
+
+      if (Object.keys(skills).length > 0) {
+        this.gameStateManager.getState().characterSkills[characterId] = skills;
+      }
+    }
+
+    this.gameStateManager.updateSettings({
+      autoAttack: this.autoAttack,
+      // other settings would be added here
+    });
+  }
+
+  syncGameStateToSystems(): void {
+    // Update systems with loaded game state
+    const gameState = this.gameStateManager.getState();
+
+    // Update player stats
+    this.level = gameState.player.level;
+    this.xp = gameState.player.xp;
+    this.xpToNext = gameState.player.xpToNext;
+    this.hp = gameState.player.health;
+    this.player.energy = gameState.player.energy;
+    // maxEnergy is readonly, so we'll need to work around this limitation
+
+    // Update world progress - for now, we'll use the current level system as-is
+    // In a full implementation, you'd add methods to LevelSystem to set current state
+    // this.levelSystem.setCurrentWorld(gameState.world.currentWorldIndex);
+    // this.levelSystem.setCurrentLevel(gameState.world.currentLevelIndex);
+
+    // Update skill system
+    this.skillSystem.reset(); // Clear existing state
+
+    // Restore skill points
+    // Note: This is a simplified approach - in a full implementation,
+    // you'd want to restore the exact skill system state
+    const totalSkillPoints = gameState.player.skillPoints;
+    // Simulate level-ups to restore skill points
+    for (let i = 0; i < totalSkillPoints / 2; i++) {
+      this.skillSystem.onLevelUp(i + 1);
+    }
+
+    // Restore character unlocks
+    for (const characterId of gameState.unlockedCharacters) {
+      if (characterId !== "helio") {
+        // helio is unlocked by default
+        this.skillSystem.unlockCharacter(characterId as any);
+      }
+    }
+
+    // Switch to active character
+    this.skillSystem.switchCharacter(gameState.activeCharacter as any);
+
+    // Restore character skills
+    for (const [characterId, skills] of Object.entries(gameState.characterSkills)) {
+      for (const [skillId, level] of Object.entries(skills)) {
+        for (let i = 0; i < level; i++) {
+          this.skillSystem.upgradeSkill(characterId as any, skillId);
+        }
+      }
+    }
+
+    // Update settings
+    this.autoAttack = gameState.settings.autoAttack;
+
+    // Update HUD
+    this.hud.setHealth(this.hp, 10);
+    this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
+    this.hud.setXP(this.level, this.xp, this.xpToNext);
+    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
+
+    const currentCharacter = this.skillSystem.getCurrentCharacter();
+    this.hud.setCurrentCharacter(currentCharacter.data.name, currentCharacter.data.color);
   }
 
   setupSkillSystemHandlers(): void {
@@ -319,6 +598,22 @@ export class Game {
     }
   }
   update(dt: number, t: number) {
+    // Handle pause/menu keyboard input
+    if (this.keyboard.has("Escape")) {
+      if (!this.lastEscape) {
+        this.handleEscapeKey();
+        this.lastEscape = true;
+      }
+    } else {
+      this.lastEscape = false;
+    }
+
+    // Only update game systems when playing
+    if (this.gameState !== "playing") {
+      this.renderer.render(this.scene, this.camera);
+      return;
+    }
+
     this.player.update(dt);
     this.stepEnemies(dt, t);
     this.projectiles.update(
@@ -395,6 +690,15 @@ export class Game {
     this.renderer.render(this.scene, this.camera);
     this.updateHud();
     if (this.hp <= 0) this.respawn();
+  }
+
+  handleEscapeKey(): void {
+    if (this.gameState === "playing") {
+      this.pauseGame();
+    } else if (this.gameState === "paused") {
+      this.resumeGame();
+    }
+    // In menu state, ESC does nothing for now
   }
   updateCamera() {
     const p = this.player.mesh.position;
