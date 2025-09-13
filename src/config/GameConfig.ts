@@ -11,10 +11,18 @@ export const GameConfig = {
   // Player configuration
   PLAYER: {
     SPEED: 4,
+    MOVEMENT_SPEED: 4,
     DASH_SPEED: 10,
     DASH_DURATION: 0.18, // seconds
     DASH_COOLDOWN: 0.5,
+    DASH_ENERGY_COST: 25,
     MAX_HP: 10,
+    MAX_ENERGY: 100,
+    ENERGY_REGEN_RATE: 20, // per second
+    SHIELD_ENERGY_COST: 30, // per second
+    SIZE: 0.8,
+    HEIGHT_OFFSET: 0.4,
+    SHIELD_RADIUS: 1.1,
     INITIAL_YAW: Math.PI * 0.25,
   },
 
@@ -47,6 +55,7 @@ export const GameConfig = {
     XP_MULTIPLIER: 1.4,
     XP_BASE_INCREASE: 2,
     XP_COLLECTION_DISTANCE: 0.8,
+    XP_CRYSTAL_SIZE: 0.18,
   },
 
   // Enemy configuration
@@ -80,6 +89,7 @@ export const GameConfig = {
     BACKGROUND: "#050507",
     PLAYER: "#4ec9ff",
     PLAYER_SHIELD: "#6cf",
+    SHIELD: "#6cf",
     ENEMY: "#ff2b2b",
     PROJECTILE_PLAYER: "#ffe14e",
     PROJECTILE_ENEMY: "#ff7b72",

@@ -579,7 +579,7 @@ export class Game {
     this.level = gameState.player.level;
     this.xp = gameState.player.xp;
     this.xpToNext = gameState.player.xpToNext;
-    this.hp = gameState.player.health;
+    this.hp = gameState.player.health as number;
     this.player.energy = gameState.player.energy;
     // maxEnergy is readonly, so we'll need to work around this limitation
 
@@ -804,7 +804,6 @@ export class Game {
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.updateHud();
-    const state = gameState.current;
     if (state.player.hp <= 0) this.respawn();
   }
 
@@ -868,11 +867,13 @@ export class Game {
     this.xpCrystals.splice(index, 1);
     
     // Use GameState to handle XP logic
+    const oldXp = gameState.current.player.xp;
     gameState.addExperience(1);
+    const newXp = gameState.current.player.xp;
     
     gameEvents.emit("xp:collected", {
       amount: 1,
-      position: { x: c.position.x, y: c.position.y, z: c.position.z },
+      totalXp: newXp,
     });
   }
   autoShoot(dt: number) {
@@ -901,9 +902,6 @@ export class Game {
   }
   updateHud() {
     const state = gameState.current;
-    const activeChar = this.characterManager.getActiveCharacter();
-    const partyCount = this.characterManager.getPartyMembers().length;
-
     gameState.updateWorldStats(this.spawner.aliveCount, this.projectiles.count);
 
     this.hud.setStatus(
@@ -1080,7 +1078,6 @@ export class Game {
     const killed = enemy.takeDamage(amount);
     if (killed) {
       this.removeEnemy(enemy);
-    }
     }
   }
 }

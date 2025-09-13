@@ -1,5 +1,4 @@
-import type * as THREE from "three";
-import { GameConfig } from "../config/GameConfig";
+import * as THREE from "three";
 import type { Game } from "../core/Game";
 import { Enemy, EnemyType } from "./Enemy";
 
