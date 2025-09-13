@@ -23,6 +23,20 @@ export class Spawner {
     const idx = this.enemies.indexOf(e);
     if (idx >= 0) this.enemies.splice(idx, 1);
   }
+
+  clearAll() {
+    // Remove all enemies
+    for (const enemy of [...this.enemies]) {
+      this.remove(enemy);
+    }
+  }
+
+  spawnAtPosition(x: number, z: number) {
+    const e = Enemy.create();
+    e.mesh.position.set(x, 0.4, z);
+    this.scene.add(e.mesh);
+    this.enemies.push(e);
+  }
   ensureWave(size: number) {
     if (!this.enemies.length) this.spawn(size);
   }
