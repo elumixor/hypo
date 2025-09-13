@@ -1,10 +1,11 @@
 import * as THREE from "three";
 import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
+import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
+import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import { Hud } from "../ui/Hud";
 import { SkillTreeUI } from "../ui/SkillTreeUI";
-import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
@@ -19,6 +20,7 @@ export class Game {
   readonly player = new Player(this.keyboard, Math.PI * 0.25);
   readonly spawner = new Spawner(this.scene);
   readonly projectiles = new Projectiles();
+  readonly effects = new EffectsManager(this.scene, this.camera);
   readonly characterManager = new CharacterManager();
   xpCrystals: THREE.Mesh[] = [];
   level = 1;
@@ -73,6 +75,8 @@ export class Game {
     if (started) {
       log("Game", "dash");
       this.hud.setStatus("Dash!");
+      // Add dash visual effects
+      this.effects.dashEffect(this.player.mesh.position);
     } else {
       log("Game", "dash-failed-cooldown");
     }
@@ -86,6 +90,10 @@ export class Game {
     const newState = !this.player.shieldActive;
     this.player.setShield(newState);
     this.hud.setStatus(newState ? "Block!" : "Block off");
+    // Add block visual effects when activating
+    if (newState) {
+      this.effects.blockEffect(this.player.mesh.position);
+    }
   }
 
   async init() {
@@ -154,21 +162,21 @@ export class Game {
     this.skillSystem.onSkillPointsChange = (skillPoints) => {
       this.hud.setSkillPoints(skillPoints);
     };
-    
+
     this.skillSystem.onCharacterChange = (characterId) => {
       const character = this.skillSystem.getCharacter(characterId);
       this.hud.setCurrentCharacter(character.data.name, character.data.color);
       this.hud.setStatus(`Switched to ${character.data.name}`);
     };
-    
+
     this.skillTreeUI.onClose = () => {
       // Resume game when skill tree is closed
     };
-    
+
     this.characterSwitchUI.onClose = () => {
       // Resume game when character switch is closed
     };
-    
+
     this.characterSwitchUI.onCharacterSwitch = () => {
       // Character switching is handled by the skill system
     };
@@ -187,7 +195,7 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
-    
+
     // Resize skill UI components
     if (this.skillTreeUI) {
       this.skillTreeUI.resize();
@@ -255,6 +263,17 @@ export class Game {
         this.collectXP(i);
       }
     }
+
+    // Update effects system first
+    const p = this.player.mesh.position;
+    const baseCameraPos = new THREE.Vector3(
+      p.x + Math.cos(this.yaw) * this.dist,
+      p.y + 3.5 * this.pitch,
+      p.z + Math.sin(this.yaw) * this.dist,
+    );
+    this.effects.update(dt, baseCameraPos);
+
+    // Update camera (effects may modify camera position for shake)
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.updateHud();
@@ -262,11 +281,14 @@ export class Game {
   }
   updateCamera() {
     const p = this.player.mesh.position;
-    this.camera.position.set(
-      p.x + Math.cos(this.yaw) * this.dist,
-      p.y + 3.5 * this.pitch,
-      p.z + Math.sin(this.yaw) * this.dist,
-    );
+    // Only set camera position if camera shake is not active
+    if (!this.effects.isShaking()) {
+      this.camera.position.set(
+        p.x + Math.cos(this.yaw) * this.dist,
+        p.y + 3.5 * this.pitch,
+        p.z + Math.sin(this.yaw) * this.dist,
+      );
+    }
     this.camera.lookAt(p.x, p.y + 0.4, p.z);
   }
   stepEnemies(dt: number, t: number) {
@@ -313,6 +335,8 @@ export class Game {
   removeEnemy(e: Enemy) {
     // spawn XP crystal at enemy position
     const pos = e.mesh.position.clone();
+    // Add enemy death visual effects
+    this.effects.enemyHitEffect(pos);
     this.spawner.remove(e);
     this.spawnXP(pos);
   }
@@ -329,6 +353,8 @@ export class Game {
   collectXP(index: number) {
     const c = this.xpCrystals[index];
     if (!c) return;
+    // Add XP collection visual effects
+    this.effects.xpCollectEffect(c.position);
     this.scene.remove(c);
     this.xpCrystals.splice(index, 1);
     this.xp += 1;
@@ -337,7 +363,7 @@ export class Game {
       this.xp = 0;
       this.xpToNext = Math.floor(this.xpToNext * 1.4) + 2;
       this.hud.setStatus(`Leveled to ${this.level}`);
-      
+
       // Notify skill system of level up
       this.skillSystem.onLevelUp(this.level);
     }
@@ -380,7 +406,7 @@ export class Game {
     this.hud.setStatus("You Died - Respawning");
     this.hp = 10;
     this.player.mesh.position.set(0, 0.4, 0);
-    
+
     // Reset skill system on death
     this.skillSystem.reset();
     this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
@@ -517,6 +543,8 @@ export class Game {
     this.hp -= 1;
     log("Game", "player-hit", this.hp);
     this.hud.setHealth(this.hp, 10);
+    // Add player hit visual effects
+    this.effects.playerHitEffect(this.player.mesh.position);
     if (this.hp <= 0) {
       // reset XP/level
       this.level = 1;

@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { EffectsManager } from "../effects/EffectsManager";
 import type { Enemy } from "../world/Enemy";
 import type { Player } from "../world/Player";
 
@@ -28,6 +29,7 @@ export class Projectiles {
     enemies: Enemy[],
     onPlayerHit: () => void,
     onEnemyKilled: (e: Enemy) => void,
+    effects?: EffectsManager,
   ) {
     for (let i = this.list.length - 1; i >= 0; i--) {
       const p = this.list[i];
@@ -41,6 +43,10 @@ export class Projectiles {
         for (const e of enemies) {
           if (p.mesh.position.distanceTo(e.mesh.position) < 0.6) {
             e.hp -= 1;
+            // Add projectile impact effect
+            if (effects) {
+              effects.projectileImpactEffect(p.mesh.position, true);
+            }
             this.disposeAt(i, scene);
             if (e.hp <= 0) onEnemyKilled(e);
             break;
@@ -51,8 +57,16 @@ export class Projectiles {
         const shieldR = 1.1; // must match player shield geometry
         if (player.shieldActive && p.mesh.position.distanceTo(player.mesh.position) <= shieldR) {
           log("Projectiles", "consumed-by-shield");
+          // Add shield block effect
+          if (effects) {
+            effects.blockEffect(player.mesh.position);
+          }
           this.disposeAt(i, scene);
           continue;
+        }
+        // Add enemy projectile impact effect
+        if (effects) {
+          effects.projectileImpactEffect(p.mesh.position, false);
         }
         onPlayerHit();
         this.disposeAt(i, scene);
