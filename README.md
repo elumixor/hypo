@@ -1,10 +1,17 @@
-
 ![Build & Lint Status](https://github.com/elumixor/hypo/actions/workflows/deploy.yml/badge.svg)
+
 # HYPO
 
 [Playable Version (latest build)](https://elumixor.github.io/hypo/)
 
 Early prototype scaffold for the HYPO action roguelike RPG. Futuristic sci‑fi + fantasy universe of 6+ worlds ruled by the Empire of Pride. You rise from Wrath to overthrow it.
+
+## Documentation
+
+- Online Docs: https://elumixor.github.io/hypo/
+- Local Docs Index: [./docs/index.md](./docs/index.md)
+
+Key pages: [Architecture](./docs/Architecture.md) · [Enemy AI](./docs/EnemyAI.md) · [Resources](./docs/Resources.md) · [Game Overview](./docs/GameInfo.md)
 
 ## Stack
 
@@ -46,7 +53,7 @@ bun run preview
 - PIXI overlay text
 - Single-finger drag rotates object (mobile friendly test)
 
-## Near-term roadmap (extract from `docs/game-info.md`)
+## Near-term roadmap (see `docs/GameInfo.md`)
 
 - Level/world progression (Wrath → Pride)
 - Character switching & relation-based skill unlocks

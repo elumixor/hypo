@@ -1,0 +1,11 @@
+title: HYPO Docs
+description: Documentation for the HYPO 3D action roguelike
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+nav:
+  - index.md
+  - Architecture.md
+  - EnemyAI.md
+  - Resources.md
+  - GameInfo.md
