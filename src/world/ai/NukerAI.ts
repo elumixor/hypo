@@ -96,7 +96,7 @@ export class NukerAI extends EnemyAI {
     this.maintainSeparation(dt);
   }
 
-  private createAOEIndicator(targetPos: THREE.Vector3) {
+  private createAOEIndicator(targetPos: THREE.Vector3): void {
     if (this.aoeIndicator) this.removeAOEIndicator();
 
     const geometry = new THREE.RingGeometry(0.1, 1.5, 16);
@@ -113,7 +113,7 @@ export class NukerAI extends EnemyAI {
     this.game.scene.add(this.aoeIndicator);
   }
 
-  private removeAOEIndicator() {
+  private removeAOEIndicator(): void {
     if (this.aoeIndicator) {
       this.game.scene.remove(this.aoeIndicator);
       this.aoeIndicator.geometry.dispose();
@@ -122,7 +122,7 @@ export class NukerAI extends EnemyAI {
     }
   }
 
-  private createTrampleIndicator() {
+  private createTrampleIndicator(): void {
     if (this.aoeIndicator) this.removeAOEIndicator();
 
     const geometry = new THREE.RingGeometry(0.1, this.trampleRange, 16);
@@ -140,11 +140,11 @@ export class NukerAI extends EnemyAI {
     this.game.scene.add(this.aoeIndicator);
   }
 
-  private removeTrampleIndicator() {
+  private removeTrampleIndicator(): void {
     this.removeAOEIndicator(); // Same cleanup
   }
 
-  private fireAOEProjectile(targetPos: THREE.Vector3) {
+  private fireAOEProjectile(targetPos: THREE.Vector3): void {
     // Fire AOE projectile that can damage other enemies
     const direction = targetPos.clone().sub(this.enemy.mesh.position).normalize();
     this.game.projectiles.add(
@@ -158,7 +158,7 @@ export class NukerAI extends EnemyAI {
     );
   }
 
-  private executeTrampleAttack() {
+  private executeTrampleAttack(): void {
     // Damage everything in range (including other enemies)
     const tramplePos = this.enemy.mesh.position;
 

@@ -26,7 +26,13 @@ export class Character {
   isInParty = false;
   currentHealth: number;
 
-  constructor(type: CharacterType, name: string, description: string, baseStats: CharacterStats, isUnlocked: boolean = false) {
+  constructor(
+    type: CharacterType,
+    name: string,
+    description: string,
+    baseStats: CharacterStats,
+    isUnlocked: boolean = false,
+  ) {
     this.type = type;
     this.name = name;
     this.description = description;

@@ -396,11 +396,11 @@ export class Game {
     });
 
     this.gameStateManager.on("character_unlocked", (data) => {
-      this.hud.setStatus(`Character unlocked: ${data.characterId}`);
+      this.hud.setStatus(`Character unlocked: ${(data as { characterId: string }).characterId}`);
     });
 
     this.gameStateManager.on("quest_completed", (data) => {
-      this.hud.setStatus(`Quest completed: ${data.quest.name}`);
+      this.hud.setStatus(`Quest completed: ${(data as { quest: { name: string } }).quest.name}`);
     });
   }
 

@@ -306,4 +306,4 @@ export class WorldManager {
 }
 
 // Global world manager instance
-export const worldManager = new WorldManager();
+export const worldManager: WorldManager = new WorldManager();

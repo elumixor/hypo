@@ -1,6 +1,4 @@
-import type { CharacterData, CharacterType } from "./Character";
-
-import type { SkillTree } from "./Character";
+import type { CharacterData, CharacterType, SkillTree } from "./Character";
 
 // Define all skills for each character
 const createHeliosSkills = (): SkillTree => ({
