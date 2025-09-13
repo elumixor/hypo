@@ -554,7 +554,7 @@ export class Game {
 
     // Update character skills
     for (const character of this.skillSystem.getAllCharacters()) {
-      const characterId = character.data.id;
+      const characterId = character.type;
       const skills: Record<string, number> = {};
 
       // Extract all skills from character skill trees

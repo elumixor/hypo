@@ -11,10 +11,6 @@ export interface CharacterStats {
 }
 
 export class Character {
-  readonly type: CharacterType;
-  readonly name: string;
-  readonly description: string;
-  readonly baseStats: CharacterStats;
   readonly skills: Skill[] = [];
   readonly passiveTraits: PassiveTrait[] = [];
 
@@ -22,23 +18,17 @@ export class Character {
   private readonly relationshipBonds = new Map<CharacterType, number>();
 
   // Status
-  isUnlocked = false;
   isInParty = false;
   currentHealth: number;
 
   constructor(
-    type: CharacterType,
-    name: string,
-    description: string,
-    baseStats: CharacterStats,
-    isUnlocked: boolean = false,
+    readonly type: CharacterType,
+    readonly name: string,
+    readonly description: string,
+    readonly baseStats: CharacterStats,
+    public isUnlocked: boolean = false,
   ) {
-    this.type = type;
-    this.name = name;
-    this.description = description;
-    this.baseStats = baseStats;
     this.currentHealth = baseStats.health;
-    this.isUnlocked = isUnlocked;
   }
 
   /**

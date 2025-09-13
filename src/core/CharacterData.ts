@@ -1,10 +1,10 @@
 import type { CharacterData, CharacterType, SkillTree } from "./Character";
 
 // Define all skills for each character
-const createHeliosSkills = (): SkillTree => ({
+const heliosSkills: SkillTree = {
   lightAttack: [
     {
-      id: "helio-light-speed",
+      id: "helios-light-speed",
       name: "Swift Strike",
       description: "Increases light attack speed",
       maxLevel: 3,
@@ -13,7 +13,7 @@ const createHeliosSkills = (): SkillTree => ({
       type: "combat" as const,
     },
     {
-      id: "helio-light-damage",
+      id: "helios-light-damage",
       name: "Precise Hit",
       description: "Increases light attack damage",
       maxLevel: 5,
@@ -111,9 +111,9 @@ const createHeliosSkills = (): SkillTree => ({
       type: "combat" as const,
     },
   ],
-});
+};
 
-const createIrisSkills = (): SkillTree => ({
+const irisSkills: SkillTree = {
   lightAttack: [
     {
       id: "aria-light-chain",
@@ -214,9 +214,9 @@ const createIrisSkills = (): SkillTree => ({
       type: "combat" as const,
     },
   ],
-});
+};
 
-const createLucySkills = (): SkillTree => ({
+const lucySkills: SkillTree = {
   lightAttack: [
     {
       id: "zara-light-poison",
@@ -308,9 +308,9 @@ const createLucySkills = (): SkillTree => ({
       type: "combat" as const,
     },
   ],
-});
+};
 
-const createKaiSkills = (): SkillTree => ({
+const kaiSkills: SkillTree = {
   lightAttack: [
     {
       id: "kai-light-crit",
@@ -402,36 +402,32 @@ const createKaiSkills = (): SkillTree => ({
       type: "combat" as const,
     },
   ],
-});
+};
 
 // Character definitions
 export const CHARACTERS: Record<CharacterType, CharacterData> = {
   helio: {
-    id: "helio",
     name: "Helios",
     description: "Solar warrior seeking revenge for his murdered parents",
     color: "#4ec9ff",
-    skillTrees: createHeliosSkills(),
+    skillTrees: heliosSkills,
   },
   aria: {
-    id: "aria",
     name: "Iris",
     description: "Wind master with swift and agile combat style",
     color: "#7fff7f",
-    skillTrees: createIrisSkills(),
+    skillTrees: irisSkills,
   },
   zara: {
-    id: "zara",
     name: "Lucy",
     description: "Dark sorceress wielding shadow and void magic",
     color: "#bf7fff",
-    skillTrees: createLucySkills(),
+    skillTrees: lucySkills,
   },
   kai: {
-    id: "kai",
     name: "Kai",
     description: "Earth guardian with powerful melee combat techniques",
     color: "#ffbf7f",
-    skillTrees: createKaiSkills(),
+    skillTrees: kaiSkills,
   },
 };

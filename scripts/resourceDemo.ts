@@ -5,7 +5,7 @@ import { type LoadingProgress, Resources } from "../src/resources";
 /**
  * Simple demo showcasing the type-safe resource loading system
  */
-async function resourceDemo() {
+async function resourceDemo(): Promise<{ droneModel: GLTF; kiraTexture: Texture }> {
   console.log("🎮 Resource System Demo");
   console.log("======================");
 

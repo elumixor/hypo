@@ -11,7 +11,7 @@ import { platform } from "node:os";
 
 const ASSET_VIEWER_URL = "http://localhost:5173/scripts/asset-viewer.html";
 
-function openUrl(url: string) {
+function openUrl(url: string): void {
   const os = platform();
   let command: string;
 
@@ -37,7 +37,7 @@ function openUrl(url: string) {
   });
 }
 
-function checkServer() {
+function checkServer(): void {
   // Simple check to see if dev server is running
   const http = require("node:http");
 

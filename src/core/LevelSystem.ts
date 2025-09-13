@@ -76,7 +76,7 @@ export class LevelSystem {
     this.startWorld(WorldType.WRATH);
   }
 
-  private initializeWorlds() {
+  private initializeWorlds(): void {
     // Initialize progress tracking for all worlds
     for (let world = WorldType.WRATH; world <= WorldType.PRIDE; world++) {
       this.worldProgress.set(world, 0);
@@ -84,13 +84,13 @@ export class LevelSystem {
     }
   }
 
-  private generateLevels() {
+  private generateLevels(): void {
     this.generateSafeZoneLevels();
     this.generateRegularLevels();
     this.generateBossLevels();
   }
 
-  private generateSafeZoneLevels() {
+  private generateSafeZoneLevels(): void {
     // Create safe zone levels for the start of each world
     for (let world = WorldType.WRATH; world <= WorldType.PRIDE; world++) {
       const worldName = WorldType[world].toLowerCase();
@@ -106,7 +106,7 @@ export class LevelSystem {
     }
   }
 
-  private generateRegularLevels() {
+  private generateRegularLevels(): void {
     // Generate 12 levels per world for the first 5 worlds
     for (let world = WorldType.WRATH; world <= WorldType.ENVY; world++) {
       const worldLevels: LevelConfig[] = [];
@@ -127,7 +127,7 @@ export class LevelSystem {
     }
   }
 
-  private generateBossLevels() {
+  private generateBossLevels(): void {
     // Generate boss levels for first 5 worlds (1 each)
     for (let world = WorldType.WRATH; world <= WorldType.ENVY; world++) {
       const worldName = WorldType[world].toLowerCase();

@@ -9,7 +9,7 @@ import { BaseCharacter, type CharacterStats, type SkillTree } from "./BaseCharac
  */
 export class Helios extends BaseCharacter {
   constructor(keyboard: Keyboard, yaw: number) {
-    super("helio", "Helios", keyboard, yaw);
+    super("helios", "Helios", keyboard, yaw);
   }
 
   protected createMesh(): THREE.Mesh {

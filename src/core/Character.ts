@@ -19,7 +19,6 @@ export interface SkillTree {
 }
 
 export interface CharacterData {
-  readonly id: CharacterType;
   readonly name: string;
   readonly description: string;
   readonly color: string; // hex color for UI
@@ -38,14 +37,15 @@ export class Character {
   private _skillState: CharacterSkillState;
 
   constructor(
+    public readonly type: CharacterType,
     public readonly data: CharacterData,
     initialState?: Partial<CharacterSkillState>,
   ) {
     this._skillState = {
-      characterId: data.id,
+      characterId: type,
       skillLevels: {},
-      relationLevel: data.id === "helio" ? 1 : 0, // Helio starts available
-      isUnlocked: data.id === "helio",
+      relationLevel: type === "helio" ? 1 : 0, // Helio starts available
+      isUnlocked: type === "helio",
       ...initialState,
     };
   }
@@ -103,9 +103,9 @@ export class Character {
   }
 
   reset(): void {
-    const wasHelio = this.data.id === "helio";
+    const wasHelio = this.type === "helio";
     this._skillState = {
-      characterId: this.data.id,
+      characterId: this.type,
       skillLevels: {},
       relationLevel: wasHelio ? 1 : 0,
       isUnlocked: wasHelio,
