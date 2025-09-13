@@ -27,7 +27,7 @@ export class LevelRenderer {
     this.initializeMaterials();
   }
 
-  private initializeMaterials() {
+  private initializeMaterials(): void {
     // Ground materials for different worlds
     const worldColors = {
       wrath: "#1a0f0f", // Dark red
@@ -155,7 +155,10 @@ export class LevelRenderer {
 
     // Create ground plane
     const groundGeometry = new THREE.PlaneGeometry(width * this.tileSize, height * this.tileSize);
-    const groundMaterial = this.materials.get(`ground_${worldName}`) || this.materials.get("ground_wrath")!;
+    const groundMaterial = 
+      this.materials.get(`ground_${worldName}`) || 
+      this.materials.get("ground_wrath") ||
+      new THREE.MeshStandardMaterial({ color: "#4a4a4a" });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.position.set(((width - 1) * this.tileSize) / 2, 0, ((height - 1) * this.tileSize) / 2);
@@ -203,28 +206,28 @@ export class LevelRenderer {
     return new THREE.Vector3(x * this.tileSize, 0, y * this.tileSize);
   }
 
-  private createWall(scene: THREE.Scene, position: THREE.Vector3) {
+  private createWall(scene: THREE.Scene, position: THREE.Vector3): void {
     const geometry = new THREE.BoxGeometry(this.tileSize, this.wallHeight, this.tileSize);
-    const material = this.materials.get("wall")!;
+    const material = this.materials.get("wall") || new THREE.MeshStandardMaterial({ color: "#666666" });
     const wall = new THREE.Mesh(geometry, material);
     wall.position.copy(position);
     wall.position.y = this.wallHeight / 2;
     scene.add(wall);
   }
 
-  private createHazard(scene: THREE.Scene, position: THREE.Vector3) {
+  private createHazard(scene: THREE.Scene, position: THREE.Vector3): void {
     const geometry = new THREE.CylinderGeometry(this.tileSize * 0.4, this.tileSize * 0.4, 0.2, 8);
-    const material = this.materials.get("hazard")!;
+    const material = this.materials.get("hazard") || new THREE.MeshStandardMaterial({ color: "#ff4444" });
     const hazard = new THREE.Mesh(geometry, material);
     hazard.position.copy(position);
     hazard.position.y = 0.1;
     scene.add(hazard);
   }
 
-  private createTarget(scene: THREE.Scene, position: THREE.Vector3) {
+  private createTarget(scene: THREE.Scene, position: THREE.Vector3): void {
     // Create a more visible target with a tall cylinder and glowing effect
     const geometry = new THREE.CylinderGeometry(this.tileSize * 0.4, this.tileSize * 0.4, 1.5, 16);
-    const material = this.materials.get("target")!;
+    const material = this.materials.get("target") || new THREE.MeshStandardMaterial({ color: "#00ff00" });
     const target = new THREE.Mesh(geometry, material);
     target.position.copy(position);
     target.position.y = 0.75; // Raise it up so it's more visible
@@ -259,17 +262,17 @@ export class LevelRenderer {
     scene.add(pulse);
   }
 
-  private createSpawnMarker(scene: THREE.Scene, position: THREE.Vector3) {
+  private createSpawnMarker(scene: THREE.Scene, position: THREE.Vector3): void {
     // Small marker to indicate spawn point (for debugging/development)
     const geometry = new THREE.SphereGeometry(0.1, 8, 6);
-    const material = this.materials.get("spawn")!;
+    const material = this.materials.get("spawn") || new THREE.MeshStandardMaterial({ color: "#0000ff" });
     const marker = new THREE.Mesh(geometry, material);
     marker.position.copy(position);
     marker.position.y = 0.1;
     scene.add(marker);
   }
 
-  private addLighting(scene: THREE.Scene, world: WorldType) {
+  private addLighting(scene: THREE.Scene, world: WorldType): void {
     // Directional light
     const dirLight = new THREE.DirectionalLight("#ffffff", 1.5);
     dirLight.position.set(10, 15, 5);
@@ -290,7 +293,7 @@ export class LevelRenderer {
     scene.add(ambientLight);
   }
 
-  private addLevelDecorations(scene: THREE.Scene, config: LevelConfig) {
+  private addLevelDecorations(scene: THREE.Scene, config: LevelConfig): void {
     // Add decorations based on level type and world
     if (config.type === LevelType.BOSS) {
       this.addBossDecorations(scene, config);
@@ -299,7 +302,7 @@ export class LevelRenderer {
     }
   }
 
-  private addBossDecorations(scene: THREE.Scene, _config: LevelConfig) {
+  private addBossDecorations(scene: THREE.Scene, _config: LevelConfig): void {
     // Add dramatic lighting and atmospheric effects for boss fights
     const spotLight = new THREE.SpotLight("#ff4444", 2, 20, Math.PI / 6, 0.5);
     spotLight.position.set(0, 10, 0);
@@ -308,7 +311,7 @@ export class LevelRenderer {
     scene.add(spotLight.target);
   }
 
-  private addSafeZoneDecorations(scene: THREE.Scene, _config: LevelConfig) {
+  private addSafeZoneDecorations(scene: THREE.Scene, _config: LevelConfig): void {
     // Add peaceful, welcoming elements to safe zones
     const warmLight = new THREE.PointLight("#ffdd88", 1, 10);
     warmLight.position.set(8, 3, 8); // Near the target position

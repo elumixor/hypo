@@ -1,5 +1,5 @@
 import type { GameState } from "./GameState";
-import { SaveLoadSystem } from "./SaveLoadSystem";
+import { SaveLoadSystem, type SaveSlot } from "./SaveLoadSystem";
 
 export type GameStateEvent =
   | "state_loaded"
@@ -12,7 +12,7 @@ export type GameStateEvent =
 export class GameStateManager {
   private readonly saveLoadSystem = new SaveLoadSystem();
   private currentState: GameState;
-  private readonly eventHandlers: Record<GameStateEvent, Array<(data?: any) => void>> = {
+  private readonly eventHandlers: Record<GameStateEvent, Array<(data?: unknown) => void>> = {
     state_loaded: [],
     state_saved: [],
     character_unlocked: [],
@@ -245,7 +245,7 @@ export class GameStateManager {
   /**
    * Get save slots info
    */
-  getSaveSlots() {
+  getSaveSlots(): Record<string, SaveSlot> {
     return this.saveLoadSystem.getSaveSlots();
   }
 
@@ -278,11 +278,11 @@ export class GameStateManager {
   /**
    * Event system for UI updates
    */
-  on(event: GameStateEvent, handler: (data?: any) => void): void {
+  on(event: GameStateEvent, handler: (data?: unknown) => void): void {
     this.eventHandlers[event].push(handler);
   }
 
-  off(event: GameStateEvent, handler: (data?: any) => void): void {
+  off(event: GameStateEvent, handler: (data?: unknown) => void): void {
     const handlers = this.eventHandlers[event];
     const index = handlers.indexOf(handler);
     if (index >= 0) {
@@ -290,7 +290,7 @@ export class GameStateManager {
     }
   }
 
-  private emit(event: GameStateEvent, data?: any): void {
+  private emit(event: GameStateEvent, data?: unknown): void {
     for (const handler of this.eventHandlers[event]) {
       handler(data);
     }

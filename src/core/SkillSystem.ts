@@ -19,7 +19,7 @@ export class SkillSystem {
 
   private initializeCharacters(): void {
     for (const [id, data] of Object.entries(CHARACTERS)) {
-      this.characters[id as CharacterType] = new Character(data);
+      this.characters[id as CharacterType] = new Character(id as CharacterType, data);
     }
   }
 

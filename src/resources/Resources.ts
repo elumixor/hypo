@@ -19,7 +19,7 @@ export class Resources<TResources extends Record<string, ResourceEntry> = Record
 
   /**
    * Add a resource to be loaded
-   * @param filename The filename with extension (e.g., 'Drone.glb', 'kira.png')
+   * @param filename The filename with extension (e.g., 'Drone.glb', 'iris.png')
    * @returns A new Resources instance with the added resource
    */
   add<T extends string>(
@@ -53,7 +53,7 @@ export class Resources<TResources extends Record<string, ResourceEntry> = Record
 
   /**
    * Get a loaded resource by name (without extension)
-   * @param name The resource name (e.g., 'Drone', 'kira')
+   * @param name The resource name (e.g., 'Drone', 'iris')
    * @returns The loaded resource object
    */
   get<K extends keyof TResources>(

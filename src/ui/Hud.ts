@@ -71,7 +71,7 @@ export class Hud {
     this.skillPointsText.y = 72;
     this.ui.addChild(this.skillPointsText);
 
-    this.characterText = new Text({ text: "Helio", style: { fill: "#4ec9ff", fontSize: 13, fontWeight: "bold" } });
+    this.characterText = new Text({ text: "Helios", style: { fill: "#4ec9ff", fontSize: 13, fontWeight: "bold" } });
     this.characterText.x = 80;
     this.characterText.y = 72;
     this.ui.addChild(this.characterText);

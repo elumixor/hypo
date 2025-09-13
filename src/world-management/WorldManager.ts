@@ -1,5 +1,5 @@
 import { GameConfig } from "../config/GameConfig";
-import { gameEvents } from "../events/GameEvents";
+import { bossDefeated, gameOver, levelComplete, worldTransition } from "../events/GameEvents";
 
 /**
  * Represents a single level in the game
@@ -209,11 +209,11 @@ export class WorldManager {
 
       if (this.currentWorldId > GameConfig.WORLD_COUNT) {
         // Game completed!
-        gameEvents.emit("game:over", {});
+        gameOver.emit({});
         return false;
       }
 
-      gameEvents.emit("world:transition", {
+      worldTransition.emit({
         from: this.currentWorldId - 1,
         to: this.currentWorldId,
       });
@@ -232,13 +232,13 @@ export class WorldManager {
     const currentLevel = this.getCurrentLevel();
     if (!currentLevel) return;
 
-    gameEvents.emit("level:complete", {
+    levelComplete.emit({
       worldId: this.currentWorldId,
       levelId: this.currentLevelId,
     });
 
     if (currentLevel.type === "boss") {
-      gameEvents.emit("boss:defeated", {
+      bossDefeated.emit({
         worldId: this.currentWorldId,
         bossId: `boss_world_${this.currentWorldId}`,
       });
@@ -306,4 +306,4 @@ export class WorldManager {
 }
 
 // Global world manager instance
-export const worldManager = new WorldManager();
+export const worldManager: WorldManager = new WorldManager();

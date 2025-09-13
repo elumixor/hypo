@@ -1,7 +1,7 @@
 import * as THREE from "three";
+import { EventEmitter } from "@elumixor/frontils";
 import { GameConfig } from "../config/GameConfig";
 import type { EffectsManager } from "../effects/EffectsManager";
-import { gameEvents } from "../events/GameEvents";
 import type { Enemy } from "../world/Enemy";
 import type { Player } from "../world/Player";
 
@@ -38,6 +38,11 @@ export class Projectiles {
     emissive: "#6e1212",
   });
 
+  readonly projectileSpawned = new EventEmitter<{
+    fromPlayer: boolean;
+    position: { x: number; y: number; z: number };
+  }>();
+
   /**
    * Add a new projectile
    */
@@ -58,7 +63,7 @@ export class Projectiles {
     this.list.push(new Projectile(mesh, velocity, fromPlayer, type, damage, canHitEnemies));
 
     // Emit event
-    gameEvents.emit("combat:projectile:spawn", {
+    this.projectileSpawned.emit({
       fromPlayer,
       position: { x: from.x, y: from.y, z: from.z },
     });
