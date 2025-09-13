@@ -1,4 +1,5 @@
 import "utils/globals";
+import "@elumixor/frontils";
 
 import { initializeResources } from "./assets/gameResources";
 import { Game } from "./core/Game";
