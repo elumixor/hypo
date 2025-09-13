@@ -91,10 +91,8 @@ export class LevelSystem {
   }
 
   private generateSafeZoneLevels() {
-    // Create 3 safe zone levels (start of worlds 1, 3, and 5)
-    const safeZoneWorlds = [WorldType.WRATH, WorldType.GREED, WorldType.ENVY];
-
-    for (const world of safeZoneWorlds) {
+    // Create safe zone levels for the start of each world
+    for (let world = WorldType.WRATH; world <= WorldType.PRIDE; world++) {
       const worldName = WorldType[world].toLowerCase();
       this.safeZoneLevels.push({
         id: `safe_${worldName}`,

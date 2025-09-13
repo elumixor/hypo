@@ -6,7 +6,7 @@ import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
 import { LevelRenderer, type LevelSceneConfig } from "./LevelRenderer";
-import { LevelSystem } from "./LevelSystem";
+import { LevelSystem, LevelType } from "./LevelSystem";
 import { Loop } from "./Loop";
 
 export class Game {
@@ -75,7 +75,7 @@ export class Game {
     this.scene.add(this.player.mesh);
 
     // Check if this is a safe zone
-    this.isInSafeZone = levelConfig.type === "safe_zone";
+    this.isInSafeZone = levelConfig.type === LevelType.SAFE_ZONE;
     this.levelCompleted = false;
 
     if (!this.isInSafeZone) {
