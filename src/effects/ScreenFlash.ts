@@ -1,15 +1,15 @@
 import * as THREE from "three";
 
 export class ScreenFlash {
-  private mesh: THREE.Mesh;
-  private material: THREE.MeshBasicMaterial;
+  private readonly mesh: THREE.Mesh;
+  private readonly material: THREE.MeshBasicMaterial;
   private duration = 0;
   private elapsed = 0;
   private maxOpacity = 0;
 
   constructor(
     _scene: THREE.Scene,
-    private camera: THREE.Camera,
+    private readonly camera: THREE.Camera,
   ) {
     const geometry = new THREE.PlaneGeometry(2, 2);
     this.material = new THREE.MeshBasicMaterial({

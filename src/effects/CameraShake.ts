@@ -4,10 +4,10 @@ export class CameraShake {
   private intensity = 0;
   private duration = 0;
   private elapsed = 0;
-  private basePosition = new THREE.Vector3();
-  private offset = new THREE.Vector3();
+  private readonly basePosition = new THREE.Vector3();
+  private readonly offset = new THREE.Vector3();
 
-  constructor(private camera: THREE.Camera) {}
+  constructor(private readonly camera: THREE.Camera) {}
 
   shake(intensity: number, duration: number) {
     this.intensity = Math.max(this.intensity, intensity);

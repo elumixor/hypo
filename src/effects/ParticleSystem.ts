@@ -38,16 +38,16 @@ export class Particle {
 }
 
 export class ParticleSystem {
-  private particles: Particle[] = [];
-  private geometry: THREE.BufferGeometry;
-  private material: THREE.PointsMaterial;
-  private points: THREE.Points;
-  private positions: Float32Array;
-  private colors: Float32Array;
-  private sizes: Float32Array;
+  private readonly particles: Particle[] = [];
+  private readonly geometry: THREE.BufferGeometry;
+  private readonly material: THREE.PointsMaterial;
+  private readonly points: THREE.Points;
+  private readonly positions: Float32Array;
+  private readonly colors: Float32Array;
+  private readonly sizes: Float32Array;
 
   constructor(
-    private scene: THREE.Scene,
+    private readonly scene: THREE.Scene,
     maxParticles = 1000,
   ) {
     this.positions = new Float32Array(maxParticles * 3);
@@ -141,9 +141,9 @@ export class ParticleSystem {
       this.sizes[i] = 0;
     }
 
-    const positionAttribute = this.geometry.attributes["position"];
-    const colorAttribute = this.geometry.attributes["color"];
-    const sizeAttribute = this.geometry.attributes["size"];
+    const positionAttribute = this.geometry.getAttribute("position");
+    const colorAttribute = this.geometry.getAttribute("color");
+    const sizeAttribute = this.geometry.getAttribute("size");
 
     if (positionAttribute) positionAttribute.needsUpdate = true;
     if (colorAttribute) colorAttribute.needsUpdate = true;

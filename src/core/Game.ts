@@ -3,9 +3,9 @@ import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
 import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
+import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import { Hud } from "../ui/Hud";
 import { SkillTreeUI } from "../ui/SkillTreeUI";
-import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
@@ -162,21 +162,21 @@ export class Game {
     this.skillSystem.onSkillPointsChange = (skillPoints) => {
       this.hud.setSkillPoints(skillPoints);
     };
-    
+
     this.skillSystem.onCharacterChange = (characterId) => {
       const character = this.skillSystem.getCharacter(characterId);
       this.hud.setCurrentCharacter(character.data.name, character.data.color);
       this.hud.setStatus(`Switched to ${character.data.name}`);
     };
-    
+
     this.skillTreeUI.onClose = () => {
       // Resume game when skill tree is closed
     };
-    
+
     this.characterSwitchUI.onClose = () => {
       // Resume game when character switch is closed
     };
-    
+
     this.characterSwitchUI.onCharacterSwitch = () => {
       // Character switching is handled by the skill system
     };
@@ -195,7 +195,7 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
-    
+
     // Resize skill UI components
     if (this.skillTreeUI) {
       this.skillTreeUI.resize();
@@ -363,7 +363,7 @@ export class Game {
       this.xp = 0;
       this.xpToNext = Math.floor(this.xpToNext * 1.4) + 2;
       this.hud.setStatus(`Leveled to ${this.level}`);
-      
+
       // Notify skill system of level up
       this.skillSystem.onLevelUp(this.level);
     }
@@ -406,7 +406,7 @@ export class Game {
     this.hud.setStatus("You Died - Respawning");
     this.hp = 10;
     this.player.mesh.position.set(0, 0.4, 0);
-    
+
     // Reset skill system on death
     this.skillSystem.reset();
     this.hud.setSkillPoints(this.skillSystem.getSkillPoints());

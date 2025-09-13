@@ -39,7 +39,7 @@ export class Character {
 
   constructor(
     public readonly data: CharacterData,
-    initialState?: Partial<CharacterSkillState>
+    initialState?: Partial<CharacterSkillState>,
   ) {
     this._skillState = {
       characterId: data.id,
@@ -61,35 +61,35 @@ export class Character {
   canUpgradeSkill(skillId: string): boolean {
     const skill = this.findSkill(skillId);
     if (!skill) return false;
-    
+
     const currentLevel = this.getSkillLevel(skillId);
     if (currentLevel >= skill.maxLevel) return false;
-    
+
     // Check if character relation level is sufficient
     // For unique skills, need higher relation levels
     const skillTree = this.data.skillTrees;
-    const isUniqueSkill = skillTree.unique.some(s => s.id === skillId);
-    
+    const isUniqueSkill = skillTree.unique.some((s) => s.id === skillId);
+
     if (isUniqueSkill) {
-      const uniqueIndex = skillTree.unique.findIndex(s => s.id === skillId);
+      const uniqueIndex = skillTree.unique.findIndex((s) => s.id === skillId);
       const requiredRelationLevel = uniqueIndex + 1; // Skills unlock at relation 1, 2, 3, 4
       return this._skillState.relationLevel >= requiredRelationLevel;
     }
-    
+
     return this._skillState.isUnlocked;
   }
 
   getSkillCost(skillId: string): number {
     const skill = this.findSkill(skillId);
     if (!skill) return 0;
-    
+
     const currentLevel = this.getSkillLevel(skillId);
-    return Math.floor(skill.baseCost * Math.pow(skill.costMultiplier, currentLevel));
+    return Math.floor(skill.baseCost * skill.costMultiplier ** currentLevel);
   }
 
   upgradeSkill(skillId: string): boolean {
     if (!this.canUpgradeSkill(skillId)) return false;
-    
+
     const currentLevel = this.getSkillLevel(skillId);
     this._skillState.skillLevels[skillId] = currentLevel + 1;
     return true;
@@ -114,13 +114,7 @@ export class Character {
 
   private findSkill(skillId: string): Skill | undefined {
     const trees = this.data.skillTrees;
-    const allSkills = [
-      ...trees.lightAttack,
-      ...trees.heavyAttack,
-      ...trees.block,
-      ...trees.dodge,
-      ...trees.unique,
-    ];
-    return allSkills.find(skill => skill.id === skillId);
+    const allSkills = [...trees.lightAttack, ...trees.heavyAttack, ...trees.block, ...trees.dodge, ...trees.unique];
+    return allSkills.find((skill) => skill.id === skillId);
   }
 }
