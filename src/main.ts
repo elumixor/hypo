@@ -135,7 +135,8 @@ void (async () => {
   const stepPlayer = (dt: number) => {
     // Forward should be away from camera (camera looks toward -forward)
     forward.set(-Math.cos(yaw), 0, -Math.sin(yaw));
-    right.set(forward.z, 0, -forward.x);
+  // Right should be perpendicular (camera facing -forward). Current value reversed, so flip.
+  right.set(-forward.z, 0, forward.x);
     moveVec.set(0, 0, 0);
     if (keys.has("w") || keys.has("arrowup")) moveVec.add(forward);
     if (keys.has("s") || keys.has("arrowdown")) moveVec.sub(forward);
