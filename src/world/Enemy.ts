@@ -1,5 +1,13 @@
 import * as THREE from "three";
 import { GameConfig } from "../config/GameConfig";
+import type { Game } from "../core/Game";
+
+export enum EnemyType {
+  RANGE = "range",
+  MELEE = "melee",
+  NUKER = "nuker",
+  CHARGER = "charger"
+}
 
 /**
  * Base enemy configuration
@@ -27,7 +35,6 @@ export const ENEMY_CONFIGS = {
     shootCooldownMin: GameConfig.ENEMIES.SHOOT_COOLDOWN_MIN,
     shootCooldownVariance: GameConfig.ENEMIES.SHOOT_COOLDOWN_VARIANCE,
   },
-  // Future enemy types can be added here
   fast: {
     hp: 2,
     color: "#ff8c42",
@@ -55,12 +62,16 @@ export class Enemy {
   tShoot: number;
   readonly config: EnemyConfig;
   readonly type: string;
+  readonly aiType: EnemyType;
+  ai?: any; // AI will be set if available
 
   constructor(
     readonly mesh: THREE.Mesh,
     type: string = "basic",
+    aiType: EnemyType = EnemyType.RANGE,
   ) {
     this.type = type;
+    this.aiType = aiType;
     this.config = ENEMY_CONFIGS[type as keyof typeof ENEMY_CONFIGS] || ENEMY_CONFIGS.basic;
     this.hp = this.config.hp;
     this.maxHp = this.config.hp;
@@ -70,10 +81,27 @@ export class Enemy {
   /**
    * Create an enemy of a specific type
    */
-  static create(type: string = "basic", position?: THREE.Vector3): Enemy {
+  static create(type: string = "basic", aiType: EnemyType = EnemyType.RANGE, position?: THREE.Vector3): Enemy {
     const config = ENEMY_CONFIGS[type as keyof typeof ENEMY_CONFIGS] || ENEMY_CONFIGS.basic;
 
-    const geometry = new THREE.BoxGeometry(config.size, config.size, config.size);
+    let geometry: THREE.BufferGeometry;
+    switch (aiType) {
+      case EnemyType.RANGE:
+        geometry = new THREE.BoxGeometry(config.size, config.size, config.size);
+        break;
+      case EnemyType.MELEE:
+        geometry = new THREE.ConeGeometry(0.4, 1.2, 8);
+        break;
+      case EnemyType.NUKER:
+        geometry = new THREE.OctahedronGeometry(0.6);
+        break;
+      case EnemyType.CHARGER:
+        geometry = new THREE.CylinderGeometry(0.3, 0.6, 1.0, 6);
+        break;
+      default:
+        geometry = new THREE.BoxGeometry(config.size, config.size, config.size);
+    }
+
     const material = new THREE.MeshStandardMaterial({ color: config.color });
     const mesh = new THREE.Mesh(geometry, material);
 
@@ -88,30 +116,38 @@ export class Enemy {
       );
     }
 
-    return new Enemy(mesh, type);
+    return new Enemy(mesh, type, aiType);
   }
 
   /**
-   * Create multiple enemies of random types
+   * Initialize AI if available
    */
-  static createWave(count: number, availableTypes: string[] = ["basic"]): Enemy[] {
-    const enemies: Enemy[] = [];
+  initializeAI(game?: Game) {
+    // AI initialization will be handled by systems that have access to AI factory
+    // This is a placeholder for the interface
+  }
 
-    for (let i = 0; i < count; i++) {
-      const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
-      enemies.push(Enemy.create(type));
+  /**
+   * Update enemy (including AI if available)
+   */
+  update(dt: number) {
+    if (this.ai && !this.dead) {
+      this.ai.update?.(dt);
     }
-
-    return enemies;
   }
 
   /**
-   * Take damage and return actual damage dealt
+   * Take damage and return whether enemy was killed
    */
-  takeDamage(amount: number): number {
-    const oldHp = this.hp;
-    this.hp = Math.max(0, this.hp - amount);
-    return oldHp - this.hp;
+  takeDamage(amount: number): boolean {
+    if (this.dead) return false;
+
+    this.hp -= amount;
+    if (this.hp <= 0) {
+      this.dead = true;
+      return true; // Enemy died
+    }
+    return false; // Enemy still alive
   }
 
   /**
