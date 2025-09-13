@@ -69,10 +69,24 @@ export class Spawner {
     }
   }
 
-  clear() {
-    for (const enemy of this.enemies) {
-      this.scene.remove(enemy.mesh);
+  clearAll() {
+    // Remove all enemies
+    for (const enemy of [...this.enemies]) {
+      this.remove(enemy);
     }
-    this.enemies.length = 0;
+  }
+
+  spawnAtPosition(x: number, z: number, game?: Game) {
+    const enemyType = this.getRandomEnemyType();
+    const e = Enemy.create(enemyType);
+    
+    if (game) {
+      e.initializeAI(game);
+    }
+    
+    e.mesh.position.set(x, 0.4, z);
+    this.scene.add(e.mesh);
+    this.enemies.push(e);
+  }
   }
 }

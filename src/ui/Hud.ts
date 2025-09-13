@@ -8,16 +8,26 @@ export class Hud {
     alt: HTMLButtonElement;
     dash: HTMLButtonElement;
     block: HTMLButtonElement;
+    skills: HTMLButtonElement;
+    character: HTMLButtonElement;
+    dialogue: HTMLButtonElement;
   }> = {};
   private readonly hpBg: Graphics;
   private readonly hpFg: Graphics;
+  private readonly energyBg: Graphics;
+  private readonly energyFg: Graphics;
   private readonly lvlText: Text;
   private readonly xpText: Text;
+  private readonly skillPointsText: Text;
+  private readonly characterText: Text;
   onAuto?: (v: boolean) => void;
   onEasy?: () => void;
   onAlt?: () => void;
   onDash?: () => void;
   onBlock?: () => void;
+  onSkills?: () => void;
+  onCharacterSwitch?: () => void;
+  onDialogue?: () => void;
   auto = true;
   constructor(readonly app: Application) {
     const ui = new Container();
@@ -35,14 +45,34 @@ export class Hud {
     ui.addChild(this.hpBg);
     this.hpFg = new Graphics();
     ui.addChild(this.hpFg);
+
+    // energy bar
+    this.energyBg = new Graphics();
+    this.energyBg.beginFill(0x222222);
+    this.energyBg.drawRect(12, 50, 160, 10);
+    this.energyBg.endFill();
+    ui.addChild(this.energyBg);
+    this.energyFg = new Graphics();
+    ui.addChild(this.energyFg);
+
     this.lvlText = new Text({ text: "Lv:1", style: { fill: "#fff", fontSize: 13 } });
     this.lvlText.x = 12;
-    this.lvlText.y = 52;
+    this.lvlText.y = 66;
     ui.addChild(this.lvlText);
     this.xpText = new Text({ text: "XP:0/5", style: { fill: "#fff", fontSize: 13 } });
     this.xpText.x = 80;
-    this.xpText.y = 52;
+    this.xpText.y = 66;
     ui.addChild(this.xpText);
+
+    this.skillPointsText = new Text({ text: "SP:0", style: { fill: "#4ec9ff", fontSize: 13 } });
+    this.skillPointsText.x = 12;
+    this.skillPointsText.y = 72;
+    ui.addChild(this.skillPointsText);
+
+    this.characterText = new Text({ text: "Helio", style: { fill: "#4ec9ff", fontSize: 13, fontWeight: "bold" } });
+    this.characterText.x = 80;
+    this.characterText.y = 72;
+    ui.addChild(this.characterText);
 
     // DOM overlay for buttons
     const panel = document.createElement("div");
@@ -108,6 +138,21 @@ export class Hud {
       this.onBlock?.();
       this.setStatus("Block");
     });
+    makeBtn("Skills", "skills", () => {
+      log("HUD", "skills");
+      this.onSkills?.();
+      this.setStatus("Skills Menu");
+    });
+    makeBtn("Switch", "character", () => {
+      log("HUD", "character-switch");
+      this.onCharacterSwitch?.();
+      this.setStatus("Character Switch");
+    });
+    makeBtn("Talk (E)", "dialogue", () => {
+      log("HUD", "dialogue");
+      this.onDialogue?.();
+      this.setStatus("Starting Dialogue");
+    });
   }
   setStatus(s: string) {
     this.info.text = s;
@@ -121,8 +166,25 @@ export class Hud {
     this.hpFg.endFill();
   }
 
+  setEnergy(cur: number, max: number) {
+    const w = 160 * Math.max(0, Math.min(1, cur / max));
+    this.energyFg.clear();
+    this.energyFg.beginFill(0x44aaff);
+    this.energyFg.drawRect(12, 50, w, 10);
+    this.energyFg.endFill();
+  }
+
   setXP(level: number, xp: number, next: number) {
     this.lvlText.text = `Lv:${level}`;
     this.xpText.text = `XP:${xp}/${next}`;
+  }
+
+  setSkillPoints(skillPoints: number) {
+    this.skillPointsText.text = `SP:${skillPoints}`;
+  }
+
+  setCurrentCharacter(characterName: string, color: string) {
+    this.characterText.text = characterName;
+    this.characterText.style.fill = color;
   }
 }
