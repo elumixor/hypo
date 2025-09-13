@@ -394,7 +394,7 @@ export class Game {
         }
       }
       // Handle space/enter for skipping typing animation
-      if (this.keyboard.has(" ") || this.keyboard.has("Enter")) {
+      if (this.keyboard.has(" ") || this.keyboard.has("enter")) {
         this.dialogueUI.handleKeyPress(" ");
       }
     } else {

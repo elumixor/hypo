@@ -21,12 +21,8 @@ export class DialogueUI {
     
     // Create background panel
     this.background = new Graphics();
-    this.background.beginFill(0x000000, 0.8);
-    this.background.drawRoundedRect(0, 0, 800, 250, 10);
-    this.background.endFill();
-    this.background.beginFill(0x222222, 0.9);
-    this.background.drawRoundedRect(10, 10, 780, 230, 8);
-    this.background.endFill();
+    this.background.rect(0, 0, 800, 250).fill({ color: 0x000000, alpha: 0.8 });
+    this.background.rect(10, 10, 780, 230).fill({ color: 0x222222, alpha: 0.9 });
     this.container.addChild(this.background);
     
     // Create dummy avatars
@@ -80,30 +76,18 @@ export class DialogueUI {
   private createAvatars() {
     // Left avatar (Guard character) - using a simple colored rectangle as placeholder
     const leftAvatarBg = new Graphics();
-    leftAvatarBg.beginFill(0x4488aa);
-    leftAvatarBg.drawRoundedRect(0, 0, 120, 120, 8);
-    leftAvatarBg.endFill();
-    leftAvatarBg.beginFill(0x66aacc);
-    leftAvatarBg.drawCircle(60, 40, 25); // Head
-    leftAvatarBg.endFill();
-    leftAvatarBg.beginFill(0x8844aa);
-    leftAvatarBg.drawRect(35, 65, 50, 45); // Body
-    leftAvatarBg.endFill();
+    leftAvatarBg.rect(0, 0, 120, 120).fill(0x4488aa);
+    leftAvatarBg.circle(60, 40, 25).fill(0x66aacc); // Head
+    leftAvatarBg.rect(35, 65, 50, 45).fill(0x8844aa); // Body
     leftAvatarBg.x = 20;
     leftAvatarBg.y = 20;
     this.container.addChild(leftAvatarBg);
     
     // Right avatar (Player character) - another simple colored rectangle
     this.rightAvatar = new Graphics();
-    this.rightAvatar.beginFill(0xaa4444);
-    this.rightAvatar.drawRoundedRect(0, 0, 120, 120, 8);
-    this.rightAvatar.endFill();
-    this.rightAvatar.beginFill(0xcc6666);
-    this.rightAvatar.drawCircle(60, 40, 25); // Head
-    this.rightAvatar.endFill();
-    this.rightAvatar.beginFill(0xaa8844);
-    this.rightAvatar.drawRect(35, 65, 50, 45); // Body
-    this.rightAvatar.endFill();
+    this.rightAvatar.rect(0, 0, 120, 120).fill(0xaa4444);
+    this.rightAvatar.circle(60, 40, 25).fill(0xcc6666); // Head
+    this.rightAvatar.rect(35, 65, 50, 45).fill(0xaa8844); // Body
     this.rightAvatar.x = 660;
     this.rightAvatar.y = 20;
     this.rightAvatar.visible = false; // Only show when player is speaking
@@ -193,12 +177,8 @@ export class DialogueUI {
       
       // Button background
       const bg = new Graphics();
-      bg.beginFill(0x333333);
-      bg.drawRoundedRect(0, 0, 760, 30, 5);
-      bg.endFill();
-      bg.beginFill(0x444444, 0.8);
-      bg.drawRoundedRect(2, 2, 756, 26, 4);
-      bg.endFill();
+      bg.rect(0, 0, 760, 30).fill({ color: 0x333333 });
+      bg.rect(2, 2, 756, 26).fill({ color: 0x444444, alpha: 0.8 });
       
       // Option text
       const optionText = new Text({
@@ -224,22 +204,14 @@ export class DialogueUI {
       // Hover effects
       optionContainer.on("pointerover", () => {
         bg.clear();
-        bg.beginFill(0x555555);
-        bg.drawRoundedRect(0, 0, 760, 30, 5);
-        bg.endFill();
-        bg.beginFill(0x666666, 0.8);
-        bg.drawRoundedRect(2, 2, 756, 26, 4);
-        bg.endFill();
+        bg.rect(0, 0, 760, 30).fill({ color: 0x555555 });
+        bg.rect(2, 2, 756, 26).fill({ color: 0x666666, alpha: 0.8 });
       });
       
       optionContainer.on("pointerout", () => {
         bg.clear();
-        bg.beginFill(0x333333);
-        bg.drawRoundedRect(0, 0, 760, 30, 5);
-        bg.endFill();
-        bg.beginFill(0x444444, 0.8);
-        bg.drawRoundedRect(2, 2, 756, 26, 4);
-        bg.endFill();
+        bg.rect(0, 0, 760, 30).fill({ color: 0x333333 });
+        bg.rect(2, 2, 756, 26).fill({ color: 0x444444, alpha: 0.8 });
       });
       
       optionContainer.on("pointerdown", () => {
@@ -288,7 +260,7 @@ export class DialogueUI {
     }
     
     // Space or Enter to skip typing animation
-    if ((key === " " || key === "Enter") && this.isTyping) {
+    if ((key === " " || key === "enter") && this.isTyping) {
       this.currentText = this.targetText;
       this.dialogueText.text = this.currentText;
       this.isTyping = false;
