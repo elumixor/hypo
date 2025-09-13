@@ -3,27 +3,91 @@ import { Enemy } from "./Enemy";
 
 export class Spawner {
   enemies: Enemy[] = [];
+  
   constructor(readonly scene: THREE.Scene) {}
-  spawn(count: number) {
-    for (let i = 0; i < count; i++) this.addOne();
+  
+  /**
+   * Spawn a wave of enemies
+   */
+  spawn(count: number, availableTypes: string[] = ["basic"]): void {
+    for (let i = 0; i < count; i++) {
+      this.addOne(availableTypes);
+    }
   }
-  addOne() {
-    const e = Enemy.create();
-    this.scene.add(e.mesh);
-    this.enemies.push(e);
+  
+  /**
+   * Add a single enemy
+   */
+  addOne(availableTypes: string[] = ["basic"]): void {
+    const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+    const enemy = Enemy.create(type);
+    this.scene.add(enemy.mesh);
+    this.enemies.push(enemy);
   }
-  remove(e: Enemy) {
-    e.dead = true;
-    // remove from scene safely
-    if (e.mesh.parent) this.scene.remove(e.mesh);
-    const geom = e.mesh.geometry as THREE.BufferGeometry | undefined;
-    const mat = e.mesh.material as THREE.Material | undefined;
-    geom?.dispose?.();
-    (mat as THREE.Material | undefined)?.dispose?.();
-    const idx = this.enemies.indexOf(e);
-    if (idx >= 0) this.enemies.splice(idx, 1);
+  
+  /**
+   * Remove an enemy and dispose of its resources
+   */
+  remove(enemy: Enemy): void {
+    enemy.kill();
+    
+    // Remove from scene safely
+    if (enemy.mesh.parent) {
+      this.scene.remove(enemy.mesh);
+    }
+    
+    // Dispose of resources
+    enemy.dispose();
+    
+    // Remove from enemies array
+    const index = this.enemies.indexOf(enemy);
+    if (index >= 0) {
+      this.enemies.splice(index, 1);
+    }
   }
-  ensureWave(size: number) {
-    if (!this.enemies.length) this.spawn(size);
+  
+  /**
+   * Ensure minimum wave size
+   */
+  ensureWave(size: number, availableTypes: string[] = ["basic"]): void {
+    const aliveCount = this.enemies.filter(e => e.isAlive()).length;
+    if (aliveCount < size) {
+      const toSpawn = size - aliveCount;
+      this.spawn(toSpawn, availableTypes);
+    }
+  }
+  
+  /**
+   * Get all alive enemies
+   */
+  getAliveEnemies(): Enemy[] {
+    return this.enemies.filter(e => e.isAlive());
+  }
+  
+  /**
+   * Clear all enemies
+   */
+  clearAll(): void {
+    for (const enemy of this.enemies) {
+      if (enemy.mesh.parent) {
+        this.scene.remove(enemy.mesh);
+      }
+      enemy.dispose();
+    }
+    this.enemies.length = 0;
+  }
+  
+  /**
+   * Get enemy count
+   */
+  get count(): number {
+    return this.enemies.length;
+  }
+  
+  /**
+   * Get alive enemy count
+   */
+  get aliveCount(): number {
+    return this.enemies.filter(e => e.isAlive()).length;
   }
 }

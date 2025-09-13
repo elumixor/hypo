@@ -1,4 +1,6 @@
 import * as THREE from "three";
+import { GameConfig } from "../config/GameConfig";
+import { gameEvents } from "../events/GameEvents";
 import type { Enemy } from "../world/Enemy";
 import type { Player } from "../world/Player";
 
@@ -7,20 +9,56 @@ export class Projectile {
     readonly mesh: THREE.Mesh,
     readonly vel: THREE.Vector3,
     readonly fromPlayer: boolean,
+    readonly damage: number = 1,
   ) {}
 }
 
 export class Projectiles {
   list: Projectile[] = [];
-  readonly geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-  readonly matPlayer = new THREE.MeshStandardMaterial({ color: "#ffe14e", emissive: "#8d6f00" });
-  readonly matEnemy = new THREE.MeshStandardMaterial({ color: "#ff7b72", emissive: "#6e1212" });
-  add(from: THREE.Vector3, dir: THREE.Vector3, fromPlayer: boolean, scene: THREE.Scene) {
-    const mesh = new THREE.Mesh(this.geo, fromPlayer ? this.matPlayer : this.matEnemy);
+  readonly geometry = new THREE.BoxGeometry(
+    GameConfig.COMBAT.PROJECTILE_SIZE, 
+    GameConfig.COMBAT.PROJECTILE_SIZE, 
+    GameConfig.COMBAT.PROJECTILE_SIZE
+  );
+  readonly playerMaterial = new THREE.MeshStandardMaterial({ 
+    color: GameConfig.COLORS.PROJECTILE_PLAYER, 
+    emissive: "#8d6f00" 
+  });
+  readonly enemyMaterial = new THREE.MeshStandardMaterial({ 
+    color: GameConfig.COLORS.PROJECTILE_ENEMY, 
+    emissive: "#6e1212" 
+  });
+
+  /**
+   * Add a new projectile
+   */
+  add(
+    from: THREE.Vector3, 
+    dir: THREE.Vector3, 
+    fromPlayer: boolean, 
+    scene: THREE.Scene,
+    damage: number = 1,
+  ): void {
+    const mesh = new THREE.Mesh(
+      this.geometry, 
+      fromPlayer ? this.playerMaterial : this.enemyMaterial
+    );
     mesh.position.copy(from);
     scene.add(mesh);
-    this.list.push(new Projectile(mesh, dir.clone().normalize().multiplyScalar(6), fromPlayer));
+
+    const velocity = dir.clone().normalize().multiplyScalar(GameConfig.COMBAT.PROJECTILE_SPEED);
+    this.list.push(new Projectile(mesh, velocity, fromPlayer, damage));
+
+    // Emit event
+    gameEvents.emit("combat:projectile:spawn", {
+      fromPlayer,
+      position: { x: from.x, y: from.y, z: from.z },
+    });
   }
+
+  /**
+   * Update all projectiles
+   */
   update(
     dt: number,
     scene: THREE.Scene,
@@ -28,43 +66,121 @@ export class Projectiles {
     enemies: Enemy[],
     onPlayerHit: () => void,
     onEnemyKilled: (e: Enemy) => void,
-  ) {
+  ): void {
     for (let i = this.list.length - 1; i >= 0; i--) {
-      const p = this.list[i];
-      if (!p) continue;
-      p.mesh.position.addScaledVector(p.vel, dt);
-      if (p.mesh.position.length() > 30) {
+      const projectile = this.list[i];
+      if (!projectile) continue;
+
+      // Move projectile
+      projectile.mesh.position.addScaledVector(projectile.vel, dt);
+
+      // Check if projectile is out of range
+      if (projectile.mesh.position.length() > GameConfig.COMBAT.PROJECTILE_RANGE) {
         this.disposeAt(i, scene);
         continue;
       }
-      if (p.fromPlayer) {
-        for (const e of enemies) {
-          if (p.mesh.position.distanceTo(e.mesh.position) < 0.6) {
-            e.hp -= 1;
-            this.disposeAt(i, scene);
-            if (e.hp <= 0) onEnemyKilled(e);
-            break;
-          }
-        }
-      } else if (p.mesh.position.distanceTo(player.mesh.position) < 0.6) {
-        // if shield active and projectile hits shield radius, consume it
-        const shieldR = 1.1; // must match player shield geometry
-        if (player.shieldActive && p.mesh.position.distanceTo(player.mesh.position) <= shieldR) {
-          log("Projectiles", "consumed-by-shield");
-          this.disposeAt(i, scene);
-          continue;
-        }
-        onPlayerHit();
-        this.disposeAt(i, scene);
+
+      // Check collisions
+      if (projectile.fromPlayer) {
+        this.checkPlayerProjectileHits(projectile, enemies, i, scene, onEnemyKilled);
+      } else {
+        this.checkEnemyProjectileHits(projectile, player, i, scene, onPlayerHit);
       }
     }
   }
-  disposeAt(i: number, scene: THREE.Scene) {
-    const p = this.list[i];
-    if (!p) return;
-    scene.remove(p.mesh);
-    p.mesh.geometry.dispose();
-    (p.mesh.material as THREE.Material).dispose();
-    this.list.splice(i, 1);
+
+  /**
+   * Check collisions for player projectiles against enemies
+   */
+  private checkPlayerProjectileHits(
+    projectile: Projectile,
+    enemies: Enemy[],
+    projectileIndex: number,
+    scene: THREE.Scene,
+    onEnemyKilled: (e: Enemy) => void,
+  ): void {
+    for (const enemy of enemies) {
+      if (!enemy.isAlive()) continue;
+
+      const distance = projectile.mesh.position.distanceTo(enemy.mesh.position);
+      if (distance < GameConfig.COMBAT.HIT_DISTANCE) {
+        // Deal damage to enemy
+        enemy.takeDamage(projectile.damage);
+        this.disposeAt(projectileIndex, scene);
+
+        if (!enemy.isAlive()) {
+          onEnemyKilled(enemy);
+        }
+        
+        break; // Projectile can only hit one enemy
+      }
+    }
+  }
+
+  /**
+   * Check collisions for enemy projectiles against player
+   */
+  private checkEnemyProjectileHits(
+    projectile: Projectile,
+    player: Player,
+    projectileIndex: number,
+    scene: THREE.Scene,
+    onPlayerHit: () => void,
+  ): void {
+    const distance = projectile.mesh.position.distanceTo(player.mesh.position);
+    if (distance < GameConfig.COMBAT.HIT_DISTANCE) {
+      // Check if player is blocking
+      if (player.shieldActive) {
+        // Blocked - just remove projectile
+        log("Projectiles", "blocked-by-shield");
+        this.disposeAt(projectileIndex, scene);
+        return;
+      }
+
+      // Hit player
+      onPlayerHit();
+      this.disposeAt(projectileIndex, scene);
+    }
+  }
+
+  /**
+   * Dispose of projectile at specific index
+   */
+  disposeAt(index: number, scene: THREE.Scene): void {
+    const projectile = this.list[index];
+    if (!projectile) return;
+
+    scene.remove(projectile.mesh);
+    projectile.mesh.geometry.dispose();
+    (projectile.mesh.material as THREE.Material).dispose();
+    this.list.splice(index, 1);
+  }
+
+  /**
+   * Clear all projectiles
+   */
+  clearAll(scene: THREE.Scene): void {
+    for (const projectile of this.list) {
+      scene.remove(projectile.mesh);
+      projectile.mesh.geometry.dispose();
+      (projectile.mesh.material as THREE.Material).dispose();
+    }
+    this.list.length = 0;
+  }
+
+  /**
+   * Get projectile count
+   */
+  get count(): number {
+    return this.list.length;
+  }
+
+  /**
+   * Dispose of shared resources
+   */
+  dispose(): void {
+    this.geometry.dispose();
+    this.playerMaterial.dispose();
+    this.enemyMaterial.dispose();
   }
 }
