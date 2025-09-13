@@ -17,11 +17,11 @@ export interface LevelSceneConfig {
 }
 
 export class LevelRenderer {
-  private tileSize = 1.0;
-  private wallHeight = 2.0;
+  private readonly tileSize = 1.0;
+  private readonly wallHeight = 2.0;
 
   // Material cache for performance
-  private materials: Map<string, THREE.Material> = new Map();
+  private readonly materials: Map<string, THREE.Material> = new Map();
 
   constructor() {
     this.initializeMaterials();

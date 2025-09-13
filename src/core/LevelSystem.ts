@@ -60,12 +60,12 @@ export interface BossConfig {
 export class LevelSystem {
   private currentWorld: WorldType = WorldType.WRATH;
   private currentLevelIndex = 0;
-  private worldProgress: Map<WorldType, number> = new Map();
+  private readonly worldProgress: Map<WorldType, number> = new Map();
 
   // Level configurations
-  private safeZoneLevels: LevelConfig[] = [];
-  private regularLevels: Map<WorldType, LevelConfig[]> = new Map();
-  private bossLevels: LevelConfig[] = [];
+  private readonly safeZoneLevels: LevelConfig[] = [];
+  private readonly regularLevels: Map<WorldType, LevelConfig[]> = new Map();
+  private readonly bossLevels: LevelConfig[] = [];
 
   // Current playthrough state
   private currentWorldLevels: LevelConfig[] = [];
