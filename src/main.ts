@@ -1,7 +1,9 @@
-import { Game } from './core/Game';
+import "utils/globals";
+
+import { Game } from "./core/Game";
 
 void (async () => {
   const game = new Game(document.body);
   await game.init();
-  console.log('HYPO modular game started');
+  console.log("HYPO modular game started");
 })();

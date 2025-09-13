@@ -96,11 +96,3 @@ Good:
 ```typescript
 if (someCondition()) doSomething();
 ```
-
-# Running testing commands
-
-- Do not run test commands or linting unless specifically asked.
-
-# Available terminal commands
-
-- You have access to `bun`, `git`, `gh` (github cli) commands
