@@ -3,15 +3,15 @@ import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
 import { GameConfig } from "../config/GameConfig";
 import { EffectsManager } from "../effects/EffectsManager";
-import { 
-  uiStatusUpdate,
-  uiHealthUpdate,
-  uiXpUpdate,
-  playerLevelUp,
-  playerDash,
+import {
   combatEnemyKilled,
+  playerDash,
+  playerLevelUp,
+  uiHealthUpdate,
+  uiStatusUpdate,
+  uiXpUpdate,
+  xpCollected,
   xpSpawned,
-  xpCollected
 } from "../events/GameEvents";
 import { Keyboard } from "../input/Keyboard";
 import { gameState } from "../state/GameState";

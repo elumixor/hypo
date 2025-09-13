@@ -1,15 +1,15 @@
 import { GameConfig } from "../config/GameConfig";
-import { 
-  playerHit,
-  uiHealthUpdate,
-  xpCollected,
-  uiXpUpdate,
-  playerLevelUp,
-  playerDeath,
-  playerShield,
+import {
   gamePaused,
+  gameRestart,
   gameResumed,
-  gameRestart
+  playerDeath,
+  playerHit,
+  playerLevelUp,
+  playerShield,
+  uiHealthUpdate,
+  uiXpUpdate,
+  xpCollected,
 } from "../events/GameEvents";
 
 /**

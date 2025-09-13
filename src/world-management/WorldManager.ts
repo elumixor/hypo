@@ -1,10 +1,5 @@
 import { GameConfig } from "../config/GameConfig";
-import { 
-  gameOver,
-  worldTransition,
-  levelComplete,
-  bossDefeated
-} from "../events/GameEvents";
+import { bossDefeated, gameOver, levelComplete, worldTransition } from "../events/GameEvents";
 
 /**
  * Represents a single level in the game

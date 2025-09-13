@@ -14,7 +14,10 @@ export const playerShield = new EventEmitter<{ active: boolean }>();
 
 // Combat events
 export const combatAttack = new EventEmitter<{ type: "easy" | "alt"; target?: { x: number; y: number; z: number } }>();
-export const combatProjectileSpawn = new EventEmitter<{ fromPlayer: boolean; position: { x: number; y: number; z: number } }>();
+export const combatProjectileSpawn = new EventEmitter<{
+  fromPlayer: boolean;
+  position: { x: number; y: number; z: number };
+}>();
 export const combatEnemyKilled = new EventEmitter<{ position: { x: number; y: number; z: number } }>();
 
 // XP events
