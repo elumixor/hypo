@@ -1,7 +1,9 @@
 import type { CharacterData, CharacterType } from "./Character";
 
+import type { SkillTree } from "./Character";
+
 // Define all skills for each character
-const createHeliosSkills = () => ({
+const createHeliosSkills = (): SkillTree => ({
   lightAttack: [
     {
       id: "helio-light-speed",
@@ -113,7 +115,7 @@ const createHeliosSkills = () => ({
   ],
 });
 
-const createIrisSkills = () => ({
+const createIrisSkills = (): SkillTree => ({
   lightAttack: [
     {
       id: "aria-light-chain",
@@ -216,7 +218,7 @@ const createIrisSkills = () => ({
   ],
 });
 
-const createLucySkills = () => ({
+const createLucySkills = (): SkillTree => ({
   lightAttack: [
     {
       id: "zara-light-poison",
@@ -310,7 +312,7 @@ const createLucySkills = () => ({
   ],
 });
 
-const createKaiSkills = () => ({
+const createKaiSkills = (): SkillTree => ({
   lightAttack: [
     {
       id: "kai-light-crit",

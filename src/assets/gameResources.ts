@@ -27,7 +27,7 @@ export type GameResources = typeof gameResources;
  */
 export async function initializeResources(
   onProgress?: (progress: { loaded: number; total: number; percentage: number; current?: string }) => void,
-) {
+): Promise<void> {
   console.log("Loading game resources...");
 
   await gameResources.loadAll(onProgress);
