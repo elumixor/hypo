@@ -38,6 +38,7 @@ You should:
 
 - Create clear, concise, maintainable code, that is easy to read for both humans and large language models (LLMs).
 - Avoid unnecessary comments. Write self-explanatory code instead.
+- Don't leave commented-out code. Don't leave legacy components. Remove them. We have git for this. Keep the codebase clean.
 - Before writing custom code, check if there is a library that does what you need. If there is, install and use it.
 - Use of modern JavaScript features (e.g., async/await, destructuring) to write cleaner code.
 - Avoid callback hell, deep nesting - use early returns, helper functions, and async/await.
