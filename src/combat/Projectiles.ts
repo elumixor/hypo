@@ -1,5 +1,4 @@
 import * as THREE from "three";
-import { log } from "../core/lib";
 import type { EffectsManager } from "../effects/EffectsManager";
 import type { Enemy } from "../world/Enemy";
 import type { Player } from "../world/Player";

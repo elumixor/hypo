@@ -88,5 +88,4 @@ export class Spawner {
     this.scene.add(e.mesh);
     this.enemies.push(e);
   }
-  }
 }
