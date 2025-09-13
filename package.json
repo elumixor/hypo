@@ -13,8 +13,10 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
-    "three": "^0.168.0",
-    "pixi.js": "^8.4.1"
+    "@elumixor/frontils": "^2.14.1",
+    "gsap": "^3.13.0",
+    "pixi.js": "^8.4.1",
+    "three": "^0.168.0"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

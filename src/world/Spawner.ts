@@ -13,7 +13,7 @@ export class Spawner {
     this.enemies.push(e);
   }
   remove(e: Enemy) {
-    e.dead = true;
+    e.kill();
     // remove from scene safely
     if (e.mesh.parent) this.scene.remove(e.mesh);
     const geom = e.mesh.geometry as THREE.BufferGeometry | undefined;
