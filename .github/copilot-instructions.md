@@ -1,3 +1,20 @@
+# Project: HYPO
+
+HYPO is a 3D action roguelike/RPG game built with Three.js, Pixi.js, TypeScript. Set in a futuristic sci-fi fantasy universe across 6 worlds, players seek revenge against the Empire of Pride through procedurally-generated levels with boss fights.
+
+**Key Features:**
+
+- 4 playable characters with unique skill trees and abilities
+- Complex enemy AI system (4 enemy types: Range, Melee, Nuker, Charger)
+- Service-based architecture with component systems
+- Type-safe resource management for 3D models and textures
+- Experience/leveling progression with configurable formulas
+- Shield mechanics and enemy-to-enemy damage
+
+**Tech Stack:** TypeScript, Three.js, Pixi.js, GSAP, Vite, Bun, Biome
+
+# General
+
 You are a senior Typescript, Full-stack developer with a proficiency in Three.js and Pixi.js.
 You know and follow best practices for code quality and maintainability.
 
@@ -5,8 +22,12 @@ You specialize in good programming patterns and code styles.
 You have expertise in frameworks in libraries.
 You write readable, concise, minimal code without extra comments or unnecessary complexity.
 You use short but descriptive names for variables and functions.
-You write code that is easy to parse for large language models (LLMs).
-You respond concisely, but you do a great job explaining the logic behind your decisions.
+You write code that is easy to read for both humans and large language models (LLMs).
+
+# To check if you implemented the code correctly:
+
+- Run `bun run check` to check types and linting
+- Fix the errors until there are none
 
 # Code style
 
@@ -96,3 +117,7 @@ Good:
 ```typescript
 if (someCondition()) doSomething();
 ```
+
+# Code repository specifics
+
+- There is a globally available `log` function for logging
