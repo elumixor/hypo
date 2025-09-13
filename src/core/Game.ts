@@ -4,6 +4,8 @@ import { Projectiles } from "../combat/Projectiles";
 import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
 import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
+import { DialogueSystem } from "../ui/DialogueSystem";
+import { DialogueUI } from "../ui/DialogueUI";
 import { Hud } from "../ui/Hud";
 import { MainMenuUI } from "../ui/MainMenuUI";
 import { PauseMenuUI } from "../ui/PauseMenuUI";
@@ -30,6 +32,7 @@ export class Game {
   readonly effects = new EffectsManager(this.scene, this.camera);
   readonly characterManager = new CharacterManager();
   readonly gameStateManager = new GameStateManager();
+  readonly dialogueSystem = new DialogueSystem();
   xpCrystals: THREE.Mesh[] = [];
   level = 1;
   xp = 0;
@@ -41,6 +44,7 @@ export class Game {
   characterSwitchUI!: CharacterSwitchUI;
   mainMenuUI!: MainMenuUI;
   pauseMenuUI!: PauseMenuUI;
+  dialogueUI!: DialogueUI;
   yaw = Math.PI * 0.25;
   pitch = 1.5;
   dist = 10;
@@ -55,6 +59,7 @@ export class Game {
   lastT = false;
   lastC = false;
   lastEscape = false;
+  lastE = false;
   gameState: "menu" | "playing" | "paused" = "menu";
 
   // Level progression state
@@ -126,6 +131,7 @@ export class Game {
         this.spawner.spawnAtPosition(
           spawnInfo.position.x + (Math.random() - 0.5) * 0.5,
           spawnInfo.position.z + (Math.random() - 0.5) * 0.5,
+          this // Pass game reference for AI initialization
         );
       }
     }
@@ -229,6 +235,13 @@ export class Game {
       this.effects.blockEffect(this.player.mesh.position);
     }
   }
+  
+  startDialogue() {
+    log("Game", "dialogue-start");
+    this.hud.setStatus("Starting dialogue...");
+    this.dialogueUI.startDialogue("greeting");
+  }
+  }
 
   async init() {
     this.renderer.setPixelRatio(devicePixelRatio);
@@ -239,7 +252,23 @@ export class Game {
     this.camera.position.set(3, 13.5, 4.5);
     this.camera.lookAt(0, 0.6, 0);
 
-    // pixi hud - initialize first
+    // world pieces
+    const ground = new THREE.Mesh(
+      new THREE.CylinderGeometry(5, 5, 0.2, 40),
+      new THREE.MeshStandardMaterial({ color: "#111318", roughness: 0.9 }),
+    );
+    ground.position.y = -0.1;
+    this.scene.add(ground);
+    const light = new THREE.DirectionalLight("#ffffff", 2.2);
+    light.position.set(4, 6, 3);
+    this.scene.add(light);
+    this.scene.add(new THREE.AmbientLight("#404040", 0.6));
+
+    // add player
+    this.scene.add(this.player.mesh);
+    this.spawner.spawn(5, this);
+
+    // pixi hud
     const hudApp = new (await import("pixi.js")).Application();
     await hudApp.init({ backgroundAlpha: 0, antialias: true, resizeTo: window });
     hudApp.canvas.style.position = "fixed";
@@ -257,6 +286,9 @@ export class Game {
     // Initialize skill UI components
     this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
     this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
+    
+    // Initialize dialogue UI
+    this.dialogueUI = new DialogueUI(hudApp, this.dialogueSystem);
 
     // Initialize menu systems
     this.mainMenuUI = new MainMenuUI(hudApp, {
@@ -282,6 +314,9 @@ export class Game {
     // Start in main menu
     this.showMainMenu();
 
+    // Load the first level after HUD is ready (but don't show it until game starts)
+    this.loadCurrentLevel();
+
     // UI button bindings
     this.hud.onAuto = (v) => {
       this.autoAttack = v;
@@ -293,9 +328,10 @@ export class Game {
     this.hud.onBlock = () => this.doBlock();
     this.hud.onSkills = () => this.showSkillTree();
     this.hud.onCharacterSwitch = () => this.showCharacterSwitch();
+    this.hud.onDialogue = () => this.startDialogue();
 
     addEventListener("resize", () => this.onResize());
-    this.loop.add((dt, t) => this.update(dt, t));
+    this.loop.add((dt) => this.update(dt));
     this.loop.start();
 
     // Setup skill system event handlers
@@ -597,7 +633,7 @@ export class Game {
       this.characterSwitchUI.resize();
     }
   }
-  update(dt: number, t: number) {
+  update(dt: number) {
     // Handle pause/menu keyboard input
     if (this.keyboard.has("Escape")) {
       if (!this.lastEscape) {
@@ -613,9 +649,8 @@ export class Game {
       this.renderer.render(this.scene, this.camera);
       return;
     }
-
     this.player.update(dt);
-    this.stepEnemies(dt, t);
+    this.spawner.update(dt); // Update enemy AI
     this.projectiles.update(
       dt,
       this.scene,
@@ -623,6 +658,7 @@ export class Game {
       this.spawner.enemies,
       () => this.playerHit(),
       (e) => this.removeEnemy(e),
+      this.effects, // Pass effects manager
     );
     // Keyboard dash/block (edge-triggered)
     if (this.keyboard.dash) {
@@ -663,6 +699,31 @@ export class Game {
     } else {
       this.lastC = false;
     }
+    
+    // Dialogue system input handling
+    if (this.dialogueSystem.isActive()) {
+      // Handle number key presses for dialogue options
+      for (let i = 1; i <= 9; i++) {
+        if (this.keyboard.has(i.toString())) {
+          this.dialogueUI.handleKeyPress(i.toString());
+          break;
+        }
+      }
+      // Handle space/enter for skipping typing animation
+      if (this.keyboard.has(" ") || this.keyboard.has("enter")) {
+        this.dialogueUI.handleKeyPress(" ");
+      }
+    } else {
+      // Only allow starting dialogue when not already in one
+      if (this.keyboard.has("e")) {
+        if (!this.lastE) {
+          this.startDialogue();
+          this.lastE = true;
+        }
+      } else {
+        this.lastE = false;
+      }
+    }
     if (this.autoAttack) this.autoShoot(dt);
     // collect XP crystals when near
     for (let i = this.xpCrystals.length - 1; i >= 0; i--) {
@@ -675,6 +736,11 @@ export class Game {
 
     // Check level completion
     this.checkLevelCompletion();
+
+    // Only spawn new waves if not in a safe zone and level system allows it
+    if (!this.isInSafeZone && this.currentLevelConfig && !this.levelCompleted) {
+      this.spawner.ensureWave(5, this);
+    }
 
     // Update effects system first
     const p = this.player.mesh.position;
@@ -712,51 +778,8 @@ export class Game {
     }
     this.camera.lookAt(p.x, p.y + 0.4, p.z);
   }
-  stepEnemies(dt: number, t: number) {
-    const minPlayerDist = 0.9;
-    const separation = 0.6;
-    for (let i = 0; i < this.spawner.enemies.length; i++) {
-      const e = this.spawner.enemies[i];
-      if (!e || e.dead) continue;
-      // move towards player but maintain a minimum distance
-      this.tmp.copy(this.player.mesh.position).sub(e.mesh.position);
-      this.tmp.y = 0;
-      const d = this.tmp.length();
-      if (d > minPlayerDist) {
-        this.tmp.normalize();
-        e.mesh.position.addScaledVector(this.tmp, dt * 1.2);
-      }
-      // simple separation from other enemies
-      for (let j = 0; j < this.spawner.enemies.length; j++) {
-        if (i === j) continue;
-        const o = this.spawner.enemies[j];
-        if (!o) continue;
-        const dist = e.mesh.position.distanceTo(o.mesh.position);
-        if (dist < separation && dist > 0.001) {
-          const dir = e.mesh.position.clone().sub(o.mesh.position).setY(0).normalize();
-          e.mesh.position.addScaledVector(dir, (separation - dist) * 0.5);
-        }
-      }
-      if (t > e.tShoot) {
-        this.projectiles.add(
-          e.mesh.position.clone(),
-          this.tmp.set(
-            this.player.mesh.position.x - e.mesh.position.x,
-            0,
-            this.player.mesh.position.z - e.mesh.position.z,
-          ),
-          false,
-          this.scene,
-        );
-        e.tShoot = t + 900 + Math.random() * 600;
-      }
-    }
 
-    // Only spawn new waves if not in a safe zone
-    if (!this.isInSafeZone) {
-      this.spawner.ensureWave(5);
-    }
-  }
+  removeEnemy(e: Enemy) {
   removeEnemy(e: Enemy) {
     // spawn XP crystal at enemy position
     const pos = e.mesh.position.clone();
@@ -982,6 +1005,31 @@ export class Game {
     this.effects.playerHitEffect(this.player.mesh.position);
     if (this.hp <= 0) {
       // Don't reset XP/level immediately, wait for respawn
+    }
+  }
+
+  // Damage dealing methods for AI to use
+  damagePlayer(amount: number) {
+    if (this.player.shieldActive) {
+      log("Game", "player-damage-blocked", amount);
+      return;
+    }
+    this.hp -= amount;
+    log("Game", "player-damaged", amount, this.hp);
+    this.hud.setHealth(this.hp, 10);
+    if (this.hp <= 0) {
+      this.level = 1;
+      this.xp = 0;
+      this.xpToNext = 5;
+      this.hud.setXP(this.level, this.xp, this.xpToNext);
+    }
+  }
+
+  damageEnemy(enemy: Enemy, amount: number) {
+    const killed = enemy.takeDamage(amount);
+    if (killed) {
+      this.removeEnemy(enemy);
+    }
     }
   }
 }
