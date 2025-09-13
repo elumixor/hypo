@@ -1,204 +1,208 @@
 import * as THREE from "three";
-import { gameResources } from "../assets/gameResources";
-import { ComponentManager, HealthComponent, type HealthConfig } from "../components";
+import { GameConfig } from "../config/GameConfig";
+import type { Game } from "../core/Game";
 
-export interface EnemyConfig {
-  position?: THREE.Vector3;
-  health?: HealthConfig;
-  shootInterval?: number;
-  color?: string;
-  size?: number;
+export enum EnemyType {
+  RANGE = "range",
+  MELEE = "melee",
+  NUKER = "nuker",
+  CHARGER = "charger",
 }
 
 /**
- * Enemy class using component-based architecture
+ * Base enemy configuration
  */
+export interface EnemyConfig {
+  hp: number;
+  color: string;
+  size: number;
+  speed: number;
+  damage: number;
+  shootCooldownMin: number;
+  shootCooldownVariance: number;
+}
+
+/**
+ * Default enemy configurations for different types
+ */
+export const ENEMY_CONFIGS = {
+  basic: {
+    hp: GameConfig.ENEMIES.BASE_HP,
+    color: GameConfig.COLORS.ENEMY,
+    size: 0.7,
+    speed: GameConfig.ENEMIES.MOVEMENT_SPEED,
+    damage: 1,
+    shootCooldownMin: GameConfig.ENEMIES.SHOOT_COOLDOWN_MIN,
+    shootCooldownVariance: GameConfig.ENEMIES.SHOOT_COOLDOWN_VARIANCE,
+  },
+  fast: {
+    hp: 2,
+    color: "#ff8c42",
+    size: 0.5,
+    speed: 2.0,
+    damage: 1,
+    shootCooldownMin: 600,
+    shootCooldownVariance: 400,
+  },
+  tank: {
+    hp: 6,
+    color: "#8b0000",
+    size: 1.0,
+    speed: 0.8,
+    damage: 2,
+    shootCooldownMin: 1200,
+    shootCooldownVariance: 800,
+  },
+} as const satisfies Record<string, EnemyConfig>;
+
 export class Enemy {
-  readonly mesh: THREE.Mesh;
-  readonly components: ComponentManager;
+  hp: number;
+  readonly maxHp: number;
+  dead = false;
+  tShoot: number;
+  readonly config: EnemyConfig;
+  readonly type: string;
+  readonly aiType: EnemyType;
+  ai?: any; // AI will be set if available
 
-  private _health?: HealthComponent;
-  private readonly _shootInterval: number;
-  private _nextShootTime: number;
+  constructor(
+    readonly mesh: THREE.Mesh,
+    type: string = "basic",
+    aiType: EnemyType = EnemyType.RANGE,
+  ) {
+    this.type = type;
+    this.aiType = aiType;
+    this.config = ENEMY_CONFIGS[type as keyof typeof ENEMY_CONFIGS] || ENEMY_CONFIGS.basic;
+    this.hp = this.config.hp;
+    this.maxHp = this.config.hp;
+    this.tShoot = performance.now() + this.config.shootCooldownMin + Math.random() * this.config.shootCooldownVariance;
+  }
 
-  constructor(config: EnemyConfig = {}) {
-    this._shootInterval = config.shootInterval ?? 1500; // ms between shots
-    this._nextShootTime = performance.now() + 800 + Math.random() * 800;
+  /**
+   * Create an enemy of a specific type
+   */
+  static create(type: string = "basic", aiType: EnemyType = EnemyType.RANGE, position?: THREE.Vector3): Enemy {
+    const config = ENEMY_CONFIGS[type as keyof typeof ENEMY_CONFIGS] || ENEMY_CONFIGS.basic;
 
-    // Create enemy mesh using assets or fallback
-    this.mesh = this.createEnemyMesh(config);
+    let geometry: THREE.BufferGeometry;
+    switch (aiType) {
+      case EnemyType.RANGE:
+        geometry = new THREE.BoxGeometry(config.size, config.size, config.size);
+        break;
+      case EnemyType.MELEE:
+        geometry = new THREE.ConeGeometry(0.4, 1.2, 8);
+        break;
+      case EnemyType.NUKER:
+        geometry = new THREE.OctahedronGeometry(0.6);
+        break;
+      case EnemyType.CHARGER:
+        geometry = new THREE.CylinderGeometry(0.3, 0.6, 1.0, 6);
+        break;
+      default:
+        geometry = new THREE.BoxGeometry(config.size, config.size, config.size);
+    }
 
-    // Set position
-    if (config.position) {
-      this.mesh.position.copy(config.position);
+    const material = new THREE.MeshStandardMaterial({ color: config.color });
+    const mesh = new THREE.Mesh(geometry, material);
+
+    if (position) {
+      mesh.position.copy(position);
     } else {
-      // Default random position around origin
-      const angle = Math.random() * Math.PI * 2;
-      const distance = 3 + Math.random() * 3;
-      this.mesh.position.set(Math.cos(angle) * distance, 0.35, Math.sin(angle) * distance);
+      // Default spawn position (random around origin)
+      mesh.position.set(
+        Math.cos(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
+        config.size * 0.5, // Half height above ground
+        Math.sin(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
+      );
     }
 
-    // Set up component system
-    this.components = new ComponentManager(this.mesh);
-    this.setupComponents(config);
+    return new Enemy(mesh, type, aiType);
   }
 
   /**
-   * Create the enemy mesh using loaded resources
+   * Initialize AI if available
    */
-  private createEnemyMesh(config: EnemyConfig): THREE.Mesh {
-    try {
-      // Try to use the loaded Drone model
-      const droneModel = gameResources.get("Drone") as { scene: THREE.Group };
-      const enemyModel = droneModel.scene.clone();
+  initializeAI(_game?: Game) {
+    // AI initialization will be handled by systems that have access to AI factory
+    // This is a placeholder for the interface
+  }
 
-      // Find the first mesh in the model
-      let meshFromModel: THREE.Mesh | undefined;
-      enemyModel.traverse((child: THREE.Object3D) => {
-        if (child instanceof THREE.Mesh && !meshFromModel) {
-          meshFromModel = child;
-        }
-      });
-
-      if (meshFromModel) {
-        // Create a new mesh with the geometry from the model
-        const geometry = meshFromModel.geometry.clone();
-        const material = new THREE.MeshStandardMaterial({
-          color: config.color ?? "#ff2b2b",
-          roughness: 0.4,
-        });
-
-        const mesh = new THREE.Mesh(geometry, material);
-        const size = config.size ?? 0.4; // Smaller than player
-        mesh.scale.set(size, size, size);
-
-        console.log("✅ Enemy using Drone.glb model geometry");
-        return mesh;
-      } else {
-        throw new Error("No mesh found in Drone model");
-      }
-    } catch (error) {
-      console.warn("⚠️ Could not load Drone model for enemy, using fallback:", error);
-
-      // Fallback to simple box geometry
-      const size = config.size ?? 0.7;
-      const geometry = new THREE.BoxGeometry(size, size, size);
-      const material = new THREE.MeshStandardMaterial({
-        color: config.color ?? "#ff2b2b",
-      });
-      return new THREE.Mesh(geometry, material);
+  /**
+   * Update enemy (including AI if available)
+   */
+  update(dt: number) {
+    if (this.ai && !this.dead) {
+      this.ai.update?.(dt);
     }
   }
 
   /**
-   * Get health component
-   */
-  get health(): HealthComponent | undefined {
-    return this._health;
-  }
-
-  /**
-   * Check if enemy is dead
-   */
-  get isDead(): boolean {
-    return this._health ? !this._health.isAlive : false;
-  }
-
-  /**
-   * Get current HP for legacy compatibility
-   */
-  get hp(): number {
-    return this._health?.currentHealth ?? 0;
-  }
-
-  /**
-   * Get dead state for legacy compatibility
-   */
-  get dead(): boolean {
-    return this.isDead;
-  }
-
-  /**
-   * Get next shoot time for legacy compatibility
-   */
-  get tShoot(): number {
-    return this._nextShootTime;
-  }
-
-  /**
-   * Set next shoot time for legacy compatibility
-   */
-  set tShoot(value: number) {
-    this._nextShootTime = value;
-  }
-
-  /**
-   * Check if enemy can shoot now
-   */
-  canShoot(): boolean {
-    return performance.now() >= this._nextShootTime;
-  }
-
-  /**
-   * Schedule next shot
-   */
-  scheduleNextShot() {
-    this._nextShootTime = performance.now() + this._shootInterval + Math.random() * 600;
-  }
-
-  /**
-   * Update enemy logic
-   */
-  update(deltaTime: number) {
-    this.components.update(deltaTime);
-  }
-
-  /**
-   * Take damage (legacy compatibility)
+   * Take damage and return whether enemy was killed
    */
   takeDamage(amount: number): boolean {
-    return this._health?.takeDamage(amount) ?? false;
-  }
+    if (this.dead) return false;
 
-  /**
-   * Mark enemy as dead (used by spawner)
-   */
-  kill() {
-    if (this._health) {
-      this._health.takeDamage(this._health.currentHealth);
+    this.hp -= amount;
+    if (this.hp <= 0) {
+      this.dead = true;
+      return true; // Enemy died
     }
+    return false; // Enemy still alive
   }
 
   /**
-   * Factory method to create enemy with default settings
+   * Check if enemy should shoot based on its cooldown
    */
-  static create(config?: EnemyConfig): Enemy {
-    return new Enemy(config);
+  shouldShoot(currentTime: number): boolean {
+    if (currentTime >= this.tShoot) {
+      this.tShoot = currentTime + this.config.shootCooldownMin + Math.random() * this.config.shootCooldownVariance;
+      return true;
+    }
+    return false;
   }
 
   /**
-   * Destroy the enemy and clean up resources
+   * Get movement speed for this enemy
    */
-  destroy() {
-    this.components.destroy();
-
-    // Clean up mesh resources
-    this.mesh.geometry.dispose();
-    const material = this.mesh.material as THREE.Material;
-    material.dispose();
+  getMovementSpeed(): number {
+    return this.config.speed;
   }
 
-  private setupComponents(config: EnemyConfig) {
-    // Health component
-    const healthConfig: HealthConfig = {
-      maxHealth: 3,
-      ...config.health,
-    };
-    this._health = this.components.addComponent(new HealthComponent(healthConfig));
+  /**
+   * Get damage this enemy deals
+   */
+  getDamage(): number {
+    return this.config.damage;
+  }
 
-    // Set up health events
-    this._health.onDeath.subscribe(() => {
-      log("Enemy", "Enemy died");
-    });
+  /**
+   * Mark enemy as dead and clean up
+   */
+  kill(): void {
+    this.dead = true;
+    this.hp = 0;
+  }
+
+  /**
+   * Check if enemy is alive
+   */
+  isAlive(): boolean {
+    return this.hp > 0 && !this.dead;
+  }
+
+  /**
+   * Dispose of resources
+   */
+  dispose(): void {
+    if (this.mesh.geometry) this.mesh.geometry.dispose();
+    if (this.mesh.material) {
+      if (Array.isArray(this.mesh.material)) {
+        for (const mat of this.mesh.material) {
+          mat.dispose();
+        }
+      } else {
+        this.mesh.material.dispose();
+      }
+    }
   }
 }

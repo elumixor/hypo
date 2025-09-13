@@ -14,9 +14,10 @@ async function startGame() {
     }
   });
 
-  // Start the game
-  new Game(document.body);
-  console.log("✅ HYPO game started successfully!");
+  // Create and initialize the game
+  const game = new Game(document.body);
+  await game.init();
+  console.log("✅ HYPO modular game started successfully!");
 }
 
 // Start the game
