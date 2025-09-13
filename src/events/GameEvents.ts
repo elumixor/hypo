@@ -1,3 +1,5 @@
+import { EventEmitter as LibEventEmitter } from "@elumixor/frontils";
+
 /**
  * Type-safe event system for game communication
  */
@@ -43,64 +45,43 @@ export interface GameEvents {
 export type GameEventType = keyof GameEvents;
 export type GameEventData<T extends GameEventType> = GameEvents[T];
 
+/**
+ * Custom EventEmitter class that extends the library version with type-safe game events
+ */
 export class EventEmitter {
-  // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
-  private readonly listeners = new Map<string, Set<(data: any) => void>>();
+  private readonly emitters = new Map<GameEventType, LibEventEmitter<unknown>>();
+
+  private getEmitter<T extends GameEventType>(event: T): LibEventEmitter<GameEventData<T>> {
+    if (!this.emitters.has(event)) {
+      this.emitters.set(event, new LibEventEmitter<GameEventData<T>>() as LibEventEmitter<unknown>);
+    }
+    return this.emitters.get(event) as LibEventEmitter<GameEventData<T>>;
+  }
 
   /**
    * Subscribe to an event
    */
   on<T extends GameEventType>(event: T, listener: (data: GameEventData<T>) => void): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-
-    const eventListeners = this.listeners.get(event);
-    if (!eventListeners)
-      return () => {
-        // No-op unsubscribe function
-      };
-
-    // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
-    eventListeners.add(listener as (data: any) => void);
-
-    // Return unsubscribe function
-    return () => {
-      // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
-      eventListeners.delete(listener as (data: any) => void);
-      if (eventListeners.size === 0) {
-        this.listeners.delete(event);
-      }
-    };
+    const emitter = this.getEmitter(event);
+    emitter.subscribe(listener);
+    return (): void => emitter.unsubscribe(listener);
   }
 
   /**
    * Subscribe to an event but only listen once
    */
   once<T extends GameEventType>(event: T, listener: (data: GameEventData<T>) => void): () => void {
-    const unsubscribe = this.on(event, (data) => {
-      unsubscribe();
-      listener(data);
-    });
-    return unsubscribe;
+    const emitter = this.getEmitter(event);
+    emitter.subscribeOnce(listener);
+    return (): void => emitter.unsubscribe(listener);
   }
 
   /**
    * Emit an event to all listeners
    */
   emit<T extends GameEventType>(event: T, data: GameEventData<T>): void {
-    const eventListeners = this.listeners.get(event);
-    if (!eventListeners) return;
-
-    // Create a copy to avoid issues if listeners are modified during iteration
-    const listeners = [...eventListeners];
-    for (const listener of listeners) {
-      try {
-        listener(data);
-      } catch (error) {
-        console.error(`Error in event listener for '${event}':`, error);
-      }
-    }
+    const emitter = this.getEmitter(event);
+    emitter.emit(data);
   }
 
   /**
@@ -108,9 +89,9 @@ export class EventEmitter {
    */
   removeAllListeners(event?: GameEventType): void {
     if (event) {
-      this.listeners.delete(event);
+      this.emitters.delete(event);
     } else {
-      this.listeners.clear();
+      this.emitters.clear();
     }
   }
 
@@ -118,9 +99,18 @@ export class EventEmitter {
    * Get the number of listeners for an event
    */
   listenerCount(event: GameEventType): number {
-    return this.listeners.get(event)?.size ?? 0;
+    const emitter = this.emitters.get(event);
+    return emitter ? 1 : 0; // Library EventEmitter doesn't expose listener count
+  }
+
+  /**
+   * Get next event promise (useful for async operations)
+   */
+  async nextEvent<T extends GameEventType>(event: T): Promise<GameEventData<T>> {
+    const emitter = this.getEmitter(event);
+    return await emitter.nextEvent;
   }
 }
 
 // Global event emitter instance
-export const gameEvents = new EventEmitter();
+export const gameEvents: EventEmitter = new EventEmitter();
