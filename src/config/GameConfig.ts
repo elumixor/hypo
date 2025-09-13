@@ -5,7 +5,7 @@
 
 export const GameConfig = {
   // World structure
-  WORLD_COUNT: 8,
+  WORLD_COUNT: 6,
   LEVELS_PER_WORLD: 5,
 
   // Player configuration

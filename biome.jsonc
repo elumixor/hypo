@@ -38,11 +38,17 @@
             "syntax": "shorthand"
           }
         },
+        "useConsistentMemberAccessibility": {
+          "options": {
+            "accessibility": "noPublic"
+          }
+        },
         "useReadonlyClassProperties": "warn",
         "useGroupedAccessorPairs": "warn"
       },
       "nursery": {
         "noFloatingPromises": "error",
+        "useExplicitType": "error",
         "useConsistentTypeDefinitions": {
           "level": "warn",
           "options": {
