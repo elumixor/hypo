@@ -53,6 +53,9 @@ export class Game {
       }
     }
 
+    // Clear existing enemies
+    this.spawner.clearAll();
+
     const levelConfig = this.levelSystem.getCurrentLevel();
     if (!levelConfig) {
       console.error("No current level available");
@@ -323,7 +326,11 @@ export class Game {
         e.tShoot = t + 900 + Math.random() * 600;
       }
     }
-    this.spawner.ensureWave(5);
+    
+    // Only spawn new waves if not in a safe zone
+    if (!this.isInSafeZone) {
+      this.spawner.ensureWave(5);
+    }
   }
   removeEnemy(e: Enemy) {
     // spawn XP crystal at enemy position
