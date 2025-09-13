@@ -1,28 +1,41 @@
-import type * as THREE from "three";
+import * as THREE from "three";
 import type { Game } from "../core/Game";
-import { EnemyType } from "./ai/EnemyAI";
-import { Enemy } from "./Enemy";
+import { Enemy, EnemyType } from "./Enemy";
 
 export class Spawner {
   enemies: Enemy[] = [];
 
   constructor(readonly scene: THREE.Scene) {}
 
-  spawn(count: number, game?: Game) {
+  /**
+   * Spawn a wave of enemies with AI support
+   */
+  spawn(count: number, game?: Game, availableTypes: string[] = ["basic"]): void {
     for (let i = 0; i < count; i++) {
-      const enemyType = this.getRandomEnemyType();
-      const enemy = Enemy.create(enemyType);
-
-      if (game) {
-        enemy.initializeAI(game);
-      }
-
-      this.enemies.push(enemy);
-      this.scene.add(enemy.mesh);
+      this.addOne(game, availableTypes);
     }
   }
 
-  private getRandomEnemyType(): EnemyType {
+  /**
+   * Add a single enemy with random type selection
+   */
+  addOne(game?: Game, availableTypes: string[] = ["basic"]): void {
+    const enemyType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
+    const aiType = this.getRandomAIType();
+    const enemy = Enemy.create(enemyType, aiType);
+
+    if (game) {
+      enemy.initializeAI(game);
+    }
+
+    this.enemies.push(enemy);
+    this.scene.add(enemy.mesh);
+  }
+
+  /**
+   * Get random AI type with weighted distribution
+   */
+  private getRandomAIType(): EnemyType {
     const rand = Math.random();
 
     // Weighted distribution of enemy types
@@ -32,36 +45,42 @@ export class Spawner {
     return EnemyType.CHARGER; // 15% - Least common
   }
 
-  addOne(game?: Game) {
-    const enemyType = this.getRandomEnemyType();
-    const e = Enemy.create(enemyType);
+  /**
+   * Remove an enemy and dispose of its resources
+   */
+  remove(enemy: Enemy): void {
+    enemy.kill();
 
-    if (game) {
-      e.initializeAI(game);
+    // Remove from scene safely
+    if (enemy.mesh.parent) {
+      this.scene.remove(enemy.mesh);
     }
 
-    this.scene.add(e.mesh);
-    this.enemies.push(e);
+    // Dispose of resources
+    enemy.dispose();
+
+    // Remove from enemies array
+    const index = this.enemies.indexOf(enemy);
+    if (index >= 0) {
+      this.enemies.splice(index, 1);
+    }
   }
 
-  remove(e: Enemy) {
-    e.dead = true;
-    // remove from scene safely
-    if (e.mesh.parent) this.scene.remove(e.mesh);
-    const geom = e.mesh.geometry as THREE.BufferGeometry | undefined;
-    const mat = e.mesh.material as THREE.Material | undefined;
-    geom?.dispose?.();
-    (mat as THREE.Material | undefined)?.dispose?.();
-    const idx = this.enemies.indexOf(e);
-    if (idx >= 0) this.enemies.splice(idx, 1);
+  /**
+   * Ensure minimum wave size
+   */
+  ensureWave(size: number, game?: Game, availableTypes: string[] = ["basic"]): void {
+    const aliveCount = this.enemies.filter((e) => e.isAlive()).length;
+    if (aliveCount < size) {
+      const toSpawn = size - aliveCount;
+      this.spawn(toSpawn, game, availableTypes);
+    }
   }
 
-  ensureWave(size: number, game?: Game) {
-    if (!this.enemies.length) this.spawn(size, game);
-  }
-
-  update(dt: number) {
-    // Update all enemy AI
+  /**
+   * Update all enemies (including AI)
+   */
+  update(dt: number): void {
     for (const enemy of this.enemies) {
       if (!enemy.dead) {
         enemy.update(dt);
@@ -69,23 +88,49 @@ export class Spawner {
     }
   }
 
-  clearAll() {
-    // Remove all enemies
+  /**
+   * Get all alive enemies
+   */
+  getAliveEnemies(): Enemy[] {
+    return this.enemies.filter((e) => e.isAlive());
+  }
+
+  /**
+   * Clear all enemies
+   */
+  clearAll(): void {
     for (const enemy of [...this.enemies]) {
       this.remove(enemy);
     }
   }
 
-  spawnAtPosition(x: number, z: number, game?: Game) {
-    const enemyType = this.getRandomEnemyType();
-    const e = Enemy.create(enemyType);
+  /**
+   * Spawn enemy at specific position (for level-based spawning)
+   */
+  spawnAtPosition(x: number, z: number, game?: Game, enemyType: string = "basic"): void {
+    const aiType = this.getRandomAIType();
+    const position = new THREE.Vector3(x, 0.4, z);
+    const enemy = Enemy.create(enemyType, aiType, position);
     
     if (game) {
-      e.initializeAI(game);
+      enemy.initializeAI(game);
     }
     
-    e.mesh.position.set(x, 0.4, z);
-    this.scene.add(e.mesh);
-    this.enemies.push(e);
+    this.enemies.push(enemy);
+    this.scene.add(enemy.mesh);
+  }
+
+  /**
+   * Get enemy count
+   */
+  get count(): number {
+    return this.enemies.length;
+  }
+
+  /**
+   * Get alive enemy count
+   */
+  get aliveCount(): number {
+    return this.enemies.filter((e) => e.isAlive()).length;
   }
 }

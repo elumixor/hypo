@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
+import { GameConfig } from "../config/GameConfig";
+import { gameEvents } from "../events/GameEvents";
 import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
+import { gameState } from "../state/GameState";
 import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
 import { DialogueSystem } from "../ui/DialogueSystem";
 import { DialogueUI } from "../ui/DialogueUI";
@@ -21,10 +24,15 @@ import { SkillSystem } from "./SkillSystem";
 
 export class Game {
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  readonly camera = new THREE.PerspectiveCamera(
+    GameConfig.CAMERA.FOV,
+    innerWidth / innerHeight,
+    GameConfig.CAMERA.NEAR,
+    GameConfig.CAMERA.FAR,
+  );
   readonly renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   readonly keyboard = new Keyboard();
-  readonly player = new Player(this.keyboard, Math.PI * 0.25);
+  readonly player = new Player(this.keyboard, GameConfig.PLAYER.INITIAL_YAW);
   readonly spawner = new Spawner(this.scene);
   readonly projectiles = new Projectiles();
   readonly levelSystem = new LevelSystem();
@@ -45,10 +53,10 @@ export class Game {
   mainMenuUI!: MainMenuUI;
   pauseMenuUI!: PauseMenuUI;
   dialogueUI!: DialogueUI;
-  yaw = Math.PI * 0.25;
-  pitch = 1.5;
-  dist = 10;
-  hp = 10;
+  yaw = GameConfig.CAMERA.YAW;
+  pitch = GameConfig.CAMERA.PITCH;
+  dist = GameConfig.CAMERA.DISTANCE;
+  hp = GameConfig.PLAYER.MAX_HP;
   autoShootTimer = 0;
   tmp = new THREE.Vector3();
   tAccum = 0;
@@ -67,7 +75,32 @@ export class Game {
   isInSafeZone = false;
   levelCompleted = false;
 
-  constructor(readonly root: HTMLElement) {}
+  constructor(readonly root: HTMLElement) {
+    this.setupEventListeners();
+  }
+
+  /**
+   * Set up event listeners for game state changes
+   */
+  private setupEventListeners(): void {
+    // Listen for UI updates
+    gameEvents.on("ui:statusUpdate", ({ message }) => {
+      this.hud?.setStatus(message);
+    });
+
+    gameEvents.on("ui:healthUpdate", ({ current, max }) => {
+      this.hud?.setHealth(current, max);
+    });
+
+    gameEvents.on("ui:xpUpdate", ({ level, xp, xpToNext }) => {
+      this.hud?.setXP(level, xp, xpToNext);
+    });
+
+    // Listen for player events
+    gameEvents.on("player:levelUp", ({ newLevel }) => {
+      gameEvents.emit("ui:statusUpdate", { message: `Leveled to ${newLevel}!` });
+    });
+  }
 
   loadCurrentLevel() {
     // Clear existing scene
@@ -214,11 +247,13 @@ export class Game {
     const started = this.player.startDash();
     if (started) {
       log("Game", "dash");
-      this.hud.setStatus("Dash!");
+      gameEvents.emit("player:dash", { success: true });
+      gameEvents.emit("ui:statusUpdate", { message: "Dash!" });
       // Add dash visual effects
       this.effects.dashEffect(this.player.mesh.position);
     } else {
       log("Game", "dash-failed-cooldown");
+      gameEvents.emit("player:dash", { success: false });
     }
   }
 
@@ -229,7 +264,8 @@ export class Game {
     // toggle player shield
     const newState = !this.player.shieldActive;
     this.player.setShield(newState);
-    this.hud.setStatus(newState ? "Block!" : "Block off");
+    gameState.setShield(newState);
+    gameEvents.emit("ui:statusUpdate", { message: newState ? "Block!" : "Block off" });
     // Add block visual effects when activating
     if (newState) {
       this.effects.blockEffect(this.player.mesh.position);
@@ -241,28 +277,36 @@ export class Game {
     this.hud.setStatus("Starting dialogue...");
     this.dialogueUI.startDialogue("greeting");
   }
-  }
 
   async init() {
     this.renderer.setPixelRatio(devicePixelRatio);
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.domElement.style.display = "block";
     this.root.prepend(this.renderer.domElement);
+    this.scene.background = new THREE.Color(GameConfig.COLORS.BACKGROUND);
 
     this.camera.position.set(3, 13.5, 4.5);
     this.camera.lookAt(0, 0.6, 0);
 
     // world pieces
     const ground = new THREE.Mesh(
-      new THREE.CylinderGeometry(5, 5, 0.2, 40),
-      new THREE.MeshStandardMaterial({ color: "#111318", roughness: 0.9 }),
+      new THREE.CylinderGeometry(
+        GameConfig.WORLD.GROUND_RADIUS,
+        GameConfig.WORLD.GROUND_RADIUS,
+        GameConfig.WORLD.GROUND_HEIGHT,
+        40,
+      ),
+      new THREE.MeshStandardMaterial({
+        color: GameConfig.COLORS.GROUND,
+        roughness: 0.9,
+      }),
     );
     ground.position.y = -0.1;
     this.scene.add(ground);
-    const light = new THREE.DirectionalLight("#ffffff", 2.2);
+    const light = new THREE.DirectionalLight("#ffffff", GameConfig.WORLD.DIRECTIONAL_LIGHT_INTENSITY);
     light.position.set(4, 6, 3);
     this.scene.add(light);
-    this.scene.add(new THREE.AmbientLight("#404040", 0.6));
+    this.scene.add(new THREE.AmbientLight("#404040", GameConfig.WORLD.AMBIENT_LIGHT_INTENSITY));
 
     // add player
     this.scene.add(this.player.mesh);
@@ -277,9 +321,12 @@ export class Game {
     hudApp.canvas.style.pointerEvents = "none";
     this.root.append(hudApp.canvas);
     this.hud = new Hud(hudApp);
-    this.hud.setHealth(this.hp, 10);
+    
+    // Initialize HUD with current state
+    const state = gameState.current;
+    this.hud.setHealth(state.player.hp, state.player.maxHp);
     this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
-    this.hud.setXP(this.level, this.xp, this.xpToNext);
+    this.hud.setXP(state.player.level, state.player.xp, state.player.xpToNext);
     this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
     this.hud.setCurrentCharacter("Helio", "#4ec9ff");
 
@@ -319,8 +366,7 @@ export class Game {
 
     // UI button bindings
     this.hud.onAuto = (v) => {
-      this.autoAttack = v;
-      this.gameStateManager.updateSettings({ autoAttack: v });
+      gameState.setAutoAttack(v);
     };
     this.hud.onEasy = () => this.doAttack("easy");
     this.hud.onAlt = () => this.doAttack("alt");
@@ -533,7 +579,7 @@ export class Game {
     this.level = gameState.player.level;
     this.xp = gameState.player.xp;
     this.xpToNext = gameState.player.xpToNext;
-    this.hp = gameState.player.health;
+    this.hp = gameState.player.health as number;
     this.player.energy = gameState.player.energy;
     // maxEnergy is readonly, so we'll need to work around this limitation
 
@@ -634,6 +680,8 @@ export class Game {
     }
   }
   update(dt: number) {
+    gameState.updateGameTime(dt);
+    
     // Handle pause/menu keyboard input
     if (this.keyboard.has("Escape")) {
       if (!this.lastEscape) {
@@ -724,7 +772,8 @@ export class Game {
         this.lastE = false;
       }
     }
-    if (this.autoAttack) this.autoShoot(dt);
+    const state = gameState.current;
+    if (state.combat.autoAttack) this.autoShoot(dt);
     // collect XP crystals when near
     for (let i = this.xpCrystals.length - 1; i >= 0; i--) {
       const c = this.xpCrystals[i];
@@ -755,7 +804,7 @@ export class Game {
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.updateHud();
-    if (this.hp <= 0) this.respawn();
+    if (state.player.hp <= 0) this.respawn();
   }
 
   handleEscapeKey(): void {
@@ -780,42 +829,52 @@ export class Game {
   }
 
   removeEnemy(e: Enemy) {
-  removeEnemy(e: Enemy) {
     // spawn XP crystal at enemy position
     const pos = e.mesh.position.clone();
     // Add enemy death visual effects
     this.effects.enemyHitEffect(pos);
     this.spawner.remove(e);
     this.spawnXP(pos);
+    
+    gameEvents.emit("combat:enemy:killed", {
+      position: { x: pos.x, y: pos.y, z: pos.z },
+    });
   }
 
   spawnXP(pos: THREE.Vector3) {
-    const geo = new THREE.SphereGeometry(0.18, 8, 6);
-    const mat = new THREE.MeshStandardMaterial({ color: "#7af", emissive: "#58b" });
-    const m = new THREE.Mesh(geo, mat);
-    m.position.copy(pos).y += 0.2;
-    this.scene.add(m);
-    this.xpCrystals.push(m);
+    const geometry = new THREE.SphereGeometry(GameConfig.PROGRESSION.XP_CRYSTAL_SIZE, 8, 6);
+    const material = new THREE.MeshStandardMaterial({
+      color: GameConfig.COLORS.XP_CRYSTAL,
+      emissive: "#58b",
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(pos).y += 0.2;
+    this.scene.add(mesh);
+    this.xpCrystals.push(mesh);
+
+    gameEvents.emit("xp:spawned", {
+      position: { x: pos.x, y: pos.y, z: pos.z },
+    });
   }
 
   collectXP(index: number) {
     const c = this.xpCrystals[index];
     if (!c) return;
+    
     // Add XP collection visual effects
     this.effects.xpCollectEffect(c.position);
     this.scene.remove(c);
     this.xpCrystals.splice(index, 1);
-    this.xp += 1;
-    if (this.xp >= this.xpToNext) {
-      this.level += 1;
-      this.xp = 0;
-      this.xpToNext = Math.floor(this.xpToNext * 1.4) + 2;
-      this.hud.setStatus(`Leveled to ${this.level}`);
-
-      // Notify skill system of level up
-      this.skillSystem.onLevelUp(this.level);
-    }
-    this.hud.setXP(this.level, this.xp, this.xpToNext);
+    
+    // Use GameState to handle XP logic
+    const oldXp = gameState.current.player.xp;
+    gameState.addExperience(1);
+    const newXp = gameState.current.player.xp;
+    
+    gameEvents.emit("xp:collected", {
+      amount: 1,
+      totalXp: newXp,
+    });
   }
   autoShoot(dt: number) {
     this.autoShootTimer -= dt;
@@ -842,28 +901,22 @@ export class Game {
     return best;
   }
   updateHud() {
-    const activeChar = this.characterManager.getActiveCharacter();
-    const partyCount = this.characterManager.getPartyMembers().length;
+    const state = gameState.current;
+    gameState.updateWorldStats(this.spawner.aliveCount, this.projectiles.count);
 
     this.hud.setStatus(
-      `HP:${this.hp} Energy:${Math.floor(this.player.energy)} Enemies:${this.spawner.enemies.length} Proj:${this.projectiles.list.length} ` +
-        `Active:${activeChar?.name || "None"} Party:${partyCount} FPS:${this.loop.fps.toFixed(0)}`,
+      `HP:${state.player.hp} Enemies:${state.world.enemyCount} Proj:${state.world.projectileCount} FPS:${this.loop.fps.toFixed(0)}`,
     );
     this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
   }
   respawn() {
-    this.hud.setStatus("You Died - Respawning");
-    this.hp = 10;
+    gameEvents.emit("ui:statusUpdate", { message: "You Died - Respawning" });
+    gameState.respawn();
+    this.player.mesh.position.set(0, 0.4, 0);
 
-    // Reset to start of Wrath world
+    // Reset to start of Wrath world  
     this.levelSystem.reset();
     this.loadCurrentLevel();
-
-    // Reset XP/level
-    this.level = 1;
-    this.xp = 0;
-    this.xpToNext = 5;
-    this.hud.setXP(this.level, this.xp, this.xpToNext);
 
     // Reset skill system on death
     this.skillSystem.reset();
@@ -998,14 +1051,10 @@ export class Game {
   }
 
   playerHit() {
-    this.hp -= 1;
-    log("Game", "player-hit", this.hp);
-    this.hud.setHealth(this.hp, 10);
+    gameState.damagePlayer(1);
+    log("Game", "player-hit", gameState.current.player.hp);
     // Add player hit visual effects
     this.effects.playerHitEffect(this.player.mesh.position);
-    if (this.hp <= 0) {
-      // Don't reset XP/level immediately, wait for respawn
-    }
   }
 
   // Damage dealing methods for AI to use
@@ -1029,7 +1078,6 @@ export class Game {
     const killed = enemy.takeDamage(amount);
     if (killed) {
       this.removeEnemy(enemy);
-    }
     }
   }
 }
