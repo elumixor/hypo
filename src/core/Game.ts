@@ -100,7 +100,7 @@ export class Game {
 
     // add player
     this.scene.add(this.player.mesh);
-    this.spawner.spawn(5);
+    this.spawner.spawn(5, this);
 
     // pixi hud
     const hudApp = new (await import("pixi.js")).Application();
@@ -124,7 +124,7 @@ export class Game {
     this.hud.onBlock = () => this.doBlock();
 
     addEventListener("resize", () => this.onResize());
-    this.loop.add((dt, t) => this.update(dt, t));
+    this.loop.add((dt) => this.update(dt));
     this.loop.start();
   }
 
@@ -134,9 +134,9 @@ export class Game {
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
   }
-  update(dt: number, t: number) {
+  update(dt: number) {
     this.player.update(dt);
-    this.stepEnemies(dt, t);
+    this.spawner.update(dt); // Update enemy AI
     this.projectiles.update(
       dt,
       this.scene,
@@ -178,47 +178,6 @@ export class Game {
       p.z + Math.sin(this.yaw) * this.dist,
     );
     this.camera.lookAt(p.x, p.y + 0.4, p.z);
-  }
-  stepEnemies(dt: number, t: number) {
-    const minPlayerDist = 0.9;
-    const separation = 0.6;
-    for (let i = 0; i < this.spawner.enemies.length; i++) {
-      const e = this.spawner.enemies[i];
-      if (!e || e.dead) continue;
-      // move towards player but maintain a minimum distance
-      this.tmp.copy(this.player.mesh.position).sub(e.mesh.position);
-      this.tmp.y = 0;
-      const d = this.tmp.length();
-      if (d > minPlayerDist) {
-        this.tmp.normalize();
-        e.mesh.position.addScaledVector(this.tmp, dt * 1.2);
-      }
-      // simple separation from other enemies
-      for (let j = 0; j < this.spawner.enemies.length; j++) {
-        if (i === j) continue;
-        const o = this.spawner.enemies[j];
-        if (!o) continue;
-        const dist = e.mesh.position.distanceTo(o.mesh.position);
-        if (dist < separation && dist > 0.001) {
-          const dir = e.mesh.position.clone().sub(o.mesh.position).setY(0).normalize();
-          e.mesh.position.addScaledVector(dir, (separation - dist) * 0.5);
-        }
-      }
-      if (t > e.tShoot) {
-        this.projectiles.add(
-          e.mesh.position.clone(),
-          this.tmp.set(
-            this.player.mesh.position.x - e.mesh.position.x,
-            0,
-            this.player.mesh.position.z - e.mesh.position.z,
-          ),
-          false,
-          this.scene,
-        );
-        e.tShoot = t + 900 + Math.random() * 600;
-      }
-    }
-    this.spawner.ensureWave(5);
   }
   removeEnemy(e: Enemy) {
     // spawn XP crystal at enemy position
