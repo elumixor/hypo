@@ -35,6 +35,16 @@ export class Game {
   constructor(readonly root: HTMLElement) {}
   doAttack(type: "easy" | "alt") {
     log("Game", "attack", type);
+
+    // Energy cost for alt attack (easy attack is free)
+    if (type === "alt") {
+      const altAttackCost = 15;
+      if (!this.player.consumeEnergy(altAttackCost)) {
+        this.hud.setStatus("Not enough energy for Alt Attack");
+        return;
+      }
+    }
+
     // choose a target if available, otherwise fire forward
     const target = this.closestEnemy();
     if (target) {
@@ -112,6 +122,7 @@ export class Game {
     this.root.append(hudApp.canvas);
     this.hud = new Hud(hudApp);
     this.hud.setHealth(this.hp, 10);
+    this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
     this.hud.setXP(this.level, this.xp, this.xpToNext);
 
     // UI button bindings
@@ -276,8 +287,9 @@ export class Game {
   }
   updateHud() {
     this.hud.setStatus(
-      `HP:${this.hp} Enemies:${this.spawner.enemies.length} Proj:${this.projectiles.list.length} FPS:${this.loop.fps.toFixed(0)}`,
+      `HP:${this.hp} Energy:${Math.floor(this.player.energy)} Enemies:${this.spawner.enemies.length} Proj:${this.projectiles.list.length} FPS:${this.loop.fps.toFixed(0)}`,
     );
+    this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
   }
   respawn() {
     this.hud.setStatus("You Died - Respawning");

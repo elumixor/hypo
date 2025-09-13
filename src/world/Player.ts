@@ -13,6 +13,11 @@ export class Player {
   // shield
   private readonly shieldMesh?: THREE.Mesh;
   shieldActive = false;
+  // energy system
+  energy = 100;
+  readonly maxEnergy = 100;
+  private readonly energyRegenRate = 20; // energy per second
+  private readonly shieldEnergyCost = 30; // energy per second while active
   constructor(
     readonly keyboard: Keyboard,
     readonly yaw: number,
@@ -42,17 +47,59 @@ export class Player {
     if (this.dashCooldownTimer > 0) this.dashCooldownTimer -= dt;
     const curSpeed = this.dashTime > 0 ? this.dashSpeed : this.speed;
     if (move.lengthSq() > 0) this.mesh.position.add(move.normalize().multiplyScalar(curSpeed * dt));
+
+    // energy system updates
+    this.updateEnergy(dt);
   }
 
   startDash() {
     if (this.dashCooldownTimer > 0) return false;
+    const dashEnergyCost = 25;
+    if (this.energy < dashEnergyCost) return false; // not enough energy
+
     this.dashTime = this.dashDuration;
     this.dashCooldownTimer = this.dashCooldown;
+    this.energy -= dashEnergyCost;
     return true;
   }
 
   setShield(active: boolean) {
+    // Only allow shield activation if we have energy
+    if (active && this.energy <= 0) {
+      active = false;
+    }
+
     this.shieldActive = active;
     if (this.shieldMesh) this.shieldMesh.visible = active;
+  }
+
+  private updateEnergy(dt: number) {
+    // Energy regeneration (constant rate)
+    if (this.energy < this.maxEnergy) {
+      this.energy = Math.min(this.maxEnergy, this.energy + this.energyRegenRate * dt);
+    }
+
+    // Shield energy consumption
+    if (this.shieldActive) {
+      this.energy -= this.shieldEnergyCost * dt;
+      if (this.energy <= 0) {
+        this.energy = 0;
+        this.setShield(false); // disable shield when out of energy
+      }
+    }
+  }
+
+  // Method to check if player has enough energy for actions
+  hasEnergy(cost: number): boolean {
+    return this.energy >= cost;
+  }
+
+  // Method to consume energy for skills
+  consumeEnergy(cost: number): boolean {
+    if (this.energy >= cost) {
+      this.energy -= cost;
+      return true;
+    }
+    return false;
   }
 }
