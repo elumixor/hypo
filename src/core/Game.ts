@@ -680,10 +680,15 @@ export class Game {
   }
 
   // (removed duplicate and misplaced code)
-  onResize() {
+  onResize(): void {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
+
+    // Resize Pixi.js HUD application
+    if (this.hud?.app) {
+      this.hud.app.renderer.resize(innerWidth, innerHeight);
+    }
 
     // Resize skill UI components
     if (this.skillTreeUI) {
@@ -691,6 +696,14 @@ export class Game {
     }
     if (this.characterSwitchUI) {
       this.characterSwitchUI.resize();
+    }
+
+    // Resize menu UI components
+    if (this.mainMenuUI) {
+      this.mainMenuUI.resize();
+    }
+    if (this.pauseMenuUI) {
+      this.pauseMenuUI.resize();
     }
   }
   update(dt: number) {
