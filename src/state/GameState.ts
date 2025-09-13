@@ -1,5 +1,16 @@
 import { GameConfig } from "../config/GameConfig";
-import { gameEvents } from "../events/GameEvents";
+import { 
+  playerHit,
+  uiHealthUpdate,
+  xpCollected,
+  uiXpUpdate,
+  playerLevelUp,
+  playerDeath,
+  playerShield,
+  gamePaused,
+  gameResumed,
+  gameRestart
+} from "../events/GameEvents";
 
 /**
  * Centralized game state management
@@ -87,8 +98,8 @@ export class GameState {
     const oldHp = this.state.player.hp;
     this.state.player.hp = Math.max(0, oldHp - damage);
 
-    gameEvents.emit("player:hit", { damage, currentHp: this.state.player.hp });
-    gameEvents.emit("ui:healthUpdate", {
+    playerHit.emit({ damage, currentHp: this.state.player.hp });
+    uiHealthUpdate.emit({
       current: this.state.player.hp,
       max: this.state.player.maxHp,
     });
@@ -108,11 +119,11 @@ export class GameState {
       this.levelUp();
     }
 
-    gameEvents.emit("xp:collected", {
+    xpCollected.emit({
       amount,
       totalXp: this.state.player.xp,
     });
-    gameEvents.emit("ui:xpUpdate", {
+    uiXpUpdate.emit({
       level: this.state.player.level,
       xp: this.state.player.xp,
       xpToNext: this.state.player.xpToNext,
@@ -129,7 +140,7 @@ export class GameState {
       Math.floor(this.state.player.xpToNext * GameConfig.PROGRESSION.XP_MULTIPLIER) +
       GameConfig.PROGRESSION.XP_BASE_INCREASE;
 
-    gameEvents.emit("player:levelUp", {
+    playerLevelUp.emit({
       newLevel: this.state.player.level,
       xp: this.state.player.xp,
       xpToNext: this.state.player.xpToNext,
@@ -140,7 +151,7 @@ export class GameState {
    * Handle player death
    */
   private handlePlayerDeath(): void {
-    gameEvents.emit("player:death", {
+    playerDeath.emit({
       level: this.state.player.level,
       xp: this.state.player.xp,
     });
@@ -161,11 +172,11 @@ export class GameState {
     this.state.player.position = { x: 0, y: 0.4, z: 0 };
     this.state.isGameOver = false;
 
-    gameEvents.emit("ui:healthUpdate", {
+    uiHealthUpdate.emit({
       current: this.state.player.hp,
       max: this.state.player.maxHp,
     });
-    gameEvents.emit("ui:xpUpdate", {
+    uiXpUpdate.emit({
       level: this.state.player.level,
       xp: this.state.player.xp,
       xpToNext: this.state.player.xpToNext,
@@ -191,7 +202,7 @@ export class GameState {
    */
   setShield(active: boolean): void {
     this.state.combat.shieldActive = active;
-    gameEvents.emit("player:shield", { active });
+    playerShield.emit({ active });
   }
 
   /**
@@ -225,7 +236,7 @@ export class GameState {
     if (this.state.isPaused === paused) return;
 
     this.state.isPaused = paused;
-    gameEvents.emit(paused ? "game:paused" : "game:resumed", {});
+    (paused ? gamePaused : gameResumed).emit({});
   }
 
   /**
@@ -233,7 +244,7 @@ export class GameState {
    */
   reset(): void {
     this.state = this.createInitialState();
-    gameEvents.emit("game:restart", {});
+    gameRestart.emit({});
   }
 }
 

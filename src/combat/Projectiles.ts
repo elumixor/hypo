@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GameConfig } from "../config/GameConfig";
 import type { EffectsManager } from "../effects/EffectsManager";
-import { gameEvents } from "../events/GameEvents";
+import { combatProjectileSpawn } from "../events/GameEvents";
 import type { Enemy } from "../world/Enemy";
 import type { Player } from "../world/Player";
 
@@ -58,7 +58,7 @@ export class Projectiles {
     this.list.push(new Projectile(mesh, velocity, fromPlayer, type, damage, canHitEnemies));
 
     // Emit event
-    gameEvents.emit("combat:projectile:spawn", {
+    combatProjectileSpawn.emit({
       fromPlayer,
       position: { x: from.x, y: from.y, z: from.z },
     });
