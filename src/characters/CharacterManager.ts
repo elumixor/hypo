@@ -19,8 +19,8 @@ export interface InteractionResult {
 
 export class CharacterManager {
   private readonly characters = new Map<CharacterType, Character>();
-  private currentActiveCharacter: CharacterType = "helio";
-  private readonly partyMembers: CharacterType[] = ["helio"];
+  private currentActiveCharacter: CharacterType = "helios";
+  private readonly partyMembers: CharacterType[] = ["helios"];
 
   // Interaction state
   private inSafeZone = false;
@@ -32,67 +32,67 @@ export class CharacterManager {
   }
 
   private initializeCharacters(): void {
-    // Initialize Helio (main character - always unlocked)
-    const helio = new Character(
-      "helio",
-      "Helio",
+    // Initialize Helios (main character - always unlocked)
+    const helios = new Character(
+      "helios",
+      "Helios",
       "The main protagonist seeking revenge against the Empire of Pride",
       { attack: 10, defense: 8, speed: 6, health: 100 },
       true, // unlocked by default
     );
 
-    // Add skills for Helio
-    helio.addSkill(new LightAttackSkill());
-    helio.addSkill(new HeavyAttackSkill());
-    helio.addSkill(new SpecialSkill("solar_burst", "Solar Burst", "Unleash a burst of solar energy", "special1", []));
+    // Add skills for Helios
+    helios.addSkill(new LightAttackSkill());
+    helios.addSkill(new HeavyAttackSkill());
+    helios.addSkill(new SpecialSkill("solar_burst", "Solar Burst", "Unleash a burst of solar energy", "special1", []));
 
-    // Add base traits for Helio
-    helio.addPassiveTrait(new StrengthBoostTrait());
+    // Add base traits for Helios
+    helios.addPassiveTrait(new StrengthBoostTrait());
 
-    this.characters.set("helio", helio);
+    this.characters.set("helios", helios);
 
     // Initialize Companion 1
-    const companion1 = new Character("companion1", "Zara", "A skilled archer from the world of Envy", {
+    const companion1 = new Character("companion1", "Kai", "A skilled archer from the world of Envy", {
       attack: 12,
       defense: 6,
       speed: 10,
       health: 80,
     });
 
-    // Companion 1 skills - require bond with Helio
-    companion1.addSkill(new LightAttackSkill([{ character: "helio", minimumBond: 20 }]));
+    // Companion 1 skills - require bond with Helios
+    companion1.addSkill(new LightAttackSkill([{ character: "helios", minimumBond: 20 }]));
     companion1.addSkill(
       new SpecialSkill("piercing_shot", "Piercing Shot", "A shot that pierces through enemies", "special1", [
-        { character: "helio", minimumBond: 40 },
+        { character: "helios", minimumBond: 40 },
       ]),
     );
 
-    companion1.addPassiveTrait(new SwiftnessTrait([{ character: "helio", minimumBond: 30 }]));
+    companion1.addPassiveTrait(new SwiftnessTrait([{ character: "helios", minimumBond: 30 }]));
 
     this.characters.set("companion1", companion1);
 
     // Initialize Companion 2
-    const companion2 = new Character("companion2", "Kai", "A defensive warrior from the world of Attachment", {
+    const companion2 = new Character("companion2", "Iris", "A defensive warrior from the world of Attachment", {
       attack: 8,
       defense: 14,
       speed: 4,
       health: 120,
     });
 
-    companion2.addSkill(new HeavyAttackSkill([{ character: "helio", minimumBond: 25 }]));
+    companion2.addSkill(new HeavyAttackSkill([{ character: "helios", minimumBond: 25 }]));
     companion2.addSkill(
       new SpecialSkill("shield_bash", "Shield Bash", "A powerful defensive counter-attack", "special1", [
-        { character: "helio", minimumBond: 50 },
+        { character: "helios", minimumBond: 50 },
       ]),
     );
 
-    companion2.addPassiveTrait(new FortitudeTrait([{ character: "helio", minimumBond: 35 }]));
-    companion2.addPassiveTrait(new VitalityTrait([{ character: "helio", minimumBond: 60 }]));
+    companion2.addPassiveTrait(new FortitudeTrait([{ character: "helios", minimumBond: 35 }]));
+    companion2.addPassiveTrait(new VitalityTrait([{ character: "helios", minimumBond: 60 }]));
 
     this.characters.set("companion2", companion2);
 
     // Initialize Companion 3
-    const companion3 = new Character("companion3", "Nova", "A mysterious mage from the world of Greed", {
+    const companion3 = new Character("companion3", "Lucy", "A mysterious mage from the world of Greed", {
       attack: 14,
       defense: 5,
       speed: 8,
@@ -101,20 +101,20 @@ export class CharacterManager {
 
     companion3.addSkill(
       new SpecialSkill("arcane_blast", "Arcane Blast", "Powerful magical attack", "special1", [
-        { character: "helio", minimumBond: 45 },
+        { character: "helios", minimumBond: 45 },
       ]),
     );
 
     companion3.addSkill(
       new SpecialSkill("meteor", "Meteor", "Devastating area attack", "special2", [
-        { character: "helio", minimumBond: 70 },
+        { character: "helios", minimumBond: 70 },
         { character: "companion1", minimumBond: 30 },
       ]),
     );
 
     companion3.addPassiveTrait(
       new CombatMasteryTrait([
-        { character: "helio", minimumBond: 60 },
+        { character: "helios", minimumBond: 60 },
         { character: "companion2", minimumBond: 40 },
       ]),
     );
@@ -342,8 +342,8 @@ export class CharacterManager {
    */
   removeFromParty(character: CharacterType): boolean {
     const index = this.partyMembers.indexOf(character);
-    if (index === -1 || character === "helio") {
-      // Helio always stays in party
+    if (index === -1 || character === "helios") {
+      // Helios always stays in party
       return false;
     }
 
@@ -353,9 +353,9 @@ export class CharacterManager {
       char.leaveParty();
     }
 
-    // Switch to Helio if we were controlling the removed character
+    // Switch to Helios if we were controlling the removed character
     if (this.currentActiveCharacter === character) {
-      this.currentActiveCharacter = "helio";
+      this.currentActiveCharacter = "helios";
     }
 
     return true;

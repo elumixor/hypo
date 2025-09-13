@@ -396,7 +396,7 @@ export class Game {
       this.hud.setStatus(message);
 
       // Log relationship summary
-      log("Game", this.characterManager.getRelationshipSummary(activeChar?.type || "helio"));
+      log("Game", this.characterManager.getRelationshipSummary(activeChar?.type || "helios"));
     } else {
       this.hud.setStatus(result.message);
     }
