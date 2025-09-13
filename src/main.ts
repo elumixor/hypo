@@ -94,27 +94,25 @@ void (async () => {
 
   const tmpV = new THREE.Vector3();
   const getClosestEnemy = () => {
-    let best: Enemy | undefined; let bestD = Infinity;
+    let best: Enemy | undefined;
+    let bestD = Infinity;
     for (const e of enemies) {
       const d = e.m.position.distanceTo(player.position);
-      if (d < bestD) { bestD = d; best = e; }
+      if (d < bestD) {
+        bestD = d;
+        best = e;
+      }
     }
     return best;
   };
 
-  // Input (WASD + pointer drag rotate camera around player)
+  // Input (WASD movement only, fixed isometric camera)
   const keys = new Set<string>();
-  addEventListener('keydown', (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));
-  addEventListener('keyup', (e: KeyboardEvent) => keys.delete(e.key.toLowerCase()));
+  addEventListener("keydown", (e: KeyboardEvent) => keys.add(e.key.toLowerCase()));
+  addEventListener("keyup", (e: KeyboardEvent) => keys.delete(e.key.toLowerCase()));
 
-  let drag = false; let px = 0; let py = 0; let yaw = 0; let pitch = 0.6;
-  addEventListener('pointerdown', (e: PointerEvent) => { drag = true; px = e.clientX; py = e.clientY; });
-  addEventListener('pointerup', () => drag = false);
-  addEventListener('pointermove', (e: PointerEvent) => {
-    if (!drag) return;
-    const dx = e.clientX - px; const dy = e.clientY - py; px = e.clientX; py = e.clientY;
-    yaw -= dx * 0.005; pitch -= dy * 0.005; pitch = Math.min(1.2, Math.max(0.2, pitch));
-  });
+  const yaw = Math.PI * 0.25; // 45 deg around
+  const pitch = 0.7; // slight downward
 
   const updateCamera = () => {
     const dist = 6;
@@ -135,40 +133,51 @@ void (async () => {
   const speed = 4;
 
   const stepPlayer = (dt: number) => {
-    forward.set(Math.cos(yaw), 0, Math.sin(yaw));
+  forward.set(Math.cos(yaw), 0, Math.sin(yaw));
     right.set(forward.z, 0, -forward.x);
-    moveVec.set(0,0,0);
-    if (keys.has('w') || keys.has('arrowup')) moveVec.add(forward);
-    if (keys.has('s') || keys.has('arrowdown')) moveVec.sub(forward);
-    if (keys.has('a') || keys.has('arrowleft')) moveVec.sub(right);
-    if (keys.has('d') || keys.has('arrowright')) moveVec.add(right);
+    moveVec.set(0, 0, 0);
+    if (keys.has("w") || keys.has("arrowup")) moveVec.add(forward);
+    if (keys.has("s") || keys.has("arrowdown")) moveVec.sub(forward);
+    if (keys.has("a") || keys.has("arrowleft")) moveVec.sub(right);
+    if (keys.has("d") || keys.has("arrowright")) moveVec.add(right);
     if (moveVec.lengthSq() > 0) moveVec.normalize().multiplyScalar(speed * dt);
     player.position.add(moveVec);
   };
 
   const removeEnemy = (e: Enemy) => {
-    scene.remove(e.m); e.m.geometry.dispose(); (e.m.material as THREE.Material).dispose();
-    enemies.splice(enemies.indexOf(e),1);
+    scene.remove(e.m);
+    e.m.geometry.dispose();
+    (e.m.material as THREE.Material).dispose();
+    enemies.splice(enemies.indexOf(e), 1);
   };
 
   const removeProjectile = (p: Projectile) => {
-    scene.remove(p.m); p.m.geometry.dispose(); (p.m.material as THREE.Material).dispose();
-    projectiles.splice(projectiles.indexOf(p),1);
+    scene.remove(p.m);
+    p.m.geometry.dispose();
+    (p.m.material as THREE.Material).dispose();
+    projectiles.splice(projectiles.indexOf(p), 1);
   };
 
   const stepEnemies = (dt: number, now: number) => {
     for (const e of enemies) {
-      tmpV.copy(player.position).sub(e.m.position); tmpV.y = 0; const d = tmpV.length();
+      tmpV.copy(player.position).sub(e.m.position);
+      tmpV.y = 0;
+      const d = tmpV.length();
       if (d > 0.001) {
-        tmpV.normalize(); e.m.position.addScaledVector(tmpV, dt * 1.2);
+        tmpV.normalize();
+        e.m.position.addScaledVector(tmpV, dt * 1.2);
       }
       if (now > e.tShoot) {
-        shoot(e.m.position.clone(), tmpV.set(player.position.x - e.m.position.x, 0, player.position.z - e.m.position.z), false);
+        shoot(
+          e.m.position.clone(),
+          tmpV.set(player.position.x - e.m.position.x, 0, player.position.z - e.m.position.z),
+          false,
+        );
         e.tShoot = now + 900 + Math.random() * 600;
       }
     }
     // Respawn if all dead
-    if (!enemies.length) for (let i=0;i<5;i++) spawnEnemy();
+    if (!enemies.length) for (let i = 0; i < 5; i++) spawnEnemy();
   };
 
   const stepProjectiles = (dt: number) => {
@@ -176,17 +185,22 @@ void (async () => {
       const p = projectiles[i];
       if (!p) continue;
       p.m.position.addScaledVector(p.v, dt);
-      if (p.m.position.length() > 30) { removeProjectile(p); continue; }
+      if (p.m.position.length() > 30) {
+        removeProjectile(p);
+        continue;
+      }
       if (p.fromPlayer) {
         for (const e of enemies) {
           if (p.m.position.distanceTo(e.m.position) < 0.6) {
-            e.hp -= 1; removeProjectile(p);
+            e.hp -= 1;
+            removeProjectile(p);
             if (e.hp <= 0) removeEnemy(e);
             break;
           }
         }
       } else if (p.m.position.distanceTo(player.position) < 0.6) {
-        hp -= 1; removeProjectile(p);
+        hp -= 1;
+        removeProjectile(p);
       }
     }
   };
@@ -196,8 +210,9 @@ void (async () => {
     if (autoShootTimer <= 0) {
       const target = getClosestEnemy();
       if (target) {
-        tmpV.copy(target.m.position).sub(player.position); tmpV.y = 0;
-        if (tmpV.lengthSq() > 0.001) shoot(player.position.clone().add(new THREE.Vector3(0,0.4,0)), tmpV, true);
+        tmpV.copy(target.m.position).sub(player.position);
+        tmpV.y = 0;
+        if (tmpV.lengthSq() > 0.001) shoot(player.position.clone().add(new THREE.Vector3(0, 0.4, 0)), tmpV, true);
         autoShootTimer = 0.5; // fire cadence
       }
     }
@@ -207,17 +222,33 @@ void (async () => {
     infoText.text = `HP: ${hp}  Enemies: ${enemies.length}  Proj: ${projectiles.length}  FPS:${fps.toFixed(0)}`;
   };
 
-  let last = performance.now(); let fpsTimer = 0; let frames = 0; let fps = 0;
+  let last = performance.now();
+  let fpsTimer = 0;
+  let frames = 0;
+  let fps = 0;
   const update = (t: number) => {
-    const dt = (t - last) / 1000; last = t; frames++; fpsTimer += dt; tAccum += dt;
+    const dt = (t - last) / 1000;
+    last = t;
+    frames++;
+    fpsTimer += dt;
+    tAccum += dt;
     stepPlayer(dt);
     stepEnemies(dt, t);
     stepProjectiles(dt);
     autoShoot(dt);
     updateCamera();
     threeRenderer.render(scene, camera);
-    if (fpsTimer >= 0.5) { fps = frames / fpsTimer; frames = 0; fpsTimer = 0; updateUI(fps); }
-    if (hp <= 0) { infoText.text = 'You Died - Respawning'; hp = 10; player.position.set(0,0.4,0); }
+    if (fpsTimer >= 0.5) {
+      fps = frames / fpsTimer;
+      frames = 0;
+      fpsTimer = 0;
+      updateUI(fps);
+    }
+    if (hp <= 0) {
+      infoText.text = "You Died - Respawning";
+      hp = 10;
+      player.position.set(0, 0.4, 0);
+    }
     requestAnimationFrame(update);
   };
   requestAnimationFrame(update);
