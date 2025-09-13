@@ -9,6 +9,8 @@ import { SkillTreeUI } from "../ui/SkillTreeUI";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
 import { Spawner } from "../world/Spawner";
+import { LevelRenderer, type LevelSceneConfig } from "./LevelRenderer";
+import { LevelSystem, LevelType } from "./LevelSystem";
 import { Loop } from "./Loop";
 import { SkillSystem } from "./SkillSystem";
 
@@ -20,6 +22,8 @@ export class Game {
   readonly player = new Player(this.keyboard, Math.PI * 0.25);
   readonly spawner = new Spawner(this.scene);
   readonly projectiles = new Projectiles();
+  readonly levelSystem = new LevelSystem();
+  readonly levelRenderer = new LevelRenderer();
   readonly effects = new EffectsManager(this.scene, this.camera);
   readonly characterManager = new CharacterManager();
   xpCrystals: THREE.Mesh[] = [];
@@ -45,7 +49,119 @@ export class Game {
   lastT = false;
   lastC = false;
 
+  // Level progression state
+  currentLevelConfig: LevelSceneConfig | null = null;
+  isInSafeZone = false;
+  levelCompleted = false;
+
   constructor(readonly root: HTMLElement) {}
+
+  loadCurrentLevel() {
+    // Clear existing scene
+    while (this.scene.children.length > 0) {
+      const child = this.scene.children[0];
+      if (child) {
+        this.scene.remove(child);
+      }
+    }
+
+    // Clear existing enemies
+    this.spawner.clearAll();
+
+    const levelConfig = this.levelSystem.getCurrentLevel();
+    if (!levelConfig) {
+      console.error("No current level available");
+      return;
+    }
+
+    // Render the level using the level renderer
+    this.currentLevelConfig = this.levelRenderer.renderLevel(levelConfig);
+
+    // Apply the rendered scene (copy objects to main scene)
+    for (const child of this.currentLevelConfig.scene.children) {
+      const cloned = child.clone();
+      if (cloned) {
+        this.scene.add(cloned);
+      }
+    }
+
+    // Position player at spawn point
+    this.player.mesh.position.copy(this.currentLevelConfig.playerSpawnPosition);
+    this.scene.add(this.player.mesh);
+
+    // Check if this is a safe zone
+    this.isInSafeZone = levelConfig.type === LevelType.SAFE_ZONE;
+    this.levelCompleted = false;
+
+    if (!this.isInSafeZone) {
+      // Spawn enemies for regular/boss levels
+      this.spawnLevelEnemies();
+    }
+
+    // Update HUD with level info
+    const worldName = this.getWorldName();
+    const levelIndex = this.levelSystem.getCurrentLevelIndex() + 1;
+    const totalLevels = this.levelSystem.getTotalLevelsInCurrentWorld();
+    this.hud.setStatus(`${worldName} - Level ${levelIndex}/${totalLevels}: ${levelConfig.name}`);
+  }
+
+  spawnLevelEnemies() {
+    if (!this.currentLevelConfig) return;
+
+    // Clear existing enemies
+    this.spawner.clearAll();
+
+    // Spawn enemies based on level configuration
+    for (const spawnInfo of this.currentLevelConfig.enemySpawns) {
+      // For now, spawn basic enemies at the specified positions
+      for (let i = 0; i < spawnInfo.count; i++) {
+        this.spawner.spawnAtPosition(
+          spawnInfo.position.x + (Math.random() - 0.5) * 0.5,
+          spawnInfo.position.z + (Math.random() - 0.5) * 0.5,
+        );
+      }
+    }
+  }
+
+  checkLevelCompletion() {
+    if (this.levelCompleted) return;
+
+    if (this.isInSafeZone) {
+      // Check if player reached target position
+      if (this.currentLevelConfig?.targetPosition) {
+        const distance = this.player.mesh.position.distanceTo(this.currentLevelConfig.targetPosition);
+        if (distance < 1.0) {
+          this.completeLevelProgression();
+        }
+      }
+    } else {
+      // Check if all enemies are defeated
+      if (this.spawner.enemies.length === 0) {
+        this.completeLevelProgression();
+      }
+    }
+  }
+
+  completeLevelProgression() {
+    this.levelCompleted = true;
+    const canContinue = this.levelSystem.completeCurrentLevel();
+
+    if (!canContinue) {
+      this.hud.setStatus("Congratulations! You have completed all worlds!");
+      return;
+    }
+
+    // Load next level after a short delay
+    setTimeout(() => {
+      this.loadCurrentLevel();
+    }, 1500);
+  }
+
+  getWorldName(): string {
+    const world = this.levelSystem.getCurrentWorld();
+    const worldNames = ["Wrath", "Desire", "Greed", "Attachment", "Envy", "Pride"];
+    return worldNames[world] || "Unknown";
+  }
   doAttack(type: "easy" | "alt") {
     log("Game", "attack", type);
     // choose a target if available, otherwise fire forward
@@ -101,27 +217,11 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.domElement.style.display = "block";
     this.root.prepend(this.renderer.domElement);
-    this.scene.background = new THREE.Color("#050507");
+
     this.camera.position.set(3, 13.5, 4.5);
     this.camera.lookAt(0, 0.6, 0);
 
-    // world pieces
-    const ground = new THREE.Mesh(
-      new THREE.CylinderGeometry(5, 5, 0.2, 40),
-      new THREE.MeshStandardMaterial({ color: "#111318", roughness: 0.9 }),
-    );
-    ground.position.y = -0.1;
-    this.scene.add(ground);
-    const light = new THREE.DirectionalLight("#ffffff", 2.2);
-    light.position.set(4, 6, 3);
-    this.scene.add(light);
-    this.scene.add(new THREE.AmbientLight("#404040", 0.6));
-
-    // add player
-    this.scene.add(this.player.mesh);
-    this.spawner.spawn(5);
-
-    // pixi hud
+    // pixi hud - initialize first
     const hudApp = new (await import("pixi.js")).Application();
     await hudApp.init({ backgroundAlpha: 0, antialias: true, resizeTo: window });
     hudApp.canvas.style.position = "fixed";
@@ -138,6 +238,9 @@ export class Game {
     // Initialize skill UI components
     this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
     this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
+
+    // Load the first level after HUD is ready
+    this.loadCurrentLevel();
 
     // UI button bindings
     this.hud.onAuto = (v) => {
@@ -264,6 +367,9 @@ export class Game {
       }
     }
 
+    // Check level completion
+    this.checkLevelCompletion();
+
     // Update effects system first
     const p = this.player.mesh.position;
     const baseCameraPos = new THREE.Vector3(
@@ -330,7 +436,11 @@ export class Game {
         e.tShoot = t + 900 + Math.random() * 600;
       }
     }
-    this.spawner.ensureWave(5);
+
+    // Only spawn new waves if not in a safe zone
+    if (!this.isInSafeZone) {
+      this.spawner.ensureWave(5);
+    }
   }
   removeEnemy(e: Enemy) {
     // spawn XP crystal at enemy position
@@ -405,7 +515,16 @@ export class Game {
   respawn() {
     this.hud.setStatus("You Died - Respawning");
     this.hp = 10;
-    this.player.mesh.position.set(0, 0.4, 0);
+
+    // Reset to start of Wrath world
+    this.levelSystem.reset();
+    this.loadCurrentLevel();
+
+    // Reset XP/level
+    this.level = 1;
+    this.xp = 0;
+    this.xpToNext = 5;
+    this.hud.setXP(this.level, this.xp, this.xpToNext);
 
     // Reset skill system on death
     this.skillSystem.reset();
@@ -546,11 +665,7 @@ export class Game {
     // Add player hit visual effects
     this.effects.playerHitEffect(this.player.mesh.position);
     if (this.hp <= 0) {
-      // reset XP/level
-      this.level = 1;
-      this.xp = 0;
-      this.xpToNext = 5;
-      this.hud.setXP(this.level, this.xp, this.xpToNext);
+      // Don't reset XP/level immediately, wait for respawn
     }
   }
 }
