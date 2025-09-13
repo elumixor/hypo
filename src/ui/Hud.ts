@@ -10,6 +10,7 @@ export class Hud {
     block: HTMLButtonElement;
     skills: HTMLButtonElement;
     character: HTMLButtonElement;
+    dialogue: HTMLButtonElement;
   }> = {};
   private readonly hpBg: Graphics;
   private readonly hpFg: Graphics;
@@ -26,6 +27,7 @@ export class Hud {
   onBlock?: () => void;
   onSkills?: () => void;
   onCharacterSwitch?: () => void;
+  onDialogue?: () => void;
   auto = true;
   constructor(readonly app: Application) {
     const ui = new Container();
@@ -145,6 +147,11 @@ export class Hud {
       log("HUD", "character-switch");
       this.onCharacterSwitch?.();
       this.setStatus("Character Switch");
+    });
+    makeBtn("Talk (E)", "dialogue", () => {
+      log("HUD", "dialogue");
+      this.onDialogue?.();
+      this.setStatus("Starting Dialogue");
     });
   }
   setStatus(s: string) {
