@@ -1,4 +1,4 @@
-import { type Application, Graphics, Text } from "pixi.js";
+import { Graphics, Text } from "pixi.js";
 import { GameConfig } from "../../config/GameConfig";
 import { UIComponent } from "./UIComponent";
 
@@ -11,10 +11,6 @@ export class HealthBar extends UIComponent {
   private text!: Text;
   private currentHp = 10;
   private maxHp = 10;
-
-  constructor(app: Application) {
-    super(app);
-  }
 
   protected init(): void {
     // Background bar
@@ -80,10 +76,6 @@ export class ExperienceBar extends UIComponent {
   private level = 1;
   private currentXp = 0;
   private xpToNext = 5;
-
-  constructor(app: Application) {
-    super(app);
-  }
 
   protected init(): void {
     // Background bar
@@ -156,10 +148,6 @@ export class ExperienceBar extends UIComponent {
  */
 export class StatusText extends UIComponent {
   private text!: Text;
-
-  constructor(app: Application) {
-    super(app);
-  }
 
   protected init(): void {
     this.text = new Text({

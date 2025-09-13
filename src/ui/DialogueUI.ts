@@ -2,21 +2,21 @@ import { type Application, Container, Graphics, Text } from "pixi.js";
 import type { DialogueNode, DialogueOption, DialogueSystem } from "./DialogueSystem";
 
 export class DialogueUI {
-  private container: Container;
-  private background: Graphics;
+  private readonly container: Container;
+  private readonly background: Graphics;
   private rightAvatar!: Graphics; // Using graphics as placeholder for now
-  private speakerText: Text;
-  private dialogueText: Text;
+  private readonly speakerText: Text;
+  private readonly dialogueText: Text;
   private optionButtons: Container[] = [];
   private currentText = "";
   private targetText = "";
   private typewriterTimer = 0;
-  private typewriterSpeed = 0.03; // Time between characters
+  private readonly typewriterSpeed = 0.03; // Time between characters
   private isTyping = false;
 
   constructor(
-    private app: Application,
-    private dialogueSystem: DialogueSystem,
+    private readonly app: Application,
+    private readonly dialogueSystem: DialogueSystem,
   ) {
     this.container = new Container();
     this.container.visible = false;
@@ -259,7 +259,7 @@ export class DialogueUI {
     const currentDialogue = this.dialogueSystem.getCurrentDialogue();
     if (!currentDialogue?.options) return false;
 
-    const num = parseInt(key);
+    const num = parseInt(key, 10);
     if (num >= 1 && num <= currentDialogue.options.length) {
       this.selectOption(num - 1);
       return true;

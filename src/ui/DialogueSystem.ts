@@ -13,7 +13,7 @@ export interface DialogueNode {
 }
 
 export class DialogueSystem {
-  private dialogues: Map<string, DialogueNode> = new Map();
+  private readonly dialogues: Map<string, DialogueNode> = new Map();
   private currentDialogue: DialogueNode | null = null;
   private onDialogueChange?: (dialogue: DialogueNode | null) => void;
 

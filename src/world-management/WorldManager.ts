@@ -34,7 +34,7 @@ export interface WorldData {
  * Manages world progression and level transitions
  */
 export class WorldManager {
-  private worlds: WorldData[];
+  private readonly worlds: WorldData[];
   private currentWorldId = 1;
   private currentLevelId = 1;
 

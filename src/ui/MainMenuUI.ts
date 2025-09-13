@@ -10,18 +10,18 @@ export interface MainMenuCallbacks {
 }
 
 export class MainMenuUI {
-  private container: Container;
-  private background: Graphics;
+  private readonly container: Container;
+  private readonly background: Graphics;
   private titleText!: Text; // Use definite assignment assertion
-  private buttonContainer: Container;
-  private loadSlotsContainer: Container;
+  private readonly buttonContainer: Container;
+  private readonly loadSlotsContainer: Container;
   private buttons: Graphics[] = [];
   private visible = false;
   private showingLoadSlots = false;
 
   constructor(
-    private app: Application,
-    private callbacks: MainMenuCallbacks,
+    private readonly app: Application,
+    private readonly callbacks: MainMenuCallbacks,
   ) {
     this.container = new Container();
     this.background = new Graphics();
@@ -88,7 +88,7 @@ export class MainMenuUI {
 
     // Add exit button if callback provided (for electron/desktop)
     if (this.callbacks.onExit) {
-      buttonData.push({ text: "Exit", action: () => this.callbacks.onExit!() });
+      buttonData.push({ text: "Exit", action: () => this.callbacks.onExit?.() });
     }
 
     this.buttons = [];

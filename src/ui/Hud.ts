@@ -13,7 +13,7 @@ export class Hud {
     character: HTMLButtonElement;
     dialogue: HTMLButtonElement;
   }> = {};
-  private buttonPanel: HTMLElement | null = null; // Reference to DOM button panel
+  private readonly buttonPanel: HTMLElement | null = null; // Reference to DOM button panel
   private readonly hpBg: Graphics;
   private readonly hpFg: Graphics;
   private readonly energyBg: Graphics;
