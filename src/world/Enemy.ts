@@ -34,25 +34,25 @@ export class Enemy {
     switch (type) {
       case EnemyType.RANGE:
         geo = new THREE.BoxGeometry(0.7, 0.7, 0.7);
-        mat = new THREE.MeshStandardMaterial({ color: "#ff2b2b" });
+        mat = new THREE.MeshStandardMaterial({ color: "#ff2b2b", roughness: 0.8 }); // Red cube
         hp = 3;
         break;
 
       case EnemyType.MELEE:
         geo = new THREE.ConeGeometry(0.4, 1.2, 8);
-        mat = new THREE.MeshStandardMaterial({ color: "#ff6600" });
+        mat = new THREE.MeshStandardMaterial({ color: "#ff6600", roughness: 0.6 }); // Orange cone
         hp = 4;
         break;
 
       case EnemyType.NUKER:
         geo = new THREE.OctahedronGeometry(0.6);
-        mat = new THREE.MeshStandardMaterial({ color: "#aa2244" });
+        mat = new THREE.MeshStandardMaterial({ color: "#aa2244", roughness: 0.4, metalness: 0.3 }); // Dark red octahedron
         hp = 5;
         break;
 
       case EnemyType.CHARGER:
         geo = new THREE.CylinderGeometry(0.3, 0.6, 1.0, 6);
-        mat = new THREE.MeshStandardMaterial({ color: "#8844bb" });
+        mat = new THREE.MeshStandardMaterial({ color: "#8844bb", roughness: 0.5, metalness: 0.2 }); // Purple cylinder
         hp = 6;
         break;
     }
