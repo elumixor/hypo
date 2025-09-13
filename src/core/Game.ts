@@ -4,6 +4,8 @@ import { Projectiles } from "../combat/Projectiles";
 import { EffectsManager } from "../effects/EffectsManager";
 import { Keyboard } from "../input/Keyboard";
 import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
+import { DialogueSystem } from "../ui/DialogueSystem";
+import { DialogueUI } from "../ui/DialogueUI";
 import { Hud } from "../ui/Hud";
 import { SkillTreeUI } from "../ui/SkillTreeUI";
 import type { Enemy } from "../world/Enemy";
@@ -26,6 +28,7 @@ export class Game {
   readonly levelRenderer = new LevelRenderer();
   readonly effects = new EffectsManager(this.scene, this.camera);
   readonly characterManager = new CharacterManager();
+  readonly dialogueSystem = new DialogueSystem();
   xpCrystals: THREE.Mesh[] = [];
   level = 1;
   xp = 0;
@@ -35,6 +38,7 @@ export class Game {
   hud!: Hud;
   skillTreeUI!: SkillTreeUI;
   characterSwitchUI!: CharacterSwitchUI;
+  dialogueUI!: DialogueUI;
   yaw = Math.PI * 0.25;
   pitch = 1.5;
   dist = 10;
@@ -48,6 +52,7 @@ export class Game {
   lastR = false;
   lastT = false;
   lastC = false;
+  lastE = false;
 
   // Level progression state
   currentLevelConfig: LevelSceneConfig | null = null;
@@ -221,6 +226,12 @@ export class Game {
       this.effects.blockEffect(this.player.mesh.position);
     }
   }
+  
+  startDialogue() {
+    log("Game", "dialogue-start");
+    this.hud.setStatus("Starting dialogue...");
+    this.dialogueUI.startDialogue("greeting");
+  }
 
   async init() {
     this.renderer.setPixelRatio(devicePixelRatio);
@@ -249,6 +260,9 @@ export class Game {
     // Initialize skill UI components
     this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
     this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
+    
+    // Initialize dialogue UI
+    this.dialogueUI = new DialogueUI(hudApp, this.dialogueSystem);
 
     // Load the first level after HUD is ready
     this.loadCurrentLevel();
@@ -263,6 +277,7 @@ export class Game {
     this.hud.onBlock = () => this.doBlock();
     this.hud.onSkills = () => this.showSkillTree();
     this.hud.onCharacterSwitch = () => this.showCharacterSwitch();
+    this.hud.onDialogue = () => this.startDialogue();
 
     addEventListener("resize", () => this.onResize());
     this.loop.add((dt, t) => this.update(dt, t));
@@ -367,6 +382,31 @@ export class Game {
       }
     } else {
       this.lastC = false;
+    }
+    
+    // Dialogue system input handling
+    if (this.dialogueSystem.isActive()) {
+      // Handle number key presses for dialogue options
+      for (let i = 1; i <= 9; i++) {
+        if (this.keyboard.has(i.toString())) {
+          this.dialogueUI.handleKeyPress(i.toString());
+          break;
+        }
+      }
+      // Handle space/enter for skipping typing animation
+      if (this.keyboard.has(" ") || this.keyboard.has("Enter")) {
+        this.dialogueUI.handleKeyPress(" ");
+      }
+    } else {
+      // Only allow starting dialogue when not already in one
+      if (this.keyboard.has("e")) {
+        if (!this.lastE) {
+          this.startDialogue();
+          this.lastE = true;
+        }
+      } else {
+        this.lastE = false;
+      }
     }
     if (this.autoAttack) this.autoShoot(dt);
     // collect XP crystals when near
