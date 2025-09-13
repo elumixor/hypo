@@ -64,9 +64,7 @@ export class Enemy {
     this.config = ENEMY_CONFIGS[type as keyof typeof ENEMY_CONFIGS] || ENEMY_CONFIGS.basic;
     this.hp = this.config.hp;
     this.maxHp = this.config.hp;
-    this.tShoot = performance.now() + 
-      this.config.shootCooldownMin + 
-      Math.random() * this.config.shootCooldownVariance;
+    this.tShoot = performance.now() + this.config.shootCooldownMin + Math.random() * this.config.shootCooldownVariance;
   }
 
   /**
@@ -74,11 +72,11 @@ export class Enemy {
    */
   static create(type: string = "basic", position?: THREE.Vector3): Enemy {
     const config = ENEMY_CONFIGS[type as keyof typeof ENEMY_CONFIGS] || ENEMY_CONFIGS.basic;
-    
+
     const geometry = new THREE.BoxGeometry(config.size, config.size, config.size);
     const material = new THREE.MeshStandardMaterial({ color: config.color });
     const mesh = new THREE.Mesh(geometry, material);
-    
+
     if (position) {
       mesh.position.copy(position);
     } else {
@@ -89,7 +87,7 @@ export class Enemy {
         Math.sin(Math.random() * Math.PI * 2) * (3 + Math.random() * 3),
       );
     }
-    
+
     return new Enemy(mesh, type);
   }
 
@@ -98,12 +96,12 @@ export class Enemy {
    */
   static createWave(count: number, availableTypes: string[] = ["basic"]): Enemy[] {
     const enemies: Enemy[] = [];
-    
+
     for (let i = 0; i < count; i++) {
       const type = availableTypes[Math.floor(Math.random() * availableTypes.length)];
       enemies.push(Enemy.create(type));
     }
-    
+
     return enemies;
   }
 
@@ -121,9 +119,7 @@ export class Enemy {
    */
   shouldShoot(currentTime: number): boolean {
     if (currentTime >= this.tShoot) {
-      this.tShoot = currentTime + 
-        this.config.shootCooldownMin + 
-        Math.random() * this.config.shootCooldownVariance;
+      this.tShoot = currentTime + this.config.shootCooldownMin + Math.random() * this.config.shootCooldownVariance;
       return true;
     }
     return false;
@@ -165,7 +161,9 @@ export class Enemy {
     if (this.mesh.geometry) this.mesh.geometry.dispose();
     if (this.mesh.material) {
       if (Array.isArray(this.mesh.material)) {
-        this.mesh.material.forEach(mat => mat.dispose());
+        for (const mat of this.mesh.material) {
+          mat.dispose();
+        }
       } else {
         this.mesh.material.dispose();
       }

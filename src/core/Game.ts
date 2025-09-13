@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { Projectiles } from "../combat/Projectiles";
+import { GameConfig } from "../config/GameConfig";
+import { gameEvents } from "../events/GameEvents";
 import { Keyboard } from "../input/Keyboard";
+import { gameState } from "../state/GameState";
 import { Hud } from "../ui/Hud";
 import type { Enemy } from "../world/Enemy";
 import { Player } from "../world/Player";
@@ -9,30 +12,55 @@ import { Loop } from "./Loop";
 
 export class Game {
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+  readonly camera = new THREE.PerspectiveCamera(
+    GameConfig.CAMERA.FOV,
+    innerWidth / innerHeight,
+    GameConfig.CAMERA.NEAR,
+    GameConfig.CAMERA.FAR,
+  );
   readonly renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   readonly keyboard = new Keyboard();
-  readonly player = new Player(this.keyboard, Math.PI * 0.25);
+  readonly player = new Player(this.keyboard, GameConfig.PLAYER.INITIAL_YAW);
   readonly spawner = new Spawner(this.scene);
   readonly projectiles = new Projectiles();
   xpCrystals: THREE.Mesh[] = [];
-  level = 1;
-  xp = 0;
-  xpToNext = 5;
   readonly loop = new Loop();
   hud!: Hud;
-  yaw = Math.PI * 0.25;
-  pitch = 1.5;
-  dist = 10;
-  hp = 10;
+  yaw = GameConfig.CAMERA.YAW;
+  pitch = GameConfig.CAMERA.PITCH;
+  dist = GameConfig.CAMERA.DISTANCE;
   autoShootTimer = 0;
   tmp = new THREE.Vector3();
   tAccum = 0;
-  autoAttack = true;
   lastDash = false;
   lastBlock = false;
 
-  constructor(readonly root: HTMLElement) {}
+  constructor(readonly root: HTMLElement) {
+    this.setupEventListeners();
+  }
+
+  /**
+   * Set up event listeners for game state changes
+   */
+  private setupEventListeners(): void {
+    // Listen for UI updates
+    gameEvents.on("ui:statusUpdate", ({ message }) => {
+      this.hud?.setStatus(message);
+    });
+
+    gameEvents.on("ui:healthUpdate", ({ current, max }) => {
+      this.hud?.setHealth(current, max);
+    });
+
+    gameEvents.on("ui:xpUpdate", ({ level, xp, xpToNext }) => {
+      this.hud?.setXP(level, xp, xpToNext);
+    });
+
+    // Listen for player events
+    gameEvents.on("player:levelUp", ({ newLevel }) => {
+      gameEvents.emit("ui:statusUpdate", { message: `Leveled to ${newLevel}!` });
+    });
+  }
   doAttack(type: "easy" | "alt") {
     log("Game", "attack", type);
     // choose a target if available, otherwise fire forward
@@ -40,13 +68,24 @@ export class Game {
     if (target) {
       this.tmp.copy(target.mesh.position).sub(this.player.mesh.position);
       this.tmp.y = 0;
-      if (this.tmp.lengthSq() > 0.0001) this.spawnPlayerProjectile(this.tmp, type);
+      if (this.tmp.lengthSq() > 0.0001) {
+        this.spawnPlayerProjectile(this.tmp, type);
+        gameEvents.emit("combat:attack", {
+          type,
+          target: {
+            x: target.mesh.position.x,
+            y: target.mesh.position.y,
+            z: target.mesh.position.z,
+          },
+        });
+      }
     } else {
       // fire in player facing direction
-      const f = new THREE.Vector3(-Math.cos(this.player.yaw), 0, -Math.sin(this.player.yaw));
-      this.spawnPlayerProjectile(f, type);
+      const forward = new THREE.Vector3(-Math.cos(this.player.yaw), 0, -Math.sin(this.player.yaw));
+      this.spawnPlayerProjectile(forward, type);
+      gameEvents.emit("combat:attack", { type });
     }
-    this.hud.setStatus(`Attack: ${type}`);
+    gameEvents.emit("ui:statusUpdate", { message: `Attack: ${type}` });
   }
 
   spawnPlayerProjectile(dir: THREE.Vector3, kind: "easy" | "alt" = "easy") {
@@ -61,9 +100,11 @@ export class Game {
     const started = this.player.startDash();
     if (started) {
       log("Game", "dash");
-      this.hud.setStatus("Dash!");
+      gameEvents.emit("player:dash", { success: true });
+      gameEvents.emit("ui:statusUpdate", { message: "Dash!" });
     } else {
       log("Game", "dash-failed-cooldown");
+      gameEvents.emit("player:dash", { success: false });
     }
   }
 
@@ -74,7 +115,8 @@ export class Game {
     // toggle player shield
     const newState = !this.player.shieldActive;
     this.player.setShield(newState);
-    this.hud.setStatus(newState ? "Block!" : "Block off");
+    gameState.setShield(newState);
+    gameEvents.emit("ui:statusUpdate", { message: newState ? "Block!" : "Block off" });
   }
 
   async init() {
@@ -82,25 +124,33 @@ export class Game {
     this.renderer.setSize(innerWidth, innerHeight);
     this.renderer.domElement.style.display = "block";
     this.root.prepend(this.renderer.domElement);
-    this.scene.background = new THREE.Color("#050507");
+    this.scene.background = new THREE.Color(GameConfig.COLORS.BACKGROUND);
     this.camera.position.set(3, 13.5, 4.5);
     this.camera.lookAt(0, 0.6, 0);
 
     // world pieces
     const ground = new THREE.Mesh(
-      new THREE.CylinderGeometry(5, 5, 0.2, 40),
-      new THREE.MeshStandardMaterial({ color: "#111318", roughness: 0.9 }),
+      new THREE.CylinderGeometry(
+        GameConfig.WORLD.GROUND_RADIUS,
+        GameConfig.WORLD.GROUND_RADIUS,
+        GameConfig.WORLD.GROUND_HEIGHT,
+        40,
+      ),
+      new THREE.MeshStandardMaterial({
+        color: GameConfig.COLORS.GROUND,
+        roughness: 0.9,
+      }),
     );
     ground.position.y = -0.1;
     this.scene.add(ground);
-    const light = new THREE.DirectionalLight("#ffffff", 2.2);
+    const light = new THREE.DirectionalLight("#ffffff", GameConfig.WORLD.DIRECTIONAL_LIGHT_INTENSITY);
     light.position.set(4, 6, 3);
     this.scene.add(light);
-    this.scene.add(new THREE.AmbientLight("#404040", 0.6));
+    this.scene.add(new THREE.AmbientLight("#404040", GameConfig.WORLD.AMBIENT_LIGHT_INTENSITY));
 
     // add player
     this.scene.add(this.player.mesh);
-    this.spawner.spawn(5);
+    this.spawner.spawn(GameConfig.ENEMIES.WAVE_SIZE);
 
     // pixi hud
     const hudApp = new (await import("pixi.js")).Application();
@@ -111,12 +161,15 @@ export class Game {
     hudApp.canvas.style.pointerEvents = "none";
     this.root.append(hudApp.canvas);
     this.hud = new Hud(hudApp);
-    this.hud.setHealth(this.hp, 10);
-    this.hud.setXP(this.level, this.xp, this.xpToNext);
+
+    // Initialize HUD with current state
+    const state = gameState.current;
+    this.hud.setHealth(state.player.hp, state.player.maxHp);
+    this.hud.setXP(state.player.level, state.player.xp, state.player.xpToNext);
 
     // UI button bindings
     this.hud.onAuto = (v) => {
-      this.autoAttack = v;
+      gameState.setAutoAttack(v);
     };
     this.hud.onEasy = () => this.doAttack("easy");
     this.hud.onAlt = () => this.doAttack("alt");
@@ -135,6 +188,7 @@ export class Game {
     this.camera.updateProjectionMatrix();
   }
   update(dt: number, t: number) {
+    gameState.updateGameTime(dt);
     this.player.update(dt);
     this.stepEnemies(dt, t);
     this.projectiles.update(
@@ -156,99 +210,108 @@ export class Game {
     } else {
       this.lastBlock = false;
     }
-    if (this.autoAttack) this.autoShoot(dt);
+    const state = gameState.current;
+    if (state.combat.autoAttack) this.autoShoot(dt);
     // collect XP crystals when near
     for (let i = this.xpCrystals.length - 1; i >= 0; i--) {
       const c = this.xpCrystals[i];
       if (!c) continue;
-      if (c.position.distanceTo(this.player.mesh.position) < 0.8) {
+      if (c.position.distanceTo(this.player.mesh.position) < GameConfig.PROGRESSION.XP_COLLECTION_DISTANCE) {
         this.collectXP(i);
       }
     }
     this.updateCamera();
     this.renderer.render(this.scene, this.camera);
     this.updateHud();
-    if (this.hp <= 0) this.respawn();
+    if (state.player.hp <= 0) this.respawn();
   }
   updateCamera() {
-    const p = this.player.mesh.position;
+    const playerPos = this.player.mesh.position;
     this.camera.position.set(
-      p.x + Math.cos(this.yaw) * this.dist,
-      p.y + 3.5 * this.pitch,
-      p.z + Math.sin(this.yaw) * this.dist,
+      playerPos.x + Math.cos(this.yaw) * this.dist,
+      playerPos.y + GameConfig.CAMERA.HEIGHT_OFFSET * this.pitch,
+      playerPos.z + Math.sin(this.yaw) * this.dist,
     );
-    this.camera.lookAt(p.x, p.y + 0.4, p.z);
+    this.camera.lookAt(playerPos.x, playerPos.y + GameConfig.CAMERA.LOOK_HEIGHT, playerPos.z);
   }
   stepEnemies(dt: number, t: number) {
-    const minPlayerDist = 0.9;
-    const separation = 0.6;
-    for (let i = 0; i < this.spawner.enemies.length; i++) {
-      const e = this.spawner.enemies[i];
-      if (!e || e.dead) continue;
+    const aliveEnemies = this.spawner.getAliveEnemies();
+    const minPlayerDist = GameConfig.ENEMIES.MIN_PLAYER_DISTANCE;
+    const separation = GameConfig.ENEMIES.SEPARATION_DISTANCE;
+
+    for (const enemy of aliveEnemies) {
       // move towards player but maintain a minimum distance
-      this.tmp.copy(this.player.mesh.position).sub(e.mesh.position);
+      this.tmp.copy(this.player.mesh.position).sub(enemy.mesh.position);
       this.tmp.y = 0;
-      const d = this.tmp.length();
-      if (d > minPlayerDist) {
+      const distance = this.tmp.length();
+      if (distance > minPlayerDist) {
         this.tmp.normalize();
-        e.mesh.position.addScaledVector(this.tmp, dt * 1.2);
+        enemy.mesh.position.addScaledVector(this.tmp, dt * enemy.getMovementSpeed());
       }
+
       // simple separation from other enemies
-      for (let j = 0; j < this.spawner.enemies.length; j++) {
-        if (i === j) continue;
-        const o = this.spawner.enemies[j];
-        if (!o) continue;
-        const dist = e.mesh.position.distanceTo(o.mesh.position);
+      for (const other of aliveEnemies) {
+        if (enemy === other) continue;
+        const dist = enemy.mesh.position.distanceTo(other.mesh.position);
         if (dist < separation && dist > 0.001) {
-          const dir = e.mesh.position.clone().sub(o.mesh.position).setY(0).normalize();
-          e.mesh.position.addScaledVector(dir, (separation - dist) * 0.5);
+          const dir = enemy.mesh.position.clone().sub(other.mesh.position).setY(0).normalize();
+          enemy.mesh.position.addScaledVector(dir, (separation - dist) * 0.5);
         }
       }
-      if (t > e.tShoot) {
+
+      // Check if enemy should shoot
+      if (enemy.shouldShoot(t)) {
         this.projectiles.add(
-          e.mesh.position.clone(),
+          enemy.mesh.position.clone(),
           this.tmp.set(
-            this.player.mesh.position.x - e.mesh.position.x,
+            this.player.mesh.position.x - enemy.mesh.position.x,
             0,
-            this.player.mesh.position.z - e.mesh.position.z,
+            this.player.mesh.position.z - enemy.mesh.position.z,
           ),
           false,
           this.scene,
+          enemy.getDamage(),
         );
-        e.tShoot = t + 900 + Math.random() * 600;
       }
     }
-    this.spawner.ensureWave(5);
+    this.spawner.ensureWave(GameConfig.ENEMIES.WAVE_SIZE);
   }
-  removeEnemy(e: Enemy) {
+  removeEnemy(enemy: Enemy) {
     // spawn XP crystal at enemy position
-    const pos = e.mesh.position.clone();
-    this.spawner.remove(e);
-    this.spawnXP(pos);
+    const position = enemy.mesh.position.clone();
+    this.spawner.remove(enemy);
+    this.spawnXP(position);
+
+    gameEvents.emit("combat:enemy:killed", {
+      position: { x: position.x, y: position.y, z: position.z },
+    });
   }
 
   spawnXP(pos: THREE.Vector3) {
-    const geo = new THREE.SphereGeometry(0.18, 8, 6);
-    const mat = new THREE.MeshStandardMaterial({ color: "#7af", emissive: "#58b" });
-    const m = new THREE.Mesh(geo, mat);
-    m.position.copy(pos).y += 0.2;
-    this.scene.add(m);
-    this.xpCrystals.push(m);
+    const geometry = new THREE.SphereGeometry(0.18, 8, 6);
+    const material = new THREE.MeshStandardMaterial({
+      color: GameConfig.COLORS.XP_CRYSTAL,
+      emissive: "#58b",
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.position.copy(pos).y += 0.2;
+    this.scene.add(mesh);
+    this.xpCrystals.push(mesh);
+
+    gameEvents.emit("xp:spawned", {
+      position: { x: pos.x, y: pos.y, z: pos.z },
+    });
   }
 
   collectXP(index: number) {
-    const c = this.xpCrystals[index];
-    if (!c) return;
-    this.scene.remove(c);
+    const crystal = this.xpCrystals[index];
+    if (!crystal) return;
+
+    this.scene.remove(crystal);
     this.xpCrystals.splice(index, 1);
-    this.xp += 1;
-    if (this.xp >= this.xpToNext) {
-      this.level += 1;
-      this.xp = 0;
-      this.xpToNext = Math.floor(this.xpToNext * 1.4) + 2;
-      this.hud.setStatus(`Leveled to ${this.level}`);
-    }
-    this.hud.setXP(this.level, this.xp, this.xpToNext);
+
+    // Use GameState to handle XP logic
+    gameState.addExperience(1);
   }
   autoShoot(dt: number) {
     this.autoShootTimer -= dt;
@@ -257,44 +320,45 @@ export class Game {
       if (target) {
         this.tmp.copy(target.mesh.position).sub(this.player.mesh.position);
         this.tmp.y = 0;
-        if (this.tmp.lengthSq() > 0.001) this.spawnPlayerProjectile(this.tmp, "easy");
-        this.autoShootTimer = 0.5;
+        if (this.tmp.lengthSq() > 0.001) {
+          this.spawnPlayerProjectile(this.tmp, "easy");
+          this.autoShootTimer = GameConfig.COMBAT.AUTO_SHOOT_INTERVAL;
+        }
       }
     }
   }
+
   closestEnemy() {
+    const aliveEnemies = this.spawner.getAliveEnemies();
     let best: Enemy | undefined;
-    let bestD = Infinity;
-    for (const e of this.spawner.enemies) {
-      const d = e.mesh.position.distanceTo(this.player.mesh.position);
-      if (d < bestD) {
-        bestD = d;
-        best = e;
+    let bestDistance = Infinity;
+
+    for (const enemy of aliveEnemies) {
+      const distance = enemy.mesh.position.distanceTo(this.player.mesh.position);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = enemy;
       }
     }
     return best;
   }
+
   updateHud() {
+    const state = gameState.current;
+    gameState.updateWorldStats(this.spawner.aliveCount, this.projectiles.count);
+
     this.hud.setStatus(
-      `HP:${this.hp} Enemies:${this.spawner.enemies.length} Proj:${this.projectiles.list.length} FPS:${this.loop.fps.toFixed(0)}`,
+      `HP:${state.player.hp} Enemies:${state.world.enemyCount} Proj:${state.world.projectileCount} FPS:${this.loop.fps.toFixed(0)}`,
     );
   }
   respawn() {
-    this.hud.setStatus("You Died - Respawning");
-    this.hp = 10;
+    gameEvents.emit("ui:statusUpdate", { message: "You Died - Respawning" });
+    gameState.respawn();
     this.player.mesh.position.set(0, 0.4, 0);
   }
 
   playerHit() {
-    this.hp -= 1;
-    log("Game", "player-hit", this.hp);
-    this.hud.setHealth(this.hp, 10);
-    if (this.hp <= 0) {
-      // reset XP/level
-      this.level = 1;
-      this.xp = 0;
-      this.xpToNext = 5;
-      this.hud.setXP(this.level, this.xp, this.xpToNext);
-    }
+    gameState.damagePlayer(1);
+    log("Game", "player-hit", gameState.current.player.hp);
   }
 }

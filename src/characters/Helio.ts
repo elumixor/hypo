@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { GameConfig } from "../config/GameConfig";
-import { BaseCharacter, type CharacterStats, type SkillTree } from "./BaseCharacter";
 import type { Keyboard } from "../input/Keyboard";
+import { BaseCharacter, type CharacterStats, type SkillTree } from "./BaseCharacter";
 
 /**
  * Helio - The main character
@@ -14,9 +14,9 @@ export class Helio extends BaseCharacter {
 
   protected createMesh(): THREE.Mesh {
     const geometry = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-    const material = new THREE.MeshStandardMaterial({ 
-      color: GameConfig.COLORS.PLAYER, 
-      roughness: 0.4 
+    const material = new THREE.MeshStandardMaterial({
+      color: GameConfig.COLORS.PLAYER,
+      roughness: 0.4,
     });
     const mesh = new THREE.Mesh(geometry, material);
     mesh.position.set(0, 0.4, 0);
@@ -29,17 +29,17 @@ export class Helio extends BaseCharacter {
       maxHp: GameConfig.PLAYER.MAX_HP,
       speed: GameConfig.PLAYER.SPEED,
       damage: 2,
-      
-      // Combat stats  
+
+      // Combat stats
       attackSpeed: 1.0,
       criticalChance: 0.05, // 5%
       criticalDamage: 1.5,
-      
+
       // Defense stats
       armor: 0,
       dodgeChance: 0.1, // 10%
       blockEfficiency: 0.5, // 50% damage reduction
-      
+
       // Special stats
       dashSpeed: GameConfig.PLAYER.DASH_SPEED,
       dashCooldown: GameConfig.PLAYER.DASH_COOLDOWN,

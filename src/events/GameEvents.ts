@@ -10,7 +10,7 @@ export interface GameEvents {
   "player:dash": { success: boolean };
   "player:shield": { active: boolean };
 
-  // Combat events  
+  // Combat events
   "combat:attack": { type: "easy" | "alt"; target?: { x: number; y: number; z: number } };
   "combat:projectile:spawn": { fromPlayer: boolean; position: { x: number; y: number; z: number } };
   "combat:enemy:killed": { position: { x: number; y: number; z: number } };
@@ -25,10 +25,10 @@ export interface GameEvents {
   "ui:xpUpdate": { level: number; xp: number; xpToNext: number };
 
   // Game state events
-  "game:paused": {};
-  "game:resumed": {};
-  "game:over": {};
-  "game:restart": {};
+  "game:paused": Record<string, never>;
+  "game:resumed": Record<string, never>;
+  "game:over": Record<string, never>;
+  "game:restart": Record<string, never>;
 
   // Character events
   "character:switch": { from: string; to: string };
@@ -44,7 +44,8 @@ export type GameEventType = keyof GameEvents;
 export type GameEventData<T extends GameEventType> = GameEvents[T];
 
 export class EventEmitter {
-  private listeners = new Map<GameEventType, Set<(data: any) => void>>();
+  // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
+  private readonly listeners = new Map<string, Set<(data: any) => void>>();
 
   /**
    * Subscribe to an event
@@ -53,13 +54,20 @@ export class EventEmitter {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
-    
-    const eventListeners = this.listeners.get(event)!;
-    eventListeners.add(listener);
+
+    const eventListeners = this.listeners.get(event);
+    if (!eventListeners)
+      return () => {
+        // No-op unsubscribe function
+      };
+
+    // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
+    eventListeners.add(listener as (data: any) => void);
 
     // Return unsubscribe function
     return () => {
-      eventListeners.delete(listener);
+      // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
+      eventListeners.delete(listener as (data: any) => void);
       if (eventListeners.size === 0) {
         this.listeners.delete(event);
       }

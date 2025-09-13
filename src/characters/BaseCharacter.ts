@@ -34,17 +34,17 @@ export interface CharacterStats {
   maxHp: number;
   speed: number;
   damage: number;
-  
+
   // Combat stats
   attackSpeed: number;
   criticalChance: number;
   criticalDamage: number;
-  
+
   // Defense stats
   armor: number;
   dodgeChance: number;
   blockEfficiency: number;
-  
+
   // Special stats
   dashSpeed: number;
   dashCooldown: number;
@@ -60,18 +60,18 @@ export abstract class BaseCharacter {
   readonly mesh: THREE.Mesh;
   protected shieldMesh?: THREE.Mesh;
   protected yaw: number;
-  
+
   // Character state
   hp: number;
   mana: number;
   level: number = 1;
   experience: number = 0;
-  
+
   // Combat state
   shieldActive = false;
   private dashTime = 0;
   private dashCooldownTimer = 0;
-  
+
   // Character progression
   readonly skillTrees: SkillTree;
   readonly baseStats: CharacterStats;
@@ -79,7 +79,7 @@ export abstract class BaseCharacter {
 
   constructor(
     id: string,
-    name: string, 
+    name: string,
     protected keyboard: Keyboard,
     yaw: number,
   ) {
@@ -115,11 +115,11 @@ export abstract class BaseCharacter {
    */
   protected createShieldMesh(): THREE.Mesh {
     const geometry = new THREE.SphereGeometry(1.1, 16, 12);
-    const material = new THREE.MeshStandardMaterial({ 
-      color: GameConfig.COLORS.PLAYER_SHIELD, 
-      transparent: true, 
-      opacity: 0.25, 
-      depthWrite: false 
+    const material = new THREE.MeshStandardMaterial({
+      color: GameConfig.COLORS.PLAYER_SHIELD,
+      transparent: true,
+      opacity: 0.25,
+      depthWrite: false,
     });
     const shield = new THREE.Mesh(geometry, material);
     shield.visible = false;
@@ -157,7 +157,7 @@ export abstract class BaseCharacter {
     const forward = new THREE.Vector3(-Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const right = new THREE.Vector3(-forward.z, 0, forward.x);
     const move = new THREE.Vector3();
-    
+
     const k = this.keyboard;
     if (k.has("w") || k.has("arrowup")) move.add(forward);
     if (k.has("s") || k.has("arrowdown")) move.sub(forward);
@@ -188,7 +188,7 @@ export abstract class BaseCharacter {
   protected updateSkillEffects(): void {
     // Reset to base stats
     this.modifiedStats = { ...this.baseStats };
-    
+
     // Apply skill modifiers
     // This would iterate through active skills and apply their effects
     // Implementation depends on specific skill system design
@@ -199,7 +199,7 @@ export abstract class BaseCharacter {
    */
   startDash(): boolean {
     if (this.dashCooldownTimer > 0) return false;
-    
+
     this.dashTime = GameConfig.PLAYER.DASH_DURATION;
     this.dashCooldownTimer = this.modifiedStats.dashCooldown;
     return true;
@@ -250,8 +250,8 @@ export abstract class BaseCharacter {
    */
   levelUpSkill(treeType: keyof SkillTree, skillId: string): boolean {
     const tree = this.skillTrees[treeType];
-    const skill = tree.find(s => s.id === skillId);
-    
+    const skill = tree.find((s) => s.id === skillId);
+
     if (!skill || !skill.unlocked || skill.level >= skill.maxLevel) {
       return false;
     }
@@ -266,17 +266,17 @@ export abstract class BaseCharacter {
    */
   unlockSkill(treeType: keyof SkillTree, skillId: string): boolean {
     const tree = this.skillTrees[treeType];
-    const skill = tree.find(s => s.id === skillId);
-    
+    const skill = tree.find((s) => s.id === skillId);
+
     if (!skill || skill.unlocked) return false;
 
     // Check prerequisites
     if (skill.prerequisites) {
-      const allPrereqsMet = skill.prerequisites.every(prereqId => {
-        const prereq = tree.find(s => s.id === prereqId);
-        return prereq && prereq.unlocked && prereq.level > 0;
+      const allPrereqsMet = skill.prerequisites.every((prereqId) => {
+        const prereq = tree.find((s) => s.id === prereqId);
+        return prereq?.unlocked && prereq.level > 0;
       });
-      
+
       if (!allPrereqsMet) return false;
     }
 
@@ -288,7 +288,7 @@ export abstract class BaseCharacter {
    * Get all unlocked skills from a specific tree
    */
   getUnlockedSkills(treeType: keyof SkillTree): SkillNode[] {
-    return this.skillTrees[treeType].filter(skill => skill.unlocked);
+    return this.skillTrees[treeType].filter((skill) => skill.unlocked);
   }
 
   /**
@@ -298,12 +298,14 @@ export abstract class BaseCharacter {
     if (this.mesh.geometry) this.mesh.geometry.dispose();
     if (this.mesh.material) {
       if (Array.isArray(this.mesh.material)) {
-        this.mesh.material.forEach(mat => mat.dispose());
+        for (const mat of this.mesh.material) {
+          mat.dispose();
+        }
       } else {
         this.mesh.material.dispose();
       }
     }
-    
+
     if (this.shieldMesh) {
       if (this.shieldMesh.geometry) this.shieldMesh.geometry.dispose();
       if (this.shieldMesh.material) {

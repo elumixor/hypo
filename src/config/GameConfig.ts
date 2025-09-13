@@ -7,7 +7,7 @@ export const GameConfig = {
   // World structure
   WORLD_COUNT: 8,
   LEVELS_PER_WORLD: 5,
-  
+
   // Player configuration
   PLAYER: {
     SPEED: 4,

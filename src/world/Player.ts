@@ -57,10 +57,10 @@ export class Player {
   switchCharacter(newCharacter: Helio) {
     // Store position and state from current character
     const position = this.currentCharacter.mesh.position.clone();
-    
+
     // Dispose of old character resources if needed
     // this.currentCharacter.dispose();
-    
+
     // Switch to new character
     this.currentCharacter = newCharacter;
     this.currentCharacter.mesh.position.copy(position);

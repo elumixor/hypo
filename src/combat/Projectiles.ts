@@ -16,33 +16,24 @@ export class Projectile {
 export class Projectiles {
   list: Projectile[] = [];
   readonly geometry = new THREE.BoxGeometry(
-    GameConfig.COMBAT.PROJECTILE_SIZE, 
-    GameConfig.COMBAT.PROJECTILE_SIZE, 
-    GameConfig.COMBAT.PROJECTILE_SIZE
+    GameConfig.COMBAT.PROJECTILE_SIZE,
+    GameConfig.COMBAT.PROJECTILE_SIZE,
+    GameConfig.COMBAT.PROJECTILE_SIZE,
   );
-  readonly playerMaterial = new THREE.MeshStandardMaterial({ 
-    color: GameConfig.COLORS.PROJECTILE_PLAYER, 
-    emissive: "#8d6f00" 
+  readonly playerMaterial = new THREE.MeshStandardMaterial({
+    color: GameConfig.COLORS.PROJECTILE_PLAYER,
+    emissive: "#8d6f00",
   });
-  readonly enemyMaterial = new THREE.MeshStandardMaterial({ 
-    color: GameConfig.COLORS.PROJECTILE_ENEMY, 
-    emissive: "#6e1212" 
+  readonly enemyMaterial = new THREE.MeshStandardMaterial({
+    color: GameConfig.COLORS.PROJECTILE_ENEMY,
+    emissive: "#6e1212",
   });
 
   /**
    * Add a new projectile
    */
-  add(
-    from: THREE.Vector3, 
-    dir: THREE.Vector3, 
-    fromPlayer: boolean, 
-    scene: THREE.Scene,
-    damage: number = 1,
-  ): void {
-    const mesh = new THREE.Mesh(
-      this.geometry, 
-      fromPlayer ? this.playerMaterial : this.enemyMaterial
-    );
+  add(from: THREE.Vector3, dir: THREE.Vector3, fromPlayer: boolean, scene: THREE.Scene, damage: number = 1): void {
+    const mesh = new THREE.Mesh(this.geometry, fromPlayer ? this.playerMaterial : this.enemyMaterial);
     mesh.position.copy(from);
     scene.add(mesh);
 
@@ -111,7 +102,7 @@ export class Projectiles {
         if (!enemy.isAlive()) {
           onEnemyKilled(enemy);
         }
-        
+
         break; // Projectile can only hit one enemy
       }
     }

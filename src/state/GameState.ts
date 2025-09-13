@@ -86,11 +86,11 @@ export class GameState {
   damagePlayer(damage: number): void {
     const oldHp = this.state.player.hp;
     this.state.player.hp = Math.max(0, oldHp - damage);
-    
+
     gameEvents.emit("player:hit", { damage, currentHp: this.state.player.hp });
-    gameEvents.emit("ui:healthUpdate", { 
-      current: this.state.player.hp, 
-      max: this.state.player.maxHp 
+    gameEvents.emit("ui:healthUpdate", {
+      current: this.state.player.hp,
+      max: this.state.player.maxHp,
     });
 
     if (this.state.player.hp <= 0 && oldHp > 0) {
@@ -103,14 +103,14 @@ export class GameState {
    */
   addExperience(amount: number): void {
     this.state.player.xp += amount;
-    
+
     if (this.state.player.xp >= this.state.player.xpToNext) {
       this.levelUp();
     }
 
-    gameEvents.emit("xp:collected", { 
-      amount, 
-      totalXp: this.state.player.xp 
+    gameEvents.emit("xp:collected", {
+      amount,
+      totalXp: this.state.player.xp,
     });
     gameEvents.emit("ui:xpUpdate", {
       level: this.state.player.level,
@@ -125,9 +125,9 @@ export class GameState {
   private levelUp(): void {
     this.state.player.level += 1;
     this.state.player.xp = 0;
-    this.state.player.xpToNext = Math.floor(
-      this.state.player.xpToNext * GameConfig.PROGRESSION.XP_MULTIPLIER
-    ) + GameConfig.PROGRESSION.XP_BASE_INCREASE;
+    this.state.player.xpToNext =
+      Math.floor(this.state.player.xpToNext * GameConfig.PROGRESSION.XP_MULTIPLIER) +
+      GameConfig.PROGRESSION.XP_BASE_INCREASE;
 
     gameEvents.emit("player:levelUp", {
       newLevel: this.state.player.level,
@@ -140,16 +140,16 @@ export class GameState {
    * Handle player death
    */
   private handlePlayerDeath(): void {
-    gameEvents.emit("player:death", { 
-      level: this.state.player.level, 
-      xp: this.state.player.xp 
+    gameEvents.emit("player:death", {
+      level: this.state.player.level,
+      xp: this.state.player.xp,
     });
 
     // Reset progression on death
     this.state.player.level = GameConfig.PROGRESSION.INITIAL_LEVEL;
     this.state.player.xp = GameConfig.PROGRESSION.INITIAL_XP;
     this.state.player.xpToNext = GameConfig.PROGRESSION.INITIAL_XP_TO_NEXT;
-    
+
     this.state.isGameOver = true;
   }
 
@@ -160,7 +160,7 @@ export class GameState {
     this.state.player.hp = this.state.player.maxHp;
     this.state.player.position = { x: 0, y: 0.4, z: 0 };
     this.state.isGameOver = false;
-    
+
     gameEvents.emit("ui:healthUpdate", {
       current: this.state.player.hp,
       max: this.state.player.maxHp,
@@ -223,7 +223,7 @@ export class GameState {
    */
   setPaused(paused: boolean): void {
     if (this.state.isPaused === paused) return;
-    
+
     this.state.isPaused = paused;
     gameEvents.emit(paused ? "game:paused" : "game:resumed", {});
   }
