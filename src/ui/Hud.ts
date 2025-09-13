@@ -13,6 +13,8 @@ export class Hud {
   }> = {};
   private readonly hpBg: Graphics;
   private readonly hpFg: Graphics;
+  private readonly energyBg: Graphics;
+  private readonly energyFg: Graphics;
   private readonly lvlText: Text;
   private readonly xpText: Text;
   private readonly skillPointsText: Text;
@@ -41,13 +43,23 @@ export class Hud {
     ui.addChild(this.hpBg);
     this.hpFg = new Graphics();
     ui.addChild(this.hpFg);
+
+    // energy bar
+    this.energyBg = new Graphics();
+    this.energyBg.beginFill(0x222222);
+    this.energyBg.drawRect(12, 50, 160, 10);
+    this.energyBg.endFill();
+    ui.addChild(this.energyBg);
+    this.energyFg = new Graphics();
+    ui.addChild(this.energyFg);
+
     this.lvlText = new Text({ text: "Lv:1", style: { fill: "#fff", fontSize: 13 } });
     this.lvlText.x = 12;
-    this.lvlText.y = 52;
+    this.lvlText.y = 66;
     ui.addChild(this.lvlText);
     this.xpText = new Text({ text: "XP:0/5", style: { fill: "#fff", fontSize: 13 } });
     this.xpText.x = 80;
-    this.xpText.y = 52;
+    this.xpText.y = 66;
     ui.addChild(this.xpText);
 
     this.skillPointsText = new Text({ text: "SP:0", style: { fill: "#4ec9ff", fontSize: 13 } });
@@ -145,6 +157,14 @@ export class Hud {
     this.hpFg.beginFill(0xff4444);
     this.hpFg.drawRect(12, 34, w, 12);
     this.hpFg.endFill();
+  }
+
+  setEnergy(cur: number, max: number) {
+    const w = 160 * Math.max(0, Math.min(1, cur / max));
+    this.energyFg.clear();
+    this.energyFg.beginFill(0x44aaff);
+    this.energyFg.drawRect(12, 50, w, 10);
+    this.energyFg.endFill();
   }
 
   setXP(level: number, xp: number, next: number) {
