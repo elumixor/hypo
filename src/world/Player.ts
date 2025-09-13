@@ -1,15 +1,15 @@
 import * as THREE from "three";
-import { Helio } from "../characters/Helio";
+import { Helios } from "../characters/Helios";
 import { GameConfig } from "../config/GameConfig";
 import type { Keyboard } from "../input/Keyboard";
 
 /**
  * Player wrapper class for backwards compatibility
- * Delegates to the current active character (initially Helio)
+ * Delegates to the current active character (initially Helios)
  * but also includes direct energy and movement systems from main branch
  */
 export class Player {
-  private currentCharacter: Helio;
+  private currentCharacter: Helios;
   readonly mesh: THREE.Mesh;
   speed = GameConfig.PLAYER.MOVEMENT_SPEED;
 
@@ -31,7 +31,7 @@ export class Player {
 
   constructor(keyboard: Keyboard, yaw: number) {
     // Create character for advanced features
-    this.currentCharacter = new Helio(keyboard, yaw);
+    this.currentCharacter = new Helios(keyboard, yaw);
 
     // Create direct mesh for immediate compatibility
     const geo = new THREE.BoxGeometry(GameConfig.PLAYER.SIZE, GameConfig.PLAYER.SIZE, GameConfig.PLAYER.SIZE);
@@ -144,14 +144,14 @@ export class Player {
   /**
    * Get the current active character
    */
-  getCurrentCharacter(): Helio {
+  getCurrentCharacter(): Helios {
     return this.currentCharacter;
   }
 
   /**
    * Switch to a different character (for future multi-character support)
    */
-  switchCharacter(newCharacter: Helio) {
+  switchCharacter(newCharacter: Helios) {
     // Store position and state from current character
     const position = this.currentCharacter.mesh.position.clone();
 

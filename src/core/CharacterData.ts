@@ -1,7 +1,7 @@
 import type { CharacterData, CharacterType } from "./Character";
 
 // Define all skills for each character
-const createHelioSkills = () => ({
+const createHeliosSkills = () => ({
   lightAttack: [
     {
       id: "helio-light-speed",
@@ -113,7 +113,7 @@ const createHelioSkills = () => ({
   ],
 });
 
-const createAriaSkills = () => ({
+const createIrisSkills = () => ({
   lightAttack: [
     {
       id: "aria-light-chain",
@@ -216,7 +216,7 @@ const createAriaSkills = () => ({
   ],
 });
 
-const createZaraSkills = () => ({
+const createLucySkills = () => ({
   lightAttack: [
     {
       id: "zara-light-poison",
@@ -408,24 +408,24 @@ const createKaiSkills = () => ({
 export const CHARACTERS: Record<CharacterType, CharacterData> = {
   helio: {
     id: "helio",
-    name: "Helio",
+    name: "Helios",
     description: "Solar warrior seeking revenge for his murdered parents",
     color: "#4ec9ff",
-    skillTrees: createHelioSkills(),
+    skillTrees: createHeliosSkills(),
   },
   aria: {
     id: "aria",
-    name: "Aria",
+    name: "Iris",
     description: "Wind master with swift and agile combat style",
     color: "#7fff7f",
-    skillTrees: createAriaSkills(),
+    skillTrees: createIrisSkills(),
   },
   zara: {
     id: "zara",
-    name: "Zara",
+    name: "Lucy",
     description: "Dark sorceress wielding shadow and void magic",
     color: "#bf7fff",
-    skillTrees: createZaraSkills(),
+    skillTrees: createLucySkills(),
   },
   kai: {
     id: "kai",

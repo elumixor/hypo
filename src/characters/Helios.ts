@@ -4,12 +4,12 @@ import type { Keyboard } from "../input/Keyboard";
 import { BaseCharacter, type CharacterStats, type SkillTree } from "./BaseCharacter";
 
 /**
- * Helio - The main character
+ * Helios - The main character
  * A balanced fighter with solar-themed abilities
  */
-export class Helio extends BaseCharacter {
+export class Helios extends BaseCharacter {
   constructor(keyboard: Keyboard, yaw: number) {
-    super("helio", "Helio", keyboard, yaw);
+    super("helio", "Helios", keyboard, yaw);
   }
 
   protected createMesh(): THREE.Mesh {

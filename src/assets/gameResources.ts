@@ -12,10 +12,10 @@ export const gameResources = new Resources()
   .add("rocks.glb") // Rocks/environment model
 
   // 2D Textures
-  .add("kira.png") // Kira character texture
+  .add("iris.png") // Iris character texture
   .add("helios.jpg") // Helios character texture
   .add("lucy.jpg") // Lucy character texture
-  .add("darius-concept.png") // Darius concept art
+  .add("lucy-concept.png") // Lucy concept art
   .add("iris-concept.png") // Iris concept art
   .add("kai-concept.png"); // Kai concept art
 
@@ -47,10 +47,10 @@ export async function initializeResources(
 //
 // // Now you can use resources with full type safety:
 // const droneModel = gameResources.get("Drone"); // Type: GLTF
-// const kiraTexture = gameResources.get("kira"); // Type: Texture
+// const irisTexture = gameResources.get("iris"); // Type: Texture
 //
 // // Use in Three.js:
 // scene.add(droneModel.scene);
 //
 // // Use in Pixi.js:
-// const sprite = new PIXI.Sprite(kiraTexture);
+// const sprite = new PIXI.Sprite(irisTexture);

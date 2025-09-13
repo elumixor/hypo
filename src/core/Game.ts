@@ -328,7 +328,7 @@ export class Game {
     this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
     this.hud.setXP(state.player.level, state.player.xp, state.player.xpToNext);
     this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
-    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
+    this.hud.setCurrentCharacter("Helios", "#4ec9ff");
 
     // Initialize skill UI components
     this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
@@ -920,7 +920,7 @@ export class Game {
     // Reset skill system on death
     this.skillSystem.reset();
     this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
-    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
+    this.hud.setCurrentCharacter("Helios", "#4ec9ff");
   }
 
   // Character interaction methods
