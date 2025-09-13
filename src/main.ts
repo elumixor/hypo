@@ -133,7 +133,8 @@ void (async () => {
   const speed = 4;
 
   const stepPlayer = (dt: number) => {
-  forward.set(Math.cos(yaw), 0, Math.sin(yaw));
+    // Forward should be away from camera (camera looks toward -forward)
+    forward.set(-Math.cos(yaw), 0, -Math.sin(yaw));
     right.set(forward.z, 0, -forward.x);
     moveVec.set(0, 0, 0);
     if (keys.has("w") || keys.has("arrowup")) moveVec.add(forward);
