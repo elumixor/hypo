@@ -37,10 +37,7 @@ export class HealthBar extends UIComponent {
       },
     });
     this.text.anchor.set(0.5, 0.5);
-    this.text.position.set(
-      GameConfig.UI.HEALTH_BAR_WIDTH / 2,
-      GameConfig.UI.HEALTH_BAR_HEIGHT / 2,
-    );
+    this.text.position.set(GameConfig.UI.HEALTH_BAR_WIDTH / 2, GameConfig.UI.HEALTH_BAR_HEIGHT / 2);
     this.container.addChild(this.text);
 
     this.updateDisplay();
