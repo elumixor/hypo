@@ -12,15 +12,15 @@ export interface LoadingProgress {
 export type RemoveExtension<T extends string> = T extends `${infer Name}.${string}` ? Name : T;
 
 export type ExtensionToType = {
-  '.glb': any;
-  '.gltf': any;
-  '.png': any;
-  '.jpg': any;
-  '.jpeg': any;
-  '.webp': any;
-  '.mp3': any;
-  '.wav': any;
-  '.ogg': any;
+  ".glb": any;
+  ".gltf": any;
+  ".png": any;
+  ".jpg": any;
+  ".jpeg": any;
+  ".webp": any;
+  ".mp3": any;
+  ".wav": any;
+  ".ogg": any;
 };
 
 export type GetResourceType<T extends string> = T extends `${string}${infer Ext}`

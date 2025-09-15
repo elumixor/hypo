@@ -1,9 +1,9 @@
 import "../utils/globals";
+import { Mesh, MeshStandardMaterial, SphereGeometry, type Vector3 } from "three";
 import { Entity } from "../../engine/entity";
-import { HealthBehavior } from "../behaviors/health-behavior";
 import { AIBehavior } from "../behaviors/ai-behavior";
+import { HealthBehavior } from "../behaviors/health-behavior";
 import { MovementBehavior } from "../behaviors/movement-behavior";
-import { Mesh, SphereGeometry, MeshStandardMaterial, Vector3 } from "three";
 import { ThreeService } from "../services/three-service";
 
 export interface EnemyConfig {
@@ -19,56 +19,51 @@ export class Enemy extends Entity {
   private readonly healthBehavior: HealthBehavior;
 
   constructor(config: EnemyConfig = {}) {
-    super();
-    
+    super(); // No ID parameter needed
+
     // Create THREE.js mesh for enemy
     const geometry = new SphereGeometry(0.25, 16, 12);
     const material = new MeshStandardMaterial({ color: 0xff4444 });
     this.mesh = new Mesh(geometry, material);
-    this.mesh.position.set(
-      (Math.random() - 0.5) * 10,
-      0.3,
-      (Math.random() - 0.5) * 10
-    );
-    
+    this.mesh.position.set((Math.random() - 0.5) * 10, 0.3, (Math.random() - 0.5) * 10);
+
     // Add behaviors with default configs
     this.healthBehavior = new HealthBehavior(config.health ?? 100);
     this.addBehavior(this.healthBehavior);
-    this.addBehavior(new MovementBehavior({
-      speed: config.movementSpeed ?? 2,
-    }));
-    this.addBehavior(new AIBehavior({
-      aggroRange: config.aggroRange ?? 10,
-      attackRange: config.attackRange ?? 2,
-      attackCooldown: config.attackCooldown ?? 1.5,
-      movementSpeed: config.movementSpeed ?? 2,
-    }));
+    this.addBehavior(
+      new MovementBehavior({
+        speed: config.movementSpeed ?? 2,
+      }),
+    );
+    this.addBehavior(
+      new AIBehavior({
+        aggroRange: config.aggroRange ?? 10,
+        attackRange: config.attackRange ?? 2,
+        attackCooldown: config.attackCooldown ?? 1.5,
+        movementSpeed: config.movementSpeed ?? 2,
+      }),
+    );
   }
 
-  protected override onInit(): void {
-    super.onInit();
-    console.log(`[Enemy] Enemy ${this.id} initialized`);
+  override onInit(): void {
+    log("[Enemy] Enemy initialized");
   }
 
-  protected override onEnterScene(): void {
-    super.onEnterScene();
-    console.log(`[Enemy] Enemy ${this.id} entered scene`);
-    
+  override onEnterScene(): void {
+    log("[Enemy] Enemy entered scene");
+
     // Add enemy mesh to THREE.js scene
     const threeService = this.getService(ThreeService);
     threeService.scene.add(this.mesh);
   }
 
-  protected override onExitScene(): void {
-    super.onExitScene();
-    
+  override onExitScene(): void {
     // Remove enemy mesh from THREE.js scene
     const threeService = this.getService(ThreeService);
     threeService.scene.remove(this.mesh);
   }
 
-  protected override onDestroy(): void {
-    super.onDestroy();
+  override onDestroy(): void {
     this.mesh.geometry.dispose();
     if (Array.isArray(this.mesh.material)) {
       for (const material of this.mesh.material) material.dispose();

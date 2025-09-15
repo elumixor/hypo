@@ -1,12 +1,12 @@
 export abstract class Service {
   protected onInit(): void {}
-  
+
   protected onEnterScene(): void {}
-  
+
   protected onUpdate(_dt: number): void {}
-  
+
   protected onExitScene(): void {}
-  
+
   protected onDestroy(): void {}
 
   init(): void {

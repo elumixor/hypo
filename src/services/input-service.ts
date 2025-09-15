@@ -35,14 +35,30 @@ export class InputService extends Service {
   }
 
   // Convenience getters for common game inputs
-  get moveForward(): boolean { return this.isPressed("KeyW"); }
-  get moveBackward(): boolean { return this.isPressed("KeyS"); }
-  get moveLeft(): boolean { return this.isPressed("KeyA"); }
-  get moveRight(): boolean { return this.isPressed("KeyD"); }
-  get dash(): boolean { return this.isPressed("ShiftLeft"); }
-  get block(): boolean { return this.isPressed("Space"); }
-  get attack(): boolean { return this.isPressed("KeyE"); }
-  get altAttack(): boolean { return this.isPressed("KeyQ"); }
+  get moveForward(): boolean {
+    return this.isPressed("KeyW");
+  }
+  get moveBackward(): boolean {
+    return this.isPressed("KeyS");
+  }
+  get moveLeft(): boolean {
+    return this.isPressed("KeyA");
+  }
+  get moveRight(): boolean {
+    return this.isPressed("KeyD");
+  }
+  get dash(): boolean {
+    return this.isPressed("ShiftLeft");
+  }
+  get block(): boolean {
+    return this.isPressed("Space");
+  }
+  get attack(): boolean {
+    return this.isPressed("KeyE");
+  }
+  get altAttack(): boolean {
+    return this.isPressed("KeyQ");
+  }
 
   protected override onDestroy(): void {
     super.onDestroy();

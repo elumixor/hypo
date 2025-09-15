@@ -1,5 +1,5 @@
+import { Color, PerspectiveCamera, Scene, WebGLRenderer } from "three";
 import { Service } from "../../engine/service";
-import { Scene, PerspectiveCamera, WebGLRenderer, Color } from "three";
 
 export class ThreeService extends Service {
   readonly scene = new Scene();

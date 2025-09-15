@@ -1,5 +1,5 @@
-import * as THREE from "three";
 import { EventEmitter } from "@elumixor/frontils";
+import * as THREE from "three";
 import { GameConfig } from "../config/GameConfig";
 import type { EffectsManager } from "../effects/EffectsManager";
 import type { Enemy } from "../world/Enemy";

@@ -1,6 +1,6 @@
 # Engine Architecture
 
-This document describes the new modular engine architecture for HYPO.
+This document describes the unified modular engine architecture for HYPO.
 
 ## Core Classes
 
@@ -13,7 +13,7 @@ import { HealthBehavior } from "../behaviors/health-behavior";
 
 export class Player extends Entity {
   constructor() {
-    super("player");
+    super();
     this.addBehavior(new HealthBehavior(100));
   }
 }
@@ -30,15 +30,14 @@ export class HealthBehavior extends Behavior {
     super();
   }
 
-  protected override onInit(): void {
-    super.onInit();
+  onInit(): void {
     // Access services through this.getService()
   }
 }
 ```
 
 ### Service
-Global systems that manage state and communication. Use EventEmitters for communication.
+Systems that manage state and communication. Use EventEmitters for communication.
 
 ```typescript
 import { Service } from "@engine";
@@ -61,8 +60,7 @@ import { Widget } from "@engine";
 import { CombatService } from "../services/combat-service";
 
 export class HUD extends Widget {
-  protected override onInit(): void {
-    super.onInit();
+  onInit(): void {
     const combat = this.getService(CombatService);
     combat.entityDamaged.subscribe(({ entity, amount }) => {
       // Update UI
@@ -78,8 +76,7 @@ Manages entities, widgets, and scene-scoped services.
 import { Scene } from "@engine";
 
 export class CombatScene extends Scene {
-  protected override onInit(): void {
-    super.onInit();
+  onInit(): void {
     this.addService(new CombatService());
     this.addWidget(new HUD());
     this.addEntity(new Player());
@@ -88,15 +85,14 @@ export class CombatScene extends Scene {
 ```
 
 ### Game
-Root controller that manages global services and active scenes.
+Root controller that manages services and active scenes.
 
 ```typescript
 import { Game } from "@engine";
 
 export class GameHypo extends Game {
-  protected override onInit(): void {
-    super.onInit();
-    this.registerScene(new CombatScene());
+  onInit(): void {
+    this.registerScene(new CombatScene("combat"));
     this.switchToScene("combat");
   }
 }
@@ -104,7 +100,7 @@ export class GameHypo extends Game {
 
 ## Lifecycle Methods
 
-All classes implement consistent lifecycle methods:
+All classes implement consistent public lifecycle methods:
 
 - `onInit()`: Called once when fully constructed
 - `onEnterScene()`: Called when becoming active in a scene
@@ -112,15 +108,13 @@ All classes implement consistent lifecycle methods:
 - `onExitScene()`: Called when removed from scene
 - `onDestroy()`: Called for cleanup
 
-## Implementation Status
+## Key Features
 
-- ✅ Engine foundation (Entity, Behavior, Service, Widget, Scene, Game)
-- ✅ Core services (Combat, Health, Progression, Time)
-- ✅ Core behaviors (Health, Movement, AI)
-- ✅ Entity implementations (Player, Enemy)
-- ✅ Scene implementations (Combat, Menu, SafeZone)
-- ✅ Widget implementations (HUD)
-- ✅ Complete game loop with GameHypo
+- **Direct Method Access**: All lifecycle methods are public - call them directly
+- **Public Fields**: Access `entity`, `scene` fields directly without getters/setters
+- **Type Safety**: Constructor type `Constructor<T>` for better type inference
+- **No IDs**: Entities don't have IDs - managed by reference
+- **Event-Driven Communication**: Services use EventEmitters for loose coupling
 
 ## Usage
 

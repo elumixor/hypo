@@ -12,7 +12,7 @@ async function startGame(): Promise<void> {
 
   // Start the game loop
   let lastTime = performance.now();
-  
+
   function gameLoop(currentTime: number): void {
     const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
     lastTime = currentTime;
@@ -29,7 +29,7 @@ async function startGame(): Promise<void> {
 
   console.log("✅ HYPO modular game started successfully!");
   console.log("🏗️  Architecture: Entity-Behavior-Service-Widget-Scene-Game");
-  
+
   // Expose game for debugging
   (window as any).hypoGame = game;
 }

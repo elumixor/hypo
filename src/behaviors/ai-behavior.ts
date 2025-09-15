@@ -1,5 +1,5 @@
 import "../utils/globals";
-import { Behavior } from "../../engine/entity";
+import { Behavior } from "../../engine/behavior";
 
 export interface AIConfig {
   aggroRange: number;
@@ -11,86 +11,54 @@ export interface AIConfig {
 export class AIBehavior extends Behavior {
   private readonly config: AIConfig;
   private attackCooldownTime = 0;
-  private currentTarget?: string; // Entity ID of target
+  private currentTarget?: string;
 
   constructor(config: AIConfig) {
     super();
     this.config = config;
   }
 
-  protected override onInit(): void {
-    super.onInit();
-    console.log(`[AIBehavior] AI initialized for ${this.entity.id}`);
+  override onInit(): void {
+    log("[AIBehavior] AI initialized for entity");
   }
 
-  protected override onUpdate(dt: number): void {
-    super.onUpdate(dt);
-
-    // Update attack cooldown
+  override onUpdate(dt: number): void {
     if (this.attackCooldownTime > 0) {
       this.attackCooldownTime -= dt;
     }
 
-    // Simple AI logic
-    this.updateAI(dt);
-  }
-
-  private updateAI(dt: number): void {
-    // Find target (in a real implementation, this would query the scene for player/enemies)
-    if (!this.currentTarget) {
-      this.findTarget();
-    }
-
-    if (this.currentTarget) {
-      this.moveTowardsTarget(dt);
-      this.attemptAttack();
-    }
+    this.findTarget();
+    this.updateBehavior(dt);
   }
 
   private findTarget(): void {
-    // In a real implementation, this would search for enemies within aggro range
-    // For now, just target "player" if it exists
-    this.currentTarget = "player";
-    console.log(`[AIBehavior] ${this.entity.id} acquired target: ${this.currentTarget}`);
-  }
-
-  private moveTowardsTarget(_dt: number): void {
-    if (!this.currentTarget) return;
-
-    // In a real implementation, this would get actual positions and move towards target
-    console.log(`[AIBehavior] ${this.entity.id} moving towards ${this.currentTarget}`);
-  }
-
-  private attemptAttack(): void {
-    if (!this.currentTarget || this.attackCooldownTime > 0) return;
-
-    // Check if target is in attack range (simplified)
-    const inRange = this.isTargetInRange();
-    if (inRange) {
-      this.attack();
+    if (!this.currentTarget) {
+      const hasTarget = Math.random() < 0.1;
+      if (hasTarget) {
+        this.currentTarget = "player";
+        log(`[AIBehavior] Entity acquired target: ${this.currentTarget}`);
+      }
     }
   }
 
-  private isTargetInRange(): boolean {
-    // In a real implementation, this would calculate actual distance
-    return Math.random() > 0.7; // Simplified: 30% chance to be in range
-  }
-
-  private attack(): void {
+  private updateBehavior(dt: number): void {
     if (!this.currentTarget) return;
-    
-    // In a real implementation, this would get the actual target entity and use combat service
-    // For now, just simulate an attack
-    console.log(`[AIBehavior] ${this.entity.id} attacks ${this.currentTarget}`);
-    
-    this.attackCooldownTime = this.config.attackCooldown;
+
+    const distanceToTarget = Math.random() * 10;
+    if (distanceToTarget > this.config.attackRange) {
+      this.moveTowardsTarget(dt);
+    } else if (this.attackCooldownTime <= 0) {
+      this.attackTarget();
+      this.attackCooldownTime = this.config.attackCooldown;
+    }
   }
 
-  setTarget(targetId: string): void {
-    this.currentTarget = targetId;
+  private moveTowardsTarget(_dt: number): void {
+    log(`[AIBehavior] Entity moving towards ${this.currentTarget}`);
   }
 
-  clearTarget(): void {
-    this.currentTarget = undefined;
+  private attackTarget(): void {
+    if (!this.currentTarget) return;
+    log(`[AIBehavior] Entity attacks ${this.currentTarget}`);
   }
 }

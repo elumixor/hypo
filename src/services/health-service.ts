@@ -1,5 +1,5 @@
-import { Service } from "../../engine/service";
 import { EventEmitter } from "@elumixor/frontils";
+import { Service } from "../../engine/service";
 
 export interface HealthChangeData {
   currentHealth: number;

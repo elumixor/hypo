@@ -1,33 +1,30 @@
+import type { Constructor } from "./behavior";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 
 export abstract class Game {
-  private readonly globalServices: Map<Function, Service> = new Map();
+  private readonly services: Map<Function, Service> = new Map();
   private currentScene?: Scene;
   private readonly scenes: Map<string, Scene> = new Map();
 
   protected onInit(): void {}
-  
+
   protected onUpdate(_dt: number): void {}
-  
+
   protected onDestroy(): void {}
 
-  addGlobalService<T extends Service>(service: T): T {
-    this.globalServices.set(service.constructor, service);
+  addService<T extends Service>(service: T): T {
+    this.services.set(service.constructor, service);
     service.init();
     return service;
   }
 
-  getGlobalService<T extends Service>(serviceClass: new (...args: any[]) => T): T {
-    const service = this.globalServices.get(serviceClass);
+  getService<T extends Service>(serviceClass: Constructor<T>): T {
+    const service = this.services.get(serviceClass);
     if (!service) {
-      throw new Error(`Global service ${serviceClass.name} not found`);
+      throw new Error(`Service ${serviceClass.name} not found`);
     }
     return service as T;
-  }
-
-  hasGlobalService<T extends Service>(serviceClass: new (...args: any[]) => T): boolean {
-    return this.globalServices.has(serviceClass);
   }
 
   registerScene(scene: Scene): void {
@@ -61,8 +58,8 @@ export abstract class Game {
   update(dt: number): void {
     this.onUpdate(dt);
 
-    // Update global services
-    for (const service of Array.from(this.globalServices.values())) {
+    // Update services
+    for (const service of Array.from(this.services.values())) {
       service.update(dt);
     }
 
@@ -87,10 +84,10 @@ export abstract class Game {
     }
     this.scenes.clear();
 
-    // Destroy global services
-    for (const service of Array.from(this.globalServices.values())) {
+    // Destroy services
+    for (const service of Array.from(this.services.values())) {
       service.destroy();
     }
-    this.globalServices.clear();
+    this.services.clear();
   }
 }

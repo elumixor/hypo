@@ -6,12 +6,12 @@ import { SafeZoneScene } from "./scenes/safe-zone-scene/scene";
 export class GameHypo extends Game {
   protected override onInit(): void {
     super.onInit();
-    
+
     // Register scenes
     this.registerScene(new MenuScene());
     this.registerScene(new CombatScene());
     this.registerScene(new SafeZoneScene());
-    
+
     // Switch to initial scene
     this.switchToScene("menu");
   }

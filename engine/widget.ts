@@ -1,5 +1,5 @@
-import type { Service } from "./service";
 import type { Scene } from "./scene";
+import type { Service } from "./service";
 
 export abstract class Widget {
   readonly id: string;
@@ -10,13 +10,13 @@ export abstract class Widget {
   }
 
   protected onInit(): void {}
-  
+
   protected onEnterScene(): void {}
-  
+
   protected onUpdate(_dt: number): void {}
-  
+
   protected onExitScene(): void {}
-  
+
   protected onDestroy(): void {}
 
   setScene(scene: Scene): void {

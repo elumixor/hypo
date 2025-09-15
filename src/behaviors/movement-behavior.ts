@@ -1,5 +1,5 @@
 import "../utils/globals";
-import { Behavior } from "../../engine/entity";
+import { Behavior } from "../../engine/behavior";
 
 export interface MovementConfig {
   speed: number;
@@ -32,9 +32,7 @@ export class MovementBehavior extends Behavior {
     return this.dashCooldownTime <= 0 && !this.isDashing;
   }
 
-  protected override onUpdate(dt: number): void {
-    super.onUpdate(dt);
-
+  override onUpdate(dt: number): void {
     // Update dash timing
     if (this.isDashing) {
       this.dashTime -= dt;
@@ -55,7 +53,7 @@ export class MovementBehavior extends Behavior {
 
     this.isDashing = true;
     this.dashTime = this.config.dashDuration;
-    console.log(`[MovementBehavior] ${this.entity.id} started dash`);
+    log("[MovementBehavior] Entity started dash");
     return true;
   }
 
@@ -75,9 +73,6 @@ export class MovementBehavior extends Behavior {
     };
 
     // Move entity (this would update actual position in a real implementation)
-    console.log(
-      `[MovementBehavior] ${this.entity.id} moving at speed ${speed}, distance ${distance}`,
-      normalizedDirection,
-    );
+    log(`[MovementBehavior] Entity moving at speed ${speed}, distance ${distance}`, normalizedDirection);
   }
 }

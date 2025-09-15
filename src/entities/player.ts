@@ -1,8 +1,8 @@
 import "../utils/globals";
+import { Mesh, MeshStandardMaterial, SphereGeometry, type Vector3 } from "three";
 import { Entity } from "../../engine/entity";
 import { HealthBehavior } from "../behaviors/health-behavior";
 import { MovementBehavior } from "../behaviors/movement-behavior";
-import { Mesh, SphereGeometry, MeshStandardMaterial, Vector3 } from "three";
 import { ThreeService } from "../services/three-service";
 
 export interface PlayerConfig {
@@ -17,14 +17,14 @@ export class Player extends Entity {
   private readonly movementBehavior: MovementBehavior;
 
   constructor(config: PlayerConfig) {
-    super("player"); // Fixed ID for player
-    
+    super(); // No ID parameter needed
+
     // Create THREE.js mesh for player
     const geometry = new SphereGeometry(0.3, 16, 12);
     const material = new MeshStandardMaterial({ color: 0x4ec9ff });
     this.mesh = new Mesh(geometry, material);
     this.mesh.position.set(0, 0.4, 0);
-    
+
     this.healthBehavior = new HealthBehavior(config.health);
     this.movementBehavior = new MovementBehavior({
       speed: config.movementSpeed,
@@ -35,30 +35,25 @@ export class Player extends Entity {
     this.addBehavior(this.movementBehavior);
   }
 
-  protected override onInit(): void {
-    super.onInit();
-    console.log("[Player] Player entity initialized");
+  override onInit(): void {
+    log("[Player] Player entity initialized");
   }
 
-  protected override onEnterScene(): void {
-    super.onEnterScene();
-    console.log("[Player] Player entered scene");
-    
+  override onEnterScene(): void {
+    log("[Player] Player entered scene");
+
     // Add player mesh to THREE.js scene
     const threeService = this.getService(ThreeService);
     threeService.scene.add(this.mesh);
   }
 
-  protected override onExitScene(): void {
-    super.onExitScene();
-    
+  override onExitScene(): void {
     // Remove player mesh from THREE.js scene
     const threeService = this.getService(ThreeService);
     threeService.scene.remove(this.mesh);
   }
 
-  protected override onDestroy(): void {
-    super.onDestroy();
+  override onDestroy(): void {
     this.mesh.geometry.dispose();
     if (Array.isArray(this.mesh.material)) {
       for (const material of this.mesh.material) material.dispose();
@@ -79,7 +74,7 @@ export class Player extends Entity {
   takeDamage(amount: number): void {
     // This will trigger the HealthBehavior's damage handling
     // In a more complex system, this might go through the CombatService
-    console.log(`[Player] Taking ${amount} damage`);
+    log(`[Player] Taking ${amount} damage`);
   }
 
   dash(): boolean {
@@ -88,7 +83,7 @@ export class Player extends Entity {
 
   move(direction: { x: number; y: number; z: number }, dt: number): void {
     this.movementBehavior.move(direction, dt);
-    
+
     // Update THREE.js mesh position based on movement
     const speed = this.movementBehavior.currentSpeed;
     const distance = speed * dt;
