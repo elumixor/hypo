@@ -71,7 +71,7 @@ export class CharacterSwitchUI {
 
       // Button background
       const bg = new Graphics();
-      const isCurrentChar = character.data.id === currentChar;
+      const isCurrentChar = character.type === currentChar;
       const isUnlocked = character.skillState.isUnlocked;
 
       if (!isUnlocked) {
@@ -159,8 +159,8 @@ export class CharacterSwitchUI {
         button.cursor = "pointer";
 
         button.on("pointerdown", () => {
-          if (this.skillSystem.switchCharacter(character.data.id)) {
-            this.onCharacterSwitch?.(character.data.id);
+          if (this.skillSystem.switchCharacter(character.type)) {
+            this.onCharacterSwitch?.(character.type);
             this.hide();
           }
         });

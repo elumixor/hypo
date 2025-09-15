@@ -4,7 +4,7 @@ import "@elumixor/frontils";
 import { resources } from "resources";
 import { Game } from "./core/Game";
 
-async function startGame() {
+async function startGame(): Promise<void> {
   console.log("🎮 Initializing HYPO game...");
 
   // Initialize resources with progress tracking

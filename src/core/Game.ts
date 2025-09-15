@@ -3,7 +3,16 @@ import { CharacterManager } from "../characters/CharacterManager";
 import { Projectiles } from "../combat/Projectiles";
 import { GameConfig } from "../config/GameConfig";
 import { EffectsManager } from "../effects/EffectsManager";
-import { gameEvents } from "../events/GameEvents";
+import {
+  combatEnemyKilled,
+  playerDash,
+  playerLevelUp,
+  uiHealthUpdate,
+  uiStatusUpdate,
+  uiXpUpdate,
+  xpCollected,
+  xpSpawned,
+} from "../events/GameEvents";
 import { Keyboard } from "../input/Keyboard";
 import { gameState } from "../state/GameState";
 import { CharacterSwitchUI } from "../ui/CharacterSwitchUI";
@@ -190,28 +199,28 @@ export class Game {
    */
   private setupEventListeners(): void {
     // Listen for UI updates
-    gameEvents.on("ui:statusUpdate", ({ message }) => {
-      this.hud?.setStatus(message);
+    uiStatusUpdate.subscribe((data: { message: string }) => {
+      this.hud?.setStatus(data.message);
     });
 
-    gameEvents.on("ui:healthUpdate", ({ current, max }) => {
-      this.hud?.setHealth(current, max);
+    uiHealthUpdate.subscribe((data: { current: number; max: number }) => {
+      this.hud?.setHealth(data.current, data.max);
     });
 
-    gameEvents.on("ui:xpUpdate", ({ level, xp, xpToNext }) => {
-      this.hud?.setXP(level, xp, xpToNext);
+    uiXpUpdate.subscribe((data: { level: number; xp: number; xpToNext: number }) => {
+      this.hud?.setXP(data.level, data.xp, data.xpToNext);
     });
 
     // Listen for player events
-    gameEvents.on("player:levelUp", ({ newLevel }) => {
-      gameEvents.emit("ui:statusUpdate", { message: `Leveled to ${newLevel}!` });
+    playerLevelUp.subscribe((data: { newLevel: number; xp: number; xpToNext: number }) => {
+      uiStatusUpdate.emit({ message: `Leveled to ${data.newLevel}!` });
     });
   }
 
   loadCurrentLevel() {
     // Clear existing scene
-    while (this.scene.children.length > 0) {
-      const child = this.scene.children[0];
+    while (this.scene.children.nonEmpty) {
+      const child = this.scene.children.first;
       if (child) {
         this.scene.remove(child);
       }
@@ -289,7 +298,7 @@ export class Game {
       }
     } else {
       // Check if all enemies are defeated
-      if (this.spawner.enemies.length === 0) {
+      if (this.spawner.enemies.isEmpty) {
         this.completeLevelProgression();
       }
     }
@@ -353,13 +362,13 @@ export class Game {
     const started = this.player.startDash();
     if (started) {
       log("Game", "dash");
-      gameEvents.emit("player:dash", { success: true });
-      gameEvents.emit("ui:statusUpdate", { message: "Dash!" });
+      playerDash.emit({ success: true });
+      uiStatusUpdate.emit({ message: "Dash!" });
       // Add dash visual effects
       this.effects.dashEffect(this.player.mesh.position);
     } else {
       log("Game", "dash-failed-cooldown");
-      gameEvents.emit("player:dash", { success: false });
+      playerDash.emit({ success: false });
     }
   }
 
@@ -371,7 +380,7 @@ export class Game {
     const newState = !this.player.shieldActive;
     this.player.setShield(newState);
     gameState.setShield(newState);
-    gameEvents.emit("ui:statusUpdate", { message: newState ? "Block!" : "Block off" });
+    uiStatusUpdate.emit({ message: newState ? "Block!" : "Block off" });
     // Add block visual effects when activating
     if (newState) {
       this.effects.blockEffect(this.player.mesh.position);
@@ -396,11 +405,11 @@ export class Game {
     });
 
     this.gameStateManager.on("character_unlocked", (data) => {
-      this.hud.setStatus(`Character unlocked: ${data.characterId}`);
+      this.hud.setStatus(`Character unlocked: ${(data as { characterId: string }).characterId}`);
     });
 
     this.gameStateManager.on("quest_completed", (data) => {
-      this.hud.setStatus(`Quest completed: ${data.quest.name}`);
+      this.hud.setStatus(`Quest completed: ${(data as { quest: { name: string } }).quest.name}`);
     });
   }
 
@@ -540,7 +549,7 @@ export class Game {
 
     // Update character skills
     for (const character of this.skillSystem.getAllCharacters()) {
-      const characterId = character.data.id;
+      const characterId = character.type;
       const skills: Record<string, number> = {};
 
       // Extract all skills from character skill trees
@@ -560,7 +569,7 @@ export class Game {
         }
       }
 
-      if (Object.keys(skills).length > 0) {
+      if (Object.keys(skills).nonEmpty) {
         this.gameStateManager.getState().characterSkills[characterId] = skills;
       }
     }
@@ -666,10 +675,15 @@ export class Game {
   }
 
   // (removed duplicate and misplaced code)
-  onResize() {
+  onResize(): void {
     this.renderer.setSize(innerWidth, innerHeight);
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
+
+    // Resize Pixi.js HUD application
+    if (this.hud?.app) {
+      this.hud.app.renderer.resize(innerWidth, innerHeight);
+    }
 
     // Resize skill UI components
     if (this.skillTreeUI) {
@@ -677,6 +691,14 @@ export class Game {
     }
     if (this.characterSwitchUI) {
       this.characterSwitchUI.resize();
+    }
+
+    // Resize menu UI components
+    if (this.mainMenuUI) {
+      this.mainMenuUI.resize();
+    }
+    if (this.pauseMenuUI) {
+      this.pauseMenuUI.resize();
     }
   }
   update(dt: number) {
@@ -836,7 +858,7 @@ export class Game {
     this.spawner.remove(e);
     this.spawnXP(pos);
 
-    gameEvents.emit("combat:enemy:killed", {
+    combatEnemyKilled.emit({
       position: { x: pos.x, y: pos.y, z: pos.z },
     });
   }
@@ -852,7 +874,7 @@ export class Game {
     this.scene.add(mesh);
     this.xpCrystals.push(mesh);
 
-    gameEvents.emit("xp:spawned", {
+    xpSpawned.emit({
       position: { x: pos.x, y: pos.y, z: pos.z },
     });
   }
@@ -870,7 +892,7 @@ export class Game {
     gameState.addExperience(1);
     const newXp = gameState.current.player.xp;
 
-    gameEvents.emit("xp:collected", {
+    xpCollected.emit({
       amount: 1,
       totalXp: newXp,
     });
@@ -909,7 +931,7 @@ export class Game {
     this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
   }
   respawn() {
-    gameEvents.emit("ui:statusUpdate", { message: "You Died - Respawning" });
+    uiStatusUpdate.emit({ message: "You Died - Respawning" });
     gameState.respawn();
     this.player.mesh.position.set(0, 0.4, 0);
 
@@ -953,7 +975,7 @@ export class Game {
 
   demonstrateCharacterInteraction() {
     const availableChars = this.characterManager.getAvailableForInteraction();
-    if (availableChars.length === 0) {
+    if (availableChars.isEmpty) {
       this.hud.setStatus("No characters available for interaction");
       return;
     }

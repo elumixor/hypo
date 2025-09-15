@@ -1,126 +1,45 @@
+import { EventEmitter } from "@elumixor/frontils";
+
 /**
  * Type-safe event system for game communication
+ * Individual EventEmitters for each event type using @elumixor/frontils
  */
 
-export interface GameEvents {
-  // Player events
-  "player:hit": { damage: number; currentHp: number };
-  "player:death": { level: number; xp: number };
-  "player:levelUp": { newLevel: number; xp: number; xpToNext: number };
-  "player:dash": { success: boolean };
-  "player:shield": { active: boolean };
+// Player events
+export const playerHit = new EventEmitter<{ damage: number; currentHp: number }>();
+export const playerDeath = new EventEmitter<{ level: number; xp: number }>();
+export const playerLevelUp = new EventEmitter<{ newLevel: number; xp: number; xpToNext: number }>();
+export const playerDash = new EventEmitter<{ success: boolean }>();
+export const playerShield = new EventEmitter<{ active: boolean }>();
 
-  // Combat events
-  "combat:attack": { type: "easy" | "alt"; target?: { x: number; y: number; z: number } };
-  "combat:projectile:spawn": { fromPlayer: boolean; position: { x: number; y: number; z: number } };
-  "combat:enemy:killed": { position: { x: number; y: number; z: number } };
+// Combat events
+export const combatAttack = new EventEmitter<{ type: "easy" | "alt"; target?: { x: number; y: number; z: number } }>();
+export const combatProjectileSpawn = new EventEmitter<{
+  fromPlayer: boolean;
+  position: { x: number; y: number; z: number };
+}>();
+export const combatEnemyKilled = new EventEmitter<{ position: { x: number; y: number; z: number } }>();
 
-  // XP events
-  "xp:collected": { amount: number; totalXp: number };
-  "xp:spawned": { position: { x: number; y: number; z: number } };
+// XP events
+export const xpCollected = new EventEmitter<{ amount: number; totalXp: number }>();
+export const xpSpawned = new EventEmitter<{ position: { x: number; y: number; z: number } }>();
 
-  // UI events
-  "ui:statusUpdate": { message: string };
-  "ui:healthUpdate": { current: number; max: number };
-  "ui:xpUpdate": { level: number; xp: number; xpToNext: number };
+// UI events
+export const uiStatusUpdate = new EventEmitter<{ message: string }>();
+export const uiHealthUpdate = new EventEmitter<{ current: number; max: number }>();
+export const uiXpUpdate = new EventEmitter<{ level: number; xp: number; xpToNext: number }>();
 
-  // Game state events
-  "game:paused": Record<string, never>;
-  "game:resumed": Record<string, never>;
-  "game:over": Record<string, never>;
-  "game:restart": Record<string, never>;
+// Game state events
+export const gamePaused = new EventEmitter<Record<string, never>>();
+export const gameResumed = new EventEmitter<Record<string, never>>();
+export const gameOver = new EventEmitter<Record<string, never>>();
+export const gameRestart = new EventEmitter<Record<string, never>>();
 
-  // Character events
-  "character:switch": { from: string; to: string };
-  "character:join": { characterId: string; name: string };
+// Character events
+export const characterSwitch = new EventEmitter<{ from: string; to: string }>();
+export const characterJoin = new EventEmitter<{ characterId: string; name: string }>();
 
-  // World events
-  "world:transition": { from: number; to: number };
-  "level:complete": { worldId: number; levelId: number };
-  "boss:defeated": { worldId: number; bossId: string };
-}
-
-export type GameEventType = keyof GameEvents;
-export type GameEventData<T extends GameEventType> = GameEvents[T];
-
-export class EventEmitter {
-  // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
-  private readonly listeners = new Map<string, Set<(data: any) => void>>();
-
-  /**
-   * Subscribe to an event
-   */
-  on<T extends GameEventType>(event: T, listener: (data: GameEventData<T>) => void): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-
-    const eventListeners = this.listeners.get(event);
-    if (!eventListeners)
-      return () => {
-        // No-op unsubscribe function
-      };
-
-    // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
-    eventListeners.add(listener as (data: any) => void);
-
-    // Return unsubscribe function
-    return () => {
-      // biome-ignore lint/suspicious/noExplicitAny: Event system requires flexible typing
-      eventListeners.delete(listener as (data: any) => void);
-      if (eventListeners.size === 0) {
-        this.listeners.delete(event);
-      }
-    };
-  }
-
-  /**
-   * Subscribe to an event but only listen once
-   */
-  once<T extends GameEventType>(event: T, listener: (data: GameEventData<T>) => void): () => void {
-    const unsubscribe = this.on(event, (data) => {
-      unsubscribe();
-      listener(data);
-    });
-    return unsubscribe;
-  }
-
-  /**
-   * Emit an event to all listeners
-   */
-  emit<T extends GameEventType>(event: T, data: GameEventData<T>): void {
-    const eventListeners = this.listeners.get(event);
-    if (!eventListeners) return;
-
-    // Create a copy to avoid issues if listeners are modified during iteration
-    const listeners = [...eventListeners];
-    for (const listener of listeners) {
-      try {
-        listener(data);
-      } catch (error) {
-        console.error(`Error in event listener for '${event}':`, error);
-      }
-    }
-  }
-
-  /**
-   * Remove all listeners for a specific event or all events
-   */
-  removeAllListeners(event?: GameEventType): void {
-    if (event) {
-      this.listeners.delete(event);
-    } else {
-      this.listeners.clear();
-    }
-  }
-
-  /**
-   * Get the number of listeners for an event
-   */
-  listenerCount(event: GameEventType): number {
-    return this.listeners.get(event)?.size ?? 0;
-  }
-}
-
-// Global event emitter instance
-export const gameEvents = new EventEmitter();
+// World events
+export const worldTransition = new EventEmitter<{ from: number; to: number }>();
+export const levelComplete = new EventEmitter<{ worldId: number; levelId: number }>();
+export const bossDefeated = new EventEmitter<{ worldId: number; bossId: string }>();

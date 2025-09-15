@@ -85,7 +85,7 @@ export class SkillTreeUI {
 
       // Tab background
       const bg = new Graphics();
-      const isActive = character.data.id === this.currentCharacter;
+      const isActive = character.type === this.currentCharacter;
       const isUnlocked = character.skillState.isUnlocked;
 
       if (!isUnlocked) {
@@ -127,13 +127,13 @@ export class SkillTreeUI {
         tab.eventMode = "static";
         tab.cursor = "pointer";
         tab.on("pointerdown", () => {
-          this.currentCharacter = character.data.id;
+          this.currentCharacter = character.type;
           this.updateCharacterTabs();
           this.updateSkillTree();
         });
       }
 
-      this.characterTabs.set(character.data.id, tab);
+      this.characterTabs.set(character.type, tab);
       this.container.addChild(tab);
     });
   }
@@ -209,7 +209,7 @@ export class SkillTreeUI {
     const categorySpacing = 160;
 
     categories.forEach((category) => {
-      if (category.skills.length === 0) return;
+      if (category.skills.isEmpty) return;
 
       // Category header
       const categoryHeader = new Text({
