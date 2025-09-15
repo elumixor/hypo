@@ -9,4 +9,9 @@ export default defineConfig({
     target: "es2019",
     sourcemap: false,
   },
+  resolve: {
+    alias: {
+      "@engine": "/engine",
+    },
+  },
 });

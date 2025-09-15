@@ -170,7 +170,7 @@ export class Resources<TResources extends Record<string, ResourceEntry> = Record
 
     const type = extensionMap[extension];
     if (!type) {
-      throw new Error(`Unsupported file extension: ${extension}`);
+      throw new Error(`Unsupported file extension: ${String(extension)}`);
     }
 
     return type as GetResourceType<T>;
