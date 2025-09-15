@@ -18,21 +18,20 @@ bun run dev
 
 Open `http://localhost:5173`.
 
-Load assets demo & tools:
+Asset viewer (scan & preview models/textures):
 
 ```bash
-bun run assets          # Open the asset viewer
-bun run test-resources  # Open resource loading test page
+bun run asset-viewer
 ```
 
 ## Repository Essentials
 
-| File | Purpose |
-|------|---------|
-| `package.json` | Scripts & dependencies |
-| `tsconfig.json` | TypeScript config |
-| `vite.config.ts` | Vite build config |
-| `biome.jsonc` | Lint / format rules |
+| File             | Purpose                |
+| ---------------- | ---------------------- |
+| `package.json`   | Scripts & dependencies |
+| `tsconfig.json`  | TypeScript config      |
+| `vite.config.ts` | Vite build config      |
+| `biome.jsonc`    | Lint / format rules    |
 
 ## Contributing to Docs
 
@@ -47,4 +46,5 @@ These docs can be published via **GitHub Pages** using the `/docs` folder (Pages
 If you add custom styling or want Jekyll processing, create a `_config.yml`. A basic one is included.
 
 ---
+
 Return to the [project README](../README.md).

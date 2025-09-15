@@ -79,6 +79,112 @@ export class Game {
     this.setupEventListeners();
   }
 
+  async init() {
+    this.renderer.setPixelRatio(devicePixelRatio);
+    this.renderer.setSize(innerWidth, innerHeight);
+    this.renderer.domElement.style.display = "block";
+    this.root.prepend(this.renderer.domElement);
+    this.scene.background = new THREE.Color(GameConfig.COLORS.BACKGROUND);
+
+    this.camera.position.set(3, 13.5, 4.5);
+    this.camera.lookAt(0, 0.6, 0);
+
+    // world pieces
+    const ground = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        GameConfig.WORLD.GROUND_RADIUS,
+        GameConfig.WORLD.GROUND_RADIUS,
+        GameConfig.WORLD.GROUND_HEIGHT,
+        40,
+      ),
+      new THREE.MeshStandardMaterial({
+        color: GameConfig.COLORS.GROUND,
+        roughness: 0.9,
+      }),
+    );
+    ground.position.y = -0.1;
+    this.scene.add(ground);
+    const light = new THREE.DirectionalLight("#ffffff", GameConfig.WORLD.DIRECTIONAL_LIGHT_INTENSITY);
+    light.position.set(4, 6, 3);
+    this.scene.add(light);
+    this.scene.add(new THREE.AmbientLight("#404040", GameConfig.WORLD.AMBIENT_LIGHT_INTENSITY));
+
+    // add player
+    this.scene.add(this.player.mesh);
+    this.spawner.spawn(5, this);
+
+    // pixi hud
+    const hudApp = new (await import("pixi.js")).Application();
+    await hudApp.init({ backgroundAlpha: 0, antialias: true, resizeTo: window });
+    hudApp.canvas.style.position = "fixed";
+    hudApp.canvas.style.top = "0";
+    hudApp.canvas.style.left = "0";
+    hudApp.canvas.style.pointerEvents = "none";
+    this.root.append(hudApp.canvas);
+    this.hud = new Hud(hudApp);
+
+    // Initialize HUD with current state
+    const state = gameState.current;
+    this.hud.setHealth(state.player.hp, state.player.maxHp);
+    this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
+    this.hud.setXP(state.player.level, state.player.xp, state.player.xpToNext);
+    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
+    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
+
+    // Initialize skill UI components
+    this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
+    this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
+
+    // Initialize dialogue UI
+    this.dialogueUI = new DialogueUI(hudApp, this.dialogueSystem);
+
+    // Initialize menu systems
+    this.mainMenuUI = new MainMenuUI(hudApp, {
+      onNewGame: () => this.startNewGame(),
+      onContinueGame: () => this.continueGame(),
+      onLoadGame: (slotId) => this.loadGame(slotId),
+      onSettings: () => this.showSettings(),
+    });
+
+    this.pauseMenuUI = new PauseMenuUI(hudApp, {
+      onResume: () => this.resumeGame(),
+      onQuickSave: () => this.quickSave(),
+      onQuickLoad: () => this.quickLoad(),
+      onSaveGame: (slotId) => this.saveGame(slotId),
+      onLoadGame: (slotId) => this.loadGame(slotId),
+      onSettings: () => this.showSettings(),
+      onMainMenu: () => this.returnToMainMenu(),
+    });
+
+    // Setup game state event handlers
+    this.setupGameStateHandlers();
+
+    // Start in main menu
+    this.showMainMenu();
+
+    // Load the first level after HUD is ready (but don't show it until game starts)
+    this.loadCurrentLevel();
+
+    // UI button bindings
+    this.hud.onAuto = (v) => {
+      gameState.setAutoAttack(v);
+    };
+    this.hud.onEasy = () => this.doAttack("easy");
+    this.hud.onAlt = () => this.doAttack("alt");
+    this.hud.onDash = () => this.doDash();
+    this.hud.onBlock = () => this.doBlock();
+    this.hud.onSkills = () => this.showSkillTree();
+    this.hud.onCharacterSwitch = () => this.showCharacterSwitch();
+    this.hud.onDialogue = () => this.startDialogue();
+
+    window.addEventListener("resize", () => this.onResize());
+    this.loop.add((dt) => this.update(dt));
+    this.loop.start();
+
+    // Setup skill system event handlers
+    this.setupSkillSystemHandlers();
+  }
+
   /**
    * Set up event listeners for game state changes
    */
@@ -276,112 +382,6 @@ export class Game {
     log("Game", "dialogue-start");
     this.hud.setStatus("Starting dialogue...");
     this.dialogueUI.startDialogue("greeting");
-  }
-
-  async init() {
-    this.renderer.setPixelRatio(devicePixelRatio);
-    this.renderer.setSize(innerWidth, innerHeight);
-    this.renderer.domElement.style.display = "block";
-    this.root.prepend(this.renderer.domElement);
-    this.scene.background = new THREE.Color(GameConfig.COLORS.BACKGROUND);
-
-    this.camera.position.set(3, 13.5, 4.5);
-    this.camera.lookAt(0, 0.6, 0);
-
-    // world pieces
-    const ground = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        GameConfig.WORLD.GROUND_RADIUS,
-        GameConfig.WORLD.GROUND_RADIUS,
-        GameConfig.WORLD.GROUND_HEIGHT,
-        40,
-      ),
-      new THREE.MeshStandardMaterial({
-        color: GameConfig.COLORS.GROUND,
-        roughness: 0.9,
-      }),
-    );
-    ground.position.y = -0.1;
-    this.scene.add(ground);
-    const light = new THREE.DirectionalLight("#ffffff", GameConfig.WORLD.DIRECTIONAL_LIGHT_INTENSITY);
-    light.position.set(4, 6, 3);
-    this.scene.add(light);
-    this.scene.add(new THREE.AmbientLight("#404040", GameConfig.WORLD.AMBIENT_LIGHT_INTENSITY));
-
-    // add player
-    this.scene.add(this.player.mesh);
-    this.spawner.spawn(5, this);
-
-    // pixi hud
-    const hudApp = new (await import("pixi.js")).Application();
-    await hudApp.init({ backgroundAlpha: 0, antialias: true, resizeTo: window });
-    hudApp.canvas.style.position = "fixed";
-    hudApp.canvas.style.top = "0";
-    hudApp.canvas.style.left = "0";
-    hudApp.canvas.style.pointerEvents = "none";
-    this.root.append(hudApp.canvas);
-    this.hud = new Hud(hudApp);
-
-    // Initialize HUD with current state
-    const state = gameState.current;
-    this.hud.setHealth(state.player.hp, state.player.maxHp);
-    this.hud.setEnergy(this.player.energy, this.player.maxEnergy);
-    this.hud.setXP(state.player.level, state.player.xp, state.player.xpToNext);
-    this.hud.setSkillPoints(this.skillSystem.getSkillPoints());
-    this.hud.setCurrentCharacter("Helio", "#4ec9ff");
-
-    // Initialize skill UI components
-    this.skillTreeUI = new SkillTreeUI(hudApp, this.skillSystem);
-    this.characterSwitchUI = new CharacterSwitchUI(hudApp, this.skillSystem);
-
-    // Initialize dialogue UI
-    this.dialogueUI = new DialogueUI(hudApp, this.dialogueSystem);
-
-    // Initialize menu systems
-    this.mainMenuUI = new MainMenuUI(hudApp, {
-      onNewGame: () => this.startNewGame(),
-      onContinueGame: () => this.continueGame(),
-      onLoadGame: (slotId) => this.loadGame(slotId),
-      onSettings: () => this.showSettings(),
-    });
-
-    this.pauseMenuUI = new PauseMenuUI(hudApp, {
-      onResume: () => this.resumeGame(),
-      onQuickSave: () => this.quickSave(),
-      onQuickLoad: () => this.quickLoad(),
-      onSaveGame: (slotId) => this.saveGame(slotId),
-      onLoadGame: (slotId) => this.loadGame(slotId),
-      onSettings: () => this.showSettings(),
-      onMainMenu: () => this.returnToMainMenu(),
-    });
-
-    // Setup game state event handlers
-    this.setupGameStateHandlers();
-
-    // Start in main menu
-    this.showMainMenu();
-
-    // Load the first level after HUD is ready (but don't show it until game starts)
-    this.loadCurrentLevel();
-
-    // UI button bindings
-    this.hud.onAuto = (v) => {
-      gameState.setAutoAttack(v);
-    };
-    this.hud.onEasy = () => this.doAttack("easy");
-    this.hud.onAlt = () => this.doAttack("alt");
-    this.hud.onDash = () => this.doDash();
-    this.hud.onBlock = () => this.doBlock();
-    this.hud.onSkills = () => this.showSkillTree();
-    this.hud.onCharacterSwitch = () => this.showCharacterSwitch();
-    this.hud.onDialogue = () => this.startDialogue();
-
-    addEventListener("resize", () => this.onResize());
-    this.loop.add((dt) => this.update(dt));
-    this.loop.start();
-
-    // Setup skill system event handlers
-    this.setupSkillSystemHandlers();
   }
 
   setupGameStateHandlers(): void {

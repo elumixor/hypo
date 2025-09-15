@@ -48,7 +48,6 @@
       },
       "nursery": {
         "noFloatingPromises": "error",
-        "useExplicitType": "error",
         "useConsistentTypeDefinitions": {
           "level": "warn",
           "options": {

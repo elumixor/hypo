@@ -64,6 +64,31 @@ bun run preview
 
 GitHub Pages workflow (to be added) will publish `dist/index.html` after pushes to `main`.
 
+## Asset Viewer (Models & Textures)
+
+Quick visual inspection tool for everything under `public/assets` (models + textures).
+
+Run it:
+
+```bash
+bun run asset-viewer
+```
+
+What happens:
+
+- Starts a lightweight Bun server at http://localhost:5789
+- Scans `public/assets/**` for `.glb/.gltf` (models) and common image textures
+- Opens your browser automatically
+- Renders a responsive grid:
+  - Textures show native resolution
+  - Models get a mini Three.js scene (auto-centered, scaled, slow rotation)
+
+Reload assets with the button after adding new files (no restart needed).
+
+Fallback: If local `three` cannot be resolved it auto-loads a CDN build.
+
+This tool is intentionally independent of the main Vite dev server so you can iterate on assets without a full game compile cycle.
+
 ## License
 
 TBD (add when defined).

@@ -1,19 +1,20 @@
 import "utils/globals";
 import "@elumixor/frontils";
 
-import { initializeResources } from "./assets/gameResources";
+import { resources } from "resources";
 import { Game } from "./core/Game";
 
 async function startGame() {
   console.log("🎮 Initializing HYPO game...");
 
   // Initialize resources with progress tracking
-  await initializeResources((progress) => {
-    console.log(`Loading: ${progress.percentage.toFixed(1)}% (${progress.loaded}/${progress.total})`);
-    if (progress.current) {
-      console.log(`Current: ${progress.current}`);
-    }
-  });
+  console.log("Loading game resources...");
+  await resources.load(({ percentage, loaded, total }) =>
+    console.log(`Loading: ${percentage.toFixed(1)}% (${loaded}/${total})`),
+  );
+
+  console.log("All resources loaded successfully!");
+  console.log("Available resources:", resources.names);
 
   // Create and initialize the game
   const game = new Game(document.body);
