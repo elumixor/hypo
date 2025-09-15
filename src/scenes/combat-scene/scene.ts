@@ -1,11 +1,9 @@
-import { Scene } from "@engine";
+import { Scene } from "../../../engine/scene";
 import { HUD } from "../../ui/global/hud";
 import { CombatService } from "../../services/combat-service";
 import { Enemy } from "../../entities/enemy";
 
 export class CombatScene extends Scene {
-  private hud!: HUD;
-
   constructor() {
     super("combat");
   }
@@ -13,7 +11,7 @@ export class CombatScene extends Scene {
   protected override onInit(): void {
     super.onInit();
     this.addService(new CombatService());
-    this.hud = this.addWidget(new HUD());
+    this.addWidget(new HUD());
     this.addEntity(new Enemy());
   }
 }

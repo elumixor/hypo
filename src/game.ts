@@ -1,4 +1,4 @@
-import { Game } from "@engine";
+import { Game } from "../engine/game";
 import { CombatScene } from "./scenes/combat-scene/scene";
 
 export class GameHypo extends Game {

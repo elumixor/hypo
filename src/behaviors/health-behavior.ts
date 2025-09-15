@@ -1,4 +1,5 @@
-import { Behavior } from "@engine";
+import "../../utils/globals";
+import { Behavior } from "../../engine/entity";
 import { CombatService } from "../services/combat-service";
 
 export class HealthBehavior extends Behavior {
@@ -19,7 +20,7 @@ export class HealthBehavior extends Behavior {
     combat.entityDamaged.subscribe(({ entity, amount }) => {
       if (entity === this.entity) {
         this.health -= amount;
-        log(`[HealthBehavior] ${entity.id} took ${amount}, remaining ${this.health}`);
+        console.log(`[HealthBehavior] ${entity.id} took ${amount}, remaining ${this.health}`);
         if (this.health <= 0) {
           this.entity.destroy();
         }

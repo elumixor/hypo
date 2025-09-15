@@ -1,4 +1,4 @@
-import { Entity } from "@engine";
+import { Entity } from "../../engine/entity";
 import { HealthBehavior } from "../behaviors/health-behavior";
 
 export class Enemy extends Entity {

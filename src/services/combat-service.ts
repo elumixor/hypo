@@ -1,6 +1,6 @@
-import { Service } from "@engine";
+import { Service } from "../../engine/service";
 import { EventEmitter } from "@elumixor/frontils";
-import type { Entity } from "@engine";
+import type { Entity } from "../../engine/entity";
 
 export class CombatService extends Service {
   readonly entityDamaged = new EventEmitter<{ entity: Entity; amount: number }>();
