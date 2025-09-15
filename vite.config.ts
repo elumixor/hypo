@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import { resolve } from "path";
 
 export default defineConfig({
   base: "/hypo/",
@@ -11,7 +12,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@engine": "/engine",
+      "@engine": resolve(__dirname, "./engine"),
     },
   },
 });
