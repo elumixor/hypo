@@ -1,19 +1,41 @@
+import "../../utils/globals";
 import { Entity } from "../../engine/entity";
 import { HealthBehavior } from "../behaviors/health-behavior";
+import { AIBehavior } from "../behaviors/ai-behavior";
+import { MovementBehavior } from "../behaviors/movement-behavior";
+
+export interface EnemyConfig {
+  health?: number;
+  movementSpeed?: number;
+  aggroRange?: number;
+  attackRange?: number;
+  attackCooldown?: number;
+}
 
 export class Enemy extends Entity {
-  constructor() {
+  constructor(config: EnemyConfig = {}) {
     super();
-    this.addBehavior(new HealthBehavior(100));
+    
+    // Add behaviors with default configs
+    this.addBehavior(new HealthBehavior(config.health ?? 100));
+    this.addBehavior(new MovementBehavior({
+      speed: config.movementSpeed ?? 2,
+    }));
+    this.addBehavior(new AIBehavior({
+      aggroRange: config.aggroRange ?? 10,
+      attackRange: config.attackRange ?? 2,
+      attackCooldown: config.attackCooldown ?? 1.5,
+      movementSpeed: config.movementSpeed ?? 2,
+    }));
   }
 
   protected override onInit(): void {
     super.onInit();
-    // enemy specific initialization logic
+    console.log(`[Enemy] Enemy ${this.id} initialized`);
   }
 
   protected override onEnterScene(): void {
     super.onEnterScene();
-    // enemy specific logic for entering the scene
+    console.log(`[Enemy] Enemy ${this.id} entered scene`);
   }
 }
