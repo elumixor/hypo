@@ -155,8 +155,8 @@ export class LevelRenderer {
 
     // Create ground plane
     const groundGeometry = new THREE.PlaneGeometry(width * this.tileSize, height * this.tileSize);
-    const groundMaterial = 
-      this.materials.get(`ground_${worldName}`) || 
+    const groundMaterial =
+      this.materials.get(`ground_${worldName}`) ||
       this.materials.get("ground_wrath") ||
       new THREE.MeshStandardMaterial({ color: "#4a4a4a" });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
