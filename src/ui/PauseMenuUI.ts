@@ -400,11 +400,15 @@ export class PauseMenuUI {
   show(): void {
     this.visible = true;
     this.container.visible = true;
+    // Enable pointer events on the canvas when pause menu is shown
+    this.app.canvas.style.pointerEvents = "auto";
   }
 
   hide(): void {
     this.visible = false;
     this.container.visible = false;
+    // Disable pointer events on the canvas when pause menu is hidden
+    this.app.canvas.style.pointerEvents = "none";
     // Reset to main menu when hiding
     if (this.showingSaveSlots || this.showingLoadSlots) {
       this.showingSaveSlots = false;

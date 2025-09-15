@@ -349,11 +349,15 @@ export class MainMenuUI {
   show(): void {
     this.visible = true;
     this.container.visible = true;
+    // Enable pointer events on the canvas when main menu is shown
+    this.app.canvas.style.pointerEvents = "auto";
   }
 
   hide(): void {
     this.visible = false;
     this.container.visible = false;
+    // Disable pointer events on the canvas when main menu is hidden
+    this.app.canvas.style.pointerEvents = "none";
     // Reset to main menu when hiding
     if (this.showingLoadSlots) {
       this.showingLoadSlots = false;

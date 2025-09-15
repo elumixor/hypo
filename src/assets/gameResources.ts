@@ -12,10 +12,10 @@ export const gameResources = new Resources()
   .add("rocks.glb") // Rocks/environment model
 
   // 2D Textures
-  .add("characters/Helios.png") // Helios character texture
-  .add("characters/Kai.png") // Kai character texture
-  .add("characters/Iris.png") // Iris character texture
-  .add("characters/Kira.png") // Kira character texture
-  .add("characters/Darius.png"); // Darius character texture
+  .add("helios.jpg") // Helios character texture
+  .add("kai-concept.png") // Kai character texture (concept art)
+  .add("iris.png") // Iris character texture
+  .add("iris-concept.png") // Iris character texture (concept art)
+  .add("lucy-concept.png"); // Lucy character texture (concept art)
 
 export type GameResources = typeof gameResources;
