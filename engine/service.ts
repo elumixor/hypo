@@ -3,7 +3,7 @@ export abstract class Service {
   
   protected onEnterScene(): void {}
   
-  protected onUpdate(dt: number): void {}
+  protected onUpdate(_dt: number): void {}
   
   protected onExitScene(): void {}
   

@@ -1,4 +1,4 @@
-import "../../utils/globals";
+import "../utils/globals";
 import { Behavior } from "../../engine/entity";
 
 export interface MovementConfig {

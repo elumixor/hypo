@@ -1,25 +1,37 @@
-import "utils/globals";
+import "./utils/globals";
 import "@elumixor/frontils";
 
-import { resources } from "resources";
-import { Game } from "./core/Game";
+import { GameHypo } from "./game";
 
 async function startGame(): Promise<void> {
-  console.log("🎮 Initializing HYPO game...");
+  console.log("🎮 Initializing HYPO game with new engine architecture...");
 
-  // Initialize resources with progress tracking
-  console.log("Loading game resources...");
-  await resources.load(({ percentage, loaded, total }) =>
-    console.log(`Loading: ${percentage.toFixed(1)}% (${loaded}/${total})`),
-  );
+  // Create and initialize the new game
+  const game = new GameHypo();
+  game.init();
 
-  console.log("All resources loaded successfully!");
-  console.log("Available resources:", resources.names);
+  // Start the game loop
+  let lastTime = performance.now();
+  
+  function gameLoop(currentTime: number): void {
+    const deltaTime = (currentTime - lastTime) / 1000; // Convert to seconds
+    lastTime = currentTime;
 
-  // Create and initialize the game
-  const game = new Game(document.body);
-  await game.init();
+    // Update the game
+    game.update(deltaTime);
+
+    // Continue the loop
+    requestAnimationFrame(gameLoop);
+  }
+
+  // Start the game loop
+  requestAnimationFrame(gameLoop);
+
   console.log("✅ HYPO modular game started successfully!");
+  console.log("🏗️  Architecture: Entity-Behavior-Service-Widget-Scene-Game");
+  
+  // Expose game for debugging
+  (window as any).hypoGame = game;
 }
 
 // Start the game

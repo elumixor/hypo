@@ -1,7 +1,9 @@
-import "../../utils/globals";
+import "../utils/globals";
 import { Entity } from "../../engine/entity";
 import { HealthBehavior } from "../behaviors/health-behavior";
 import { MovementBehavior } from "../behaviors/movement-behavior";
+import { Mesh, SphereGeometry, MeshStandardMaterial, Vector3 } from "three";
+import { ThreeService } from "../services/three-service";
 
 export interface PlayerConfig {
   health: number;
@@ -10,11 +12,18 @@ export interface PlayerConfig {
 }
 
 export class Player extends Entity {
+  readonly mesh: Mesh;
   private readonly healthBehavior: HealthBehavior;
   private readonly movementBehavior: MovementBehavior;
 
   constructor(config: PlayerConfig) {
     super("player"); // Fixed ID for player
+    
+    // Create THREE.js mesh for player
+    const geometry = new SphereGeometry(0.3, 16, 12);
+    const material = new MeshStandardMaterial({ color: 0x4ec9ff });
+    this.mesh = new Mesh(geometry, material);
+    this.mesh.position.set(0, 0.4, 0);
     
     this.healthBehavior = new HealthBehavior(config.health);
     this.movementBehavior = new MovementBehavior({
@@ -34,11 +43,37 @@ export class Player extends Entity {
   protected override onEnterScene(): void {
     super.onEnterScene();
     console.log("[Player] Player entered scene");
+    
+    // Add player mesh to THREE.js scene
+    const threeService = this.getService(ThreeService);
+    threeService.scene.add(this.mesh);
+  }
+
+  protected override onExitScene(): void {
+    super.onExitScene();
+    
+    // Remove player mesh from THREE.js scene
+    const threeService = this.getService(ThreeService);
+    threeService.scene.remove(this.mesh);
+  }
+
+  protected override onDestroy(): void {
+    super.onDestroy();
+    this.mesh.geometry.dispose();
+    if (Array.isArray(this.mesh.material)) {
+      for (const material of this.mesh.material) material.dispose();
+    } else {
+      this.mesh.material.dispose();
+    }
   }
 
   // Convenience methods for accessing player-specific functionality
   get health(): number {
     return this.healthBehavior.currentHealth;
+  }
+
+  get position(): Vector3 {
+    return this.mesh.position;
   }
 
   takeDamage(amount: number): void {
@@ -53,6 +88,25 @@ export class Player extends Entity {
 
   move(direction: { x: number; y: number; z: number }, dt: number): void {
     this.movementBehavior.move(direction, dt);
+    
+    // Update THREE.js mesh position based on movement
+    const speed = this.movementBehavior.currentSpeed;
+    const distance = speed * dt;
+
+    // Normalize direction
+    const length = Math.sqrt(direction.x ** 2 + direction.y ** 2 + direction.z ** 2);
+    if (length === 0) return;
+
+    const normalizedDirection = {
+      x: direction.x / length,
+      y: direction.y / length,
+      z: direction.z / length,
+    };
+
+    // Update mesh position
+    this.mesh.position.x += normalizedDirection.x * distance;
+    this.mesh.position.y += normalizedDirection.y * distance;
+    this.mesh.position.z += normalizedDirection.z * distance;
   }
 
   get canDash(): boolean {

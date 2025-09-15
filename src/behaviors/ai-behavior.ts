@@ -1,6 +1,5 @@
-import "../../utils/globals";
+import "../utils/globals";
 import { Behavior } from "../../engine/entity";
-import { CombatService } from "../services/combat-service";
 
 export interface AIConfig {
   aggroRange: number;
@@ -55,7 +54,7 @@ export class AIBehavior extends Behavior {
     console.log(`[AIBehavior] ${this.entity.id} acquired target: ${this.currentTarget}`);
   }
 
-  private moveTowardsTarget(dt: number): void {
+  private moveTowardsTarget(_dt: number): void {
     if (!this.currentTarget) return;
 
     // In a real implementation, this would get actual positions and move towards target
@@ -79,10 +78,8 @@ export class AIBehavior extends Behavior {
 
   private attack(): void {
     if (!this.currentTarget) return;
-
-    const combat = this.getService(CombatService);
     
-    // In a real implementation, this would get the actual target entity
+    // In a real implementation, this would get the actual target entity and use combat service
     // For now, just simulate an attack
     console.log(`[AIBehavior] ${this.entity.id} attacks ${this.currentTarget}`);
     

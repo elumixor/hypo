@@ -8,7 +8,7 @@ export abstract class Behavior {
   
   protected onEnterScene(): void {}
   
-  protected onUpdate(dt: number): void {}
+  protected onUpdate(_dt: number): void {}
   
   protected onExitScene(): void {}
   
@@ -56,7 +56,7 @@ export abstract class Entity {
   
   protected onEnterScene(): void {}
   
-  protected onUpdate(dt: number): void {}
+  protected onUpdate(_dt: number): void {}
   
   protected onExitScene(): void {}
   
