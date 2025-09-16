@@ -1,6 +1,6 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
-import { Container, WebGLRenderer as PixiRenderer } from "pixi.js";
+import { Application, Container, type Renderer as PixiRenderer } from "pixi.js";
 import { PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
@@ -15,15 +15,20 @@ export abstract class Game {
   // HTML DOM root element for the renderer
   readonly domRoot = document.body;
 
-  // Renderers
+  // Pixi and ThreeJS renderers
   readonly threeRenderer = new ThreeRenderer({ antialias: true, stencil: true });
-  readonly pixiRenderer = new PixiRenderer();
+  readonly pixiApp = new Application();
+  private _pixiRenderer?: PixiRenderer;
+
+  // Canvas elements
+  readonly threeCanvas = document.createElement("canvas");
+  readonly pixiCanvas = document.createElement("canvas");
 
   // Camera for ThreeJS rendering
   readonly camera = new PerspectiveCamera(75, this.domRoot.clientWidth / this.domRoot.clientHeight, 0.1, 1000);
 
   // Root elements for 2D and 3D contents
-  readonly uiRoot = new Container();
+  readonly uiRoot = this.pixiApp.stage;
   readonly sceneRoot = new ThreeScene();
 
   // Event emitters
@@ -40,26 +45,40 @@ export abstract class Game {
     return this._currentScene;
   }
 
+  get pixiRenderer() {
+    if (!this.pixiApp.renderer) throw new Error("PixiJS renderer is not initialized yet");
+    return this.pixiApp.renderer;
+  }
+
   /** Start the game - initialize rendering contexts, initialize services start update loop */
   async start() {
-    // Set up ThreeJS + PixiJS integration: https://pixijs.com/8.x/guides/third-party/mixing-three-and-pixi
+    // Set up separate contexts for ThreeJS and PixiJS
+    this.domRoot.style.width = `${window.innerWidth}px`;
+    this.domRoot.style.height = `${window.innerHeight}px`;
 
-    // Initialize ThreeJS renderer
+    // Initialize ThreeJS renderer with its own context
     this.threeRenderer.setSize(window.innerWidth, window.innerHeight);
-    this.domRoot.appendChild(this.threeRenderer.domElement);
+    this.threeCanvas.style.position = "absolute";
+    this.threeCanvas.style.top = "0";
+    this.threeCanvas.style.left = "0";
+    this.threeCanvas.style.zIndex = "1";
+    this.domRoot.appendChild(this.threeCanvas);
 
-    // Initialize PixiJS renderer with shared context
-    await this.pixiRenderer.init({
-      context: this.threeRenderer.getContext() as WebGL2RenderingContext,
-      width: window.innerWidth,
-      height: window.innerHeight,
-      clearBeforeRender: false, // Don't clear the canvas as ThreeJS will handle that
-    });
+    // Initialize PixiJS renderer with its own separate context
+    await this.pixiApp.init({ resizeTo: this.domRoot, canvas: this.pixiCanvas });
+    this._pixiRenderer = this.pixiApp.renderer;
+
+    // Position Pixi canvas over Three.js canvas
+    this.pixiCanvas.style.position = "absolute";
+    this.pixiCanvas.style.top = "0";
+    this.pixiCanvas.style.left = "0";
+    this.pixiCanvas.style.zIndex = "2";
+    this.domRoot.appendChild(this.pixiCanvas);
 
     // Set up render loop
     const animate = (dt: number) => {
       requestAnimationFrame(animate);
-      this.update(dt); // Approximate 60 FPS
+      this.update(dt);
     };
     requestAnimationFrame(animate);
 
@@ -90,13 +109,8 @@ export abstract class Game {
   }
 
   private update(dt: number) {
-    // Render ThreeJS scene (if camera is available)
-    this.threeRenderer.resetState();
+    // Render ThreeJS scene with its own context
     this.threeRenderer.render(this.sceneRoot, this.camera);
-
-    // Render PixiJS scene
-    this.pixiRenderer.resetState();
-    this.pixiRenderer.render({ container: this.uiRoot });
 
     // Update all the services and the current scene
     for (const service of this.services) service.update(dt);
@@ -104,11 +118,14 @@ export abstract class Game {
   }
 
   private resize() {
+    this.domRoot.style.width = `${window.innerWidth}px`;
+    this.domRoot.style.height = `${window.innerHeight}px`;
+
     const width = this.domRoot.clientWidth;
     const height = this.domRoot.clientHeight;
 
-    this.threeRenderer.setSize(width, height);
-    this.pixiRenderer.resize(width, height);
+    // Resize both renderers
+    // this.threeRenderer.setSize(width, height);
 
     // Update camera for ThreeJS
     const aspect = width / height;
