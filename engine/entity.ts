@@ -35,9 +35,10 @@ export abstract class Entity {
   }
 
   /** This should be called before onInit() - in constructor() */
-  addBehavior(behavior: Behavior) {
+  addBehavior<T extends Behavior>(behavior: T) {
     behavior.entity = this;
     this.behaviors.push(behavior);
+    return behavior;
   }
 
   removeBehavior(behavior: Behavior) {
@@ -48,5 +49,11 @@ export abstract class Entity {
 
   getService<T extends Service>(serviceClass: Constructor<T>) {
     return this.scene.getService(serviceClass);
+  }
+
+  getBehavior<T extends Behavior>(behaviorClass: Constructor<T>) {
+    const behavior = this.behaviors.find((b) => b instanceof behaviorClass) as T | undefined;
+    if (!behavior) throw new Error(`Behavior ${behaviorClass.name} not found on entity`);
+    return behavior;
   }
 }

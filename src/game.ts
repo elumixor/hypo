@@ -1,12 +1,11 @@
 import { Game } from "@engine";
+import { CombatScene } from "scenes/combat/combat.scene";
 import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
 import { ResourcesLoaderService } from "services/resources-loader.service";
 import { SaveLoadService } from "services/save-load.service";
 import { GameStateService } from "systems/game-state";
 
 export class GameHypo extends Game {
-  readonly menuScene = new MainMenuScene();
-
   constructor() {
     super();
 
@@ -17,6 +16,8 @@ export class GameHypo extends Game {
 
   override async start() {
     await super.start();
-    await this.loadScene(this.menuScene);
+
+    await this.loadScene(new MainMenuScene());
+    await this.loadScene(new CombatScene()); // temporary, instantly load combat scene
   }
 }

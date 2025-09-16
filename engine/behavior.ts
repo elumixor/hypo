@@ -33,4 +33,8 @@ export abstract class Behavior {
   protected getService<T extends Service>(serviceClass: Constructor<T>) {
     return this.entity.getService(serviceClass);
   }
+
+  protected getBehavior<T extends Behavior>(behaviorClass: Constructor<T>) {
+    return this.entity.getBehavior(behaviorClass);
+  }
 }

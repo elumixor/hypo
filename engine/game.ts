@@ -23,8 +23,8 @@ export abstract class Game {
   readonly threeCanvas = this.threeRenderer.domElement;
   readonly pixiCanvas = document.createElement("canvas");
 
-  // Camera for ThreeJS rendering
-  readonly camera = new PerspectiveCamera(75, this.domRoot.clientWidth / this.domRoot.clientHeight, 0.1, 1000);
+  // Camera for ThreeJS rendering (using narrower FOV for better isometric view)
+  readonly camera = new PerspectiveCamera(50, this.domRoot.clientWidth / this.domRoot.clientHeight, 0.1, 1000);
 
   // Root elements for 2D and 3D contents
   readonly uiRoot = this.pixiApp.stage;
@@ -58,19 +58,28 @@ export abstract class Game {
 
     // Initialize ThreeJS renderer with its own context
     this.threeRenderer.setSize(window.innerWidth, window.innerHeight);
+    this.threeRenderer.shadowMap.enabled = true;
+    this.threeRenderer.shadowMap.type = 2; // PCFSoftShadowMap for better quality
     this.threeCanvas.style.position = "absolute";
     this.threeCanvas.style.top = "0";
     this.threeCanvas.style.left = "0";
     this.threeCanvas.style.zIndex = "1";
     this.domRoot.appendChild(this.threeCanvas);
 
-    // Set up initial camera position
-    this.camera.position.set(0, 50, 50);
+    // Set up initial camera position (will be overridden by camera follow behavior)
+    this.camera.position.set(8, 8, 8);
     this.camera.lookAt(0, 0, 0);
     this.sceneRoot.add(this.camera);
 
     // Initialize PixiJS renderer with its own separate context
-    await this.pixiApp.init({ backgroundAlpha: 0, resizeTo: this.domRoot, canvas: this.pixiCanvas });
+    await this.pixiApp.init({
+      backgroundAlpha: 0,
+      resizeTo: this.domRoot,
+      canvas: this.pixiCanvas,
+      antialias: true,
+      resolution: window.devicePixelRatio ?? 1,
+      autoDensity: true,
+    });
 
     // Position Pixi canvas over Three.js canvas
     this.pixiCanvas.style.position = "absolute";

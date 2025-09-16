@@ -40,7 +40,7 @@ export abstract class Widget {
     return this.scene.getService(serviceClass);
   }
 
-  protected addChild(...child: Container[]) {
-    this.container.addChild(...child);
+  protected addChild<T extends Container[]>(...child: T): T[0] {
+    return this.container.addChild(...child);
   }
 }

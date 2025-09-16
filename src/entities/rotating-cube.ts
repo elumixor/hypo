@@ -13,7 +13,7 @@ export class RotatingCube extends Entity {
   constructor() {
     super();
 
-    const boxGeometry = new BoxGeometry(30, 30, 30);
+    const boxGeometry = new BoxGeometry(3, 3, 3);
     const basicMaterial = new MeshBasicMaterial({ color: 0x0095dd });
     this.cube = new Mesh(boxGeometry, basicMaterial);
   }

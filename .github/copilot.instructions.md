@@ -35,18 +35,6 @@ More information is in the `docs/` folder.
 
 ---
 
-## To check if you implemented the code correctly
-
-Run:
-
-```sh
-bun run check
-```
-
-Fix all errors until there are none.
-
----
-
 ## Game docs
 
 - Always read documentation in the `docs/` folder.

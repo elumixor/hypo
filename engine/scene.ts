@@ -70,9 +70,10 @@ export abstract class Scene {
   }
 
   /** Should be called before onInit() - in constructor() */
-  addWidget(widget: Widget) {
+  addWidget<T extends Widget>(widget: T) {
     widget.scene = this;
     this.widgets.push(widget);
+    return widget;
   }
 
   removeWidget(widget: Widget) {
@@ -81,9 +82,10 @@ export abstract class Scene {
     this.widgets.remove(widget);
   }
 
-  addService(service: Service) {
+  addService<T extends Service>(service: T) {
     service.scene = this;
     this.services.push(service);
+    return service;
   }
 
   getService<T extends Service>(serviceClass: Constructor<T>): T {
