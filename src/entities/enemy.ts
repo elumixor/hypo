@@ -45,7 +45,7 @@ export class Enemy extends Entity {
     );
   }
 
-  override onInit(): void {
+  override init(): void {
     log("[Enemy] Enemy initialized");
   }
 
@@ -63,7 +63,7 @@ export class Enemy extends Entity {
     threeService.scene.remove(this.mesh);
   }
 
-  override onDestroy(): void {
+  override destroy(): void {
     this.mesh.geometry.dispose();
     if (Array.isArray(this.mesh.material)) {
       for (const material of this.mesh.material) material.dispose();

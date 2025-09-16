@@ -32,7 +32,7 @@ export class MovementBehavior extends Behavior {
     return this.dashCooldownTime <= 0 && !this.isDashing;
   }
 
-  override onUpdate(dt: number): void {
+  override update(dt: number): void {
     // Update dash timing
     if (this.isDashing) {
       this.dashTime -= dt;

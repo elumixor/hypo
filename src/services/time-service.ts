@@ -23,13 +23,13 @@ export class TimeService extends Service {
     return this.totalTime;
   }
 
-  protected override onInit(): void {
-    super.onInit();
+  protected override init(): void {
+    super.init();
     this.start();
   }
 
-  protected override onDestroy(): void {
-    super.onDestroy();
+  protected override destroy(): void {
+    super.destroy();
     this.stop();
   }
 
@@ -41,8 +41,8 @@ export class TimeService extends Service {
     this.isRunning = false;
   }
 
-  protected override onUpdate(dt: number): void {
-    super.onUpdate(dt);
+  protected override update(dt: number): void {
+    super.update(dt);
 
     if (!this.isRunning) return;
 

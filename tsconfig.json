@@ -27,8 +27,8 @@
     "noPropertyAccessFromIndexSignature": true,
     "baseUrl": "./src",
     "paths": {
-      "@engine": ["./engine/index.ts"],
-      "@engine/*": ["./engine/*"]
+      "@engine": ["../engine/index.ts"],
+      "@engine/*": ["../engine/*"]
     }
   },
   "include": ["src/**/*", "engine/**/*", "scripts/**/*", "src/global.d.ts"]

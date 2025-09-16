@@ -17,8 +17,8 @@ export class CombatScene extends Scene {
     super("combat");
   }
 
-  protected override onInit(): void {
-    super.onInit();
+  protected override init(): void {
+    super.init();
 
     // Add services
     this.addService(new ThreeService());
@@ -76,8 +76,8 @@ export class CombatScene extends Scene {
     }
   }
 
-  protected override onUpdate(dt: number): void {
-    super.onUpdate(dt);
+  protected override update(dt: number): void {
+    super.update(dt);
 
     // Handle input and player movement
     this.handlePlayerInput(dt);

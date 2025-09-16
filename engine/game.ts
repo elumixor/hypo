@@ -1,7 +1,14 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
-import { Application, Container, type Renderer as PixiRenderer } from "pixi.js";
-import { PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
+import { Application } from "pixi.js";
+import {
+  BoxGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  WebGLRenderer as ThreeRenderer,
+  Scene as ThreeScene,
+} from "three";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 
@@ -18,10 +25,9 @@ export abstract class Game {
   // Pixi and ThreeJS renderers
   readonly threeRenderer = new ThreeRenderer({ antialias: true, stencil: true });
   readonly pixiApp = new Application();
-  private _pixiRenderer?: PixiRenderer;
 
   // Canvas elements
-  readonly threeCanvas = document.createElement("canvas");
+  readonly threeCanvas = this.threeRenderer.domElement;
   readonly pixiCanvas = document.createElement("canvas");
 
   // Camera for ThreeJS rendering
@@ -46,8 +52,9 @@ export abstract class Game {
   }
 
   get pixiRenderer() {
-    if (!this.pixiApp.renderer) throw new Error("PixiJS renderer is not initialized yet");
-    return this.pixiApp.renderer;
+    const { renderer } = this.pixiApp;
+    if (!renderer) throw new Error("PixiJS renderer is not initialized yet");
+    return renderer;
   }
 
   /** Start the game - initialize rendering contexts, initialize services start update loop */
@@ -64,9 +71,13 @@ export abstract class Game {
     this.threeCanvas.style.zIndex = "1";
     this.domRoot.appendChild(this.threeCanvas);
 
+    // Set up initial camera position
+    this.camera.position.set(0, 50, 50);
+    this.camera.lookAt(0, 0, 0);
+    this.sceneRoot.add(this.camera);
+
     // Initialize PixiJS renderer with its own separate context
-    await this.pixiApp.init({ resizeTo: this.domRoot, canvas: this.pixiCanvas });
-    this._pixiRenderer = this.pixiApp.renderer;
+    await this.pixiApp.init({ backgroundAlpha: 0, resizeTo: this.domRoot, canvas: this.pixiCanvas });
 
     // Position Pixi canvas over Three.js canvas
     this.pixiCanvas.style.position = "absolute";
@@ -76,7 +87,11 @@ export abstract class Game {
     this.domRoot.appendChild(this.pixiCanvas);
 
     // Set up render loop
-    const animate = (dt: number) => {
+    let lastTime = performance.now();
+    const animate = (time: number) => {
+      const dt = time - lastTime;
+      lastTime = time;
+
       requestAnimationFrame(animate);
       this.update(dt);
     };
@@ -125,7 +140,9 @@ export abstract class Game {
     const height = this.domRoot.clientHeight;
 
     // Resize both renderers
-    // this.threeRenderer.setSize(width, height);
+    this.threeRenderer.setSize(width, height);
+    this.threeCanvas.width = width;
+    this.threeCanvas.height = height;
 
     // Update camera for ThreeJS
     const aspect = width / height;

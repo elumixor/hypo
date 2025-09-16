@@ -60,8 +60,8 @@ export class InputService extends Service {
     return this.isPressed("KeyQ");
   }
 
-  protected override onDestroy(): void {
-    super.onDestroy();
+  protected override destroy(): void {
+    super.destroy();
     window.removeEventListener("keydown", this.onKeyDown.bind(this));
     window.removeEventListener("keyup", this.onKeyUp.bind(this));
   }

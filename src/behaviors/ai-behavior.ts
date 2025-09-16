@@ -18,11 +18,11 @@ export class AIBehavior extends Behavior {
     this.config = config;
   }
 
-  override onInit(): void {
+  override init(): void {
     log("[AIBehavior] AI initialized for entity");
   }
 
-  override onUpdate(dt: number): void {
+  override update(dt: number): void {
     if (this.attackCooldownTime > 0) {
       this.attackCooldownTime -= dt;
     }

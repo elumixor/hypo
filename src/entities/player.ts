@@ -35,7 +35,7 @@ export class Player extends Entity {
     this.addBehavior(this.movementBehavior);
   }
 
-  override onInit(): void {
+  override init(): void {
     log("[Player] Player entity initialized");
   }
 
@@ -53,7 +53,7 @@ export class Player extends Entity {
     threeService.scene.remove(this.mesh);
   }
 
-  override onDestroy(): void {
+  override destroy(): void {
     this.mesh.geometry.dispose();
     if (Array.isArray(this.mesh.material)) {
       for (const material of this.mesh.material) material.dispose();

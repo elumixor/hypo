@@ -19,7 +19,7 @@ export class HealthBehavior extends Behavior {
     log(`[HealthBehavior] Entity took ${amount} damage, health: ${this.health}`);
   }
 
-  override onInit(): void {
+  override init(): void {
     const combat = this.getService(CombatService);
     combat.entityDamaged.subscribe(({ entity, amount }: { entity: any; amount: number }) => {
       if (entity === this.entity) {

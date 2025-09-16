@@ -14,8 +14,9 @@
     "asset-viewer": "asset-viewer ./public/assets"
   },
   "dependencies": {
+    "@elumixor/event-emitter": "^1.0.2",
     "@elumixor/frontils": "^2.14.1",
-    "@elumixor/thrixi-resources": "^1.0.6",
+    "@elumixor/thrixi-resources": "^1.0.10",
     "gsap": "^3.13.0",
     "pixi.js": "^8.4.1",
     "three": "^0.168.0"

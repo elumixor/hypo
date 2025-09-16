@@ -5,21 +5,46 @@ This document describes the unified modular engine architecture for HYPO.
 ## Core Classes
 
 ### Entity
-Base class for all game objects. Entities can have behaviors attached to them.
+
+Base class for all game objects. Entities can have behaviors attached to them and are rendered in the 3D scene.
 
 ```typescript
 import { Entity } from "@engine";
-import { HealthBehavior } from "../behaviors/health-behavior";
+import { BoxGeometry, Mesh, MeshStandardMaterial } from "three";
 
-export class Player extends Entity {
+export class Dummy extends Entity {
+  readonly mesh: Mesh;
+
   constructor() {
     super();
-    this.addBehavior(new HealthBehavior(100));
+
+    // Create Three.js mesh
+    const geometry = new BoxGeometry(1, 1, 1);
+    const material = new MeshStandardMaterial({ color: 0x00ff00 });
+    this.mesh = new Mesh(geometry, material);
+    this.mesh.position.set(0, 0.5, 0);
+  }
+
+  override async init() {
+    await super.init();
+
+    // Add to scene's Three.js Group
+    this.scene.sceneRoot.add(this.mesh);
+  }
+
+  override destroy() {
+    super.destroy();
+
+    // Clean up resources
+    this.scene.sceneRoot.remove(this.mesh);
+    this.mesh.geometry.dispose();
+    this.mesh.material.dispose();
   }
 }
 ```
 
 ### Behavior
+
 Modular, reusable logic components that can be attached to entities.
 
 ```typescript
@@ -30,104 +55,168 @@ export class HealthBehavior extends Behavior {
     super();
   }
 
-  onInit(): void {
+  async init(): Promise<void> {
     // Access services through this.getService()
   }
 }
 ```
 
 ### Service
+
 Systems that manage state and communication. Use EventEmitters for communication.
 
 ```typescript
 import { Service } from "@engine";
 import { EventEmitter } from "@elumixor/frontils";
 
-export class CombatService extends Service {
-  readonly entityDamaged = new EventEmitter<{ entity: Entity; amount: number }>();
+export class LoaderService extends Service {
+  readonly loadProgress = new EventEmitter<{ percentage: number }>();
 
-  damageEntity(entity: Entity, amount: number): void {
-    this.entityDamaged.emit({ entity, amount });
+  async loadAsset(url: string): Promise<void> {
+    // Loading logic
+    this.loadProgress.emit({ percentage: 50 });
   }
 }
 ```
 
 ### Widget
-UI components that can subscribe to services.
+
+UI components built with PixiJS that can subscribe to services and handle user interaction.
 
 ```typescript
 import { Widget } from "@engine";
-import { CombatService } from "../services/combat-service";
+import { Text as PixiText } from "pixi.js";
+import { Button } from "ui/button";
 
-export class HUD extends Widget {
-  onInit(): void {
-    const combat = this.getService(CombatService);
-    combat.entityDamaged.subscribe(({ entity, amount }) => {
-      // Update UI
+export class MenuWidget extends Widget {
+  private readonly titleText = new PixiText({ text: "Game Title" });
+  private readonly startButton = new Button("Start Game");
+
+  constructor() {
+    super();
+    this.addChild(this.titleText, this.startButton);
+
+    this.startButton.clicked.subscribe(() => {
+      // Handle button click
     });
+  }
+
+  override async init() {
+    await super.init();
+    this.game.resized.subscribeImmediate(this.resize.bind(this));
+  }
+
+  private resize({ width, height }: { width: number; height: number }) {
+    this.startButton.y = -height / 2 + 200;
   }
 }
 ```
 
 ### Scene
-Manages entities, widgets, and scene-scoped services.
+
+Manages entities, widgets, and scene-scoped services. Contains both 3D (sceneRoot) and UI (uiRoot) containers.
 
 ```typescript
 import { Scene } from "@engine";
+import { MenuWidget } from "./ui/menu.widget";
+import { RotatingCube } from "entities/dummy";
 
-export class CombatScene extends Scene {
-  onInit(): void {
-    this.addService(new CombatService());
-    this.addWidget(new HUD());
-    this.addEntity(new Player());
+export class MenuScene extends Scene {
+  constructor() {
+    super();
+
+    this.addWidget(new MenuWidget());
+    this.addEntity(new RotatingCube());
   }
 }
 ```
 
 ### Game
-Root controller that manages services and active scenes.
+
+Root controller that manages global services, scenes, and rendering systems (Three.js + PixiJS).
 
 ```typescript
 import { Game } from "@engine";
+import { MenuScene } from "scenes/menu/menu.scene";
+import { LoaderService } from "services/loader.service";
 
 export class GameHypo extends Game {
-  onInit(): void {
-    this.registerScene(new CombatScene("combat"));
-    this.switchToScene("combat");
+  readonly menuScene = new MenuScene();
+
+  constructor() {
+    super();
+    this.addService(new LoaderService());
+  }
+
+  override async start() {
+    await super.start();
+    await this.loadScene(this.menuScene);
   }
 }
 ```
 
+## Rendering Architecture
+
+The engine uses a dual-rendering system:
+
+- **Three.js**: For 3D graphics (`game.sceneRoot`, `scene.sceneRoot`)
+- **PixiJS**: For UI elements (`game.uiRoot`, `scene.uiRoot`)
+
+Entities add their 3D meshes to `this.scene.sceneRoot`, while Widgets add UI elements to themselves (they extend PixiJS Container).
+
 ## Lifecycle Methods
 
-All classes implement consistent public lifecycle methods:
+All classes implement consistent async lifecycle methods:
 
-- `onInit()`: Called once when fully constructed
-- `onEnterScene()`: Called when becoming active in a scene
-- `onUpdate(dt: number)`: Called every frame
-- `onExitScene()`: Called when removed from scene
-- `onDestroy()`: Called for cleanup
+- `async init()`: Called when becoming active in a scene
+- `update(dt: number)`: Called every frame
+- `destroy()`: Called for cleanup
+
+## Order of initialization
+
+1. Game `start()`
+2. Global services `init()`
+3. Scene `init()`
+4. Scene services `init()`
+5. Entities `init()`
+6. Behaviors `init()`
+7. Widgets `init()`
+
+## Init vs Constructor
+
+- Put setup logic in `constructor()`
+- Use `async init()` when you need:
+  - References to scene/game
+  - Service access
+  - Async operations (loading, etc.)
 
 ## Key Features
 
-- **Direct Method Access**: All lifecycle methods are public - call them directly
-- **Public Fields**: Access `entity`, `scene` fields directly without getters/setters
-- **Type Safety**: Constructor type `Constructor<T>` for better type inference
-- **No IDs**: Entities don't have IDs - managed by reference
-- **Event-Driven Communication**: Services use EventEmitters for loose coupling
+- **Async Initialization**: All init methods are async for loading operations
+- **Direct Access**: Access `entity`, `scene`, `game` fields directly
+- **Type Safety**: Strong TypeScript typing throughout
+- **Resource Management**: Proper cleanup in destroy methods
+- **Event-Driven**: Services use EventEmitters for communication
+- **Dual Rendering**: Three.js for 3D, PixiJS for UI
 
-## Usage
+## Current Implementation Status
 
-```typescript
-import { GameHypo } from "./game";
+### ✅ Correctly Implemented (New Architecture)
 
-const game = new GameHypo();
-game.init();
+- `src/main.ts` - Entry point
+- `src/game.ts` - Game class
+- `src/resources.ts` - Resource definitions
+- `src/services/loader.service.ts` - Asset loading
+- `src/scenes/menu/menu.scene.ts` - Menu scene
+- `src/scenes/menu/ui/menu.widget.ts` - Menu UI
+- `src/ui/fonts.ts` - Font definitions
+- `src/ui/button.ts` - Button component
+- `src/entities/dummy.ts` - Example entity
 
-// Game loop
-function gameLoop(dt: number) {
-  game.update(dt);
-  requestAnimationFrame(gameLoop);
-}
-requestAnimationFrame(gameLoop);
-```
+### ❌ Needs Refactoring (Old Architecture)
+
+- All other files in `src/` directory
+- Most services, entities, behaviors, UI components
+- Combat scene and related systems
+- Character system
+- State management
