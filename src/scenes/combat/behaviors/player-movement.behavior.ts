@@ -24,8 +24,9 @@ export class PlayerMovementBehavior extends Behavior {
     this.moveDirection.set(0, 0, 0);
 
     // Get movement from input
-    this.moveDirection.x = this.input.playerMovement.x;
-    this.moveDirection.z = -this.input.playerMovement.y;
+    const { x, y } = this.input.playerMovement.value;
+    this.moveDirection.x = x;
+    this.moveDirection.z = -y;
 
     // Apply movement
     if (this.moveDirection.length() > 0) {
