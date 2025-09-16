@@ -1,28 +1,15 @@
-import "utils/globals";
 import "@elumixor/frontils";
+import "./utils/globals";
 
-import { resources } from "resources";
-import { Game } from "./core/Game";
+import { GameHypo } from "./game";
 
-async function startGame(): Promise<void> {
-  console.log("🎮 Initializing HYPO game...");
-
-  // Initialize resources with progress tracking
-  console.log("Loading game resources...");
-  await resources.load(({ percentage, loaded, total }) =>
-    console.log(`Loading: ${percentage.toFixed(1)}% (${loaded}/${total})`),
-  );
-
-  console.log("All resources loaded successfully!");
-  console.log("Available resources:", resources.names);
-
-  // Create and initialize the game
-  const game = new Game(document.body);
-  await game.init();
-  console.log("✅ HYPO modular game started successfully!");
+async function start() {
+  // Create and initialize the new game
+  const game = new GameHypo();
+  await game.start();
 }
 
 // Start the game
-startGame().catch((error) => {
-  console.error("❌ Failed to start game:", error);
+start().catch((error) => {
+  console.error("❌ Game crashed:", error);
 });

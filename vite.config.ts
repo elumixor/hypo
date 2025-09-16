@@ -1,3 +1,4 @@
+import { resolve } from "path";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
@@ -8,5 +9,10 @@ export default defineConfig({
   build: {
     target: "es2019",
     sourcemap: false,
+  },
+  resolve: {
+    alias: {
+      "@engine": resolve(__dirname, "./engine"),
+    },
   },
 });

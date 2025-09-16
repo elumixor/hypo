@@ -25,7 +25,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
-    "baseUrl": "./src"
+    "baseUrl": "./src",
+    "paths": {
+      "@engine": ["../engine/index.ts"],
+      "@engine/*": ["../engine/*"]
+    }
   },
-  "include": ["src/**/*", "scripts/**/*", "src/global.d.ts"]
+  "include": ["src/**/*", "engine/**/*", "scripts/**/*", "src/global.d.ts"]
 }
