@@ -1,5 +1,5 @@
 import { EventEmitter } from "@elumixor/frontils";
-import { Service } from "../../engine/service";
+import { Service } from "@engine";
 
 export interface LevelUpData {
   newLevel: number;

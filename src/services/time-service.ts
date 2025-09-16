@@ -1,5 +1,5 @@
 import { EventEmitter } from "@elumixor/frontils";
-import { Service } from "../../engine/service";
+import { Service } from "@engine";
 
 export interface TimeData {
   deltaTime: number;
@@ -23,14 +23,14 @@ export class TimeService extends Service {
     return this.totalTime;
   }
 
-  protected override init(): void {
-    super.init();
+  override async init(): Promise<void> {
+    await super.init();
     this.start();
   }
 
-  protected override destroy(): void {
-    super.destroy();
+  override destroy(): void {
     this.stop();
+    super.destroy();
   }
 
   start(): void {
@@ -41,7 +41,7 @@ export class TimeService extends Service {
     this.isRunning = false;
   }
 
-  protected override update(dt: number): void {
+  override update(dt: number): void {
     super.update(dt);
 
     if (!this.isRunning) return;

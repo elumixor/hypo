@@ -1,20 +1,17 @@
 import "../../utils/globals";
-import { Widget } from "../../../engine/widget";
+import { Widget } from "@engine";
 import { CombatService } from "../../services/combat-service";
 
 export class HUD extends Widget {
-  protected override init(): void {
-    super.init();
+  override async init(): Promise<void> {
+    await super.init();
     const combat = this.getService(CombatService);
-    combat.entityDamaged.subscribe(({ entity, amount }: { entity: any; amount: number }) => {
-      if (entity.id === "player") {
-        console.log(`[HUD] Player took ${amount} damage`);
-      }
+    if (!combat) throw new Error("CombatService not found");
+    
+    combat.entityDamaged.subscribe(({ amount }: { entity: any; amount: number }) => {
+      console.log(`[HUD] Entity took ${amount} damage`);
     });
-  }
-
-  protected override onEnterScene(): void {
-    super.onEnterScene();
+    
     console.log("[HUD] Active in scene");
   }
 }

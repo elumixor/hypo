@@ -1,10 +1,9 @@
 import "../utils/globals";
 import { Mesh, MeshStandardMaterial, SphereGeometry, type Vector3 } from "three";
-import { Entity } from "../../engine/entity";
+import { Entity } from "@engine";
 import { AIBehavior } from "../behaviors/ai-behavior";
 import { HealthBehavior } from "../behaviors/health-behavior";
 import { MovementBehavior } from "../behaviors/movement-behavior";
-import { ThreeService } from "../services/three-service";
 
 export interface EnemyConfig {
   health?: number;
@@ -45,25 +44,21 @@ export class Enemy extends Entity {
     );
   }
 
-  override init(): void {
+  override async init(): Promise<void> {
+    await super.init();
     log("[Enemy] Enemy initialized");
-  }
-
-  override onEnterScene(): void {
-    log("[Enemy] Enemy entered scene");
-
-    // Add enemy mesh to THREE.js scene
-    const threeService = this.getService(ThreeService);
-    threeService.scene.add(this.mesh);
-  }
-
-  override onExitScene(): void {
-    // Remove enemy mesh from THREE.js scene
-    const threeService = this.getService(ThreeService);
-    threeService.scene.remove(this.mesh);
+    
+    // Add enemy mesh to 3D scene
+    this.scene.sceneRoot.add(this.mesh);
   }
 
   override destroy(): void {
+    super.destroy();
+    
+    // Remove enemy mesh from 3D scene
+    this.scene.sceneRoot.remove(this.mesh);
+    
+    // Clean up Three.js resources
     this.mesh.geometry.dispose();
     if (Array.isArray(this.mesh.material)) {
       for (const material of this.mesh.material) material.dispose();

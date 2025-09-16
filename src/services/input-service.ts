@@ -1,4 +1,4 @@
-import { Service } from "../../engine/service";
+import { Service } from "@engine";
 
 export class InputService extends Service {
   private readonly pressedKeys = new Set<string>();
@@ -60,7 +60,7 @@ export class InputService extends Service {
     return this.isPressed("KeyQ");
   }
 
-  protected override destroy(): void {
+  override destroy(): void {
     super.destroy();
     window.removeEventListener("keydown", this.onKeyDown.bind(this));
     window.removeEventListener("keyup", this.onKeyUp.bind(this));

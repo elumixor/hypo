@@ -1,5 +1,5 @@
 import "../utils/globals";
-import { Behavior } from "../../engine/behavior";
+import { Behavior } from "@engine";
 import { CombatService } from "../services/combat-service";
 
 export class HealthBehavior extends Behavior {
@@ -19,8 +19,11 @@ export class HealthBehavior extends Behavior {
     log(`[HealthBehavior] Entity took ${amount} damage, health: ${this.health}`);
   }
 
-  override init(): void {
+  override async init(): Promise<void> {
+    await super.init();
     const combat = this.getService(CombatService);
+    if (!combat) throw new Error("CombatService not found");
+    
     combat.entityDamaged.subscribe(({ entity, amount }: { entity: any; amount: number }) => {
       if (entity === this.entity) {
         this.takeDamage(amount);

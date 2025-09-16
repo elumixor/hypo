@@ -1,5 +1,5 @@
 import "../utils/globals";
-import { Behavior } from "../../engine/behavior";
+import { Behavior } from "@engine";
 
 export interface AIConfig {
   aggroRange: number;
@@ -18,7 +18,8 @@ export class AIBehavior extends Behavior {
     this.config = config;
   }
 
-  override init(): void {
+  override async init(): Promise<void> {
+    await super.init();
     log("[AIBehavior] AI initialized for entity");
   }
 

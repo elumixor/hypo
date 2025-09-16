@@ -1,12 +1,11 @@
 import { AmbientLight, CylinderGeometry, DirectionalLight, Mesh, MeshStandardMaterial } from "three";
-import { Scene } from "../../../engine/scene";
+import { Scene } from "@engine";
 import { Enemy } from "../../entities/enemy";
 import { Player } from "../../entities/player";
 import { CombatService } from "../../services/combat-service";
 import { HealthService } from "../../services/health-service";
 import { InputService } from "../../services/input-service";
 import { ProgressionService } from "../../services/progression-service";
-import { ThreeService } from "../../services/three-service";
 import { TimeService } from "../../services/time-service";
 import { HUD } from "../../ui/global/hud";
 
@@ -14,14 +13,9 @@ export class CombatScene extends Scene {
   private player!: Player;
 
   constructor() {
-    super("combat");
-  }
-
-  protected override init(): void {
-    super.init();
-
+    super();
+    
     // Add services
-    this.addService(new ThreeService());
     this.addService(new InputService());
     this.addService(new CombatService());
     this.addService(new ProgressionService());
@@ -31,28 +25,30 @@ export class CombatScene extends Scene {
     // Add UI
     this.addWidget(new HUD());
 
-    this.setupWorld();
     this.setupEntities();
   }
 
-  private setupWorld(): void {
-    const threeService = this.getService(ThreeService);
+  override async init(): Promise<void> {
+    await super.init();
+    this.setupWorld();
+  }
 
+  private setupWorld(): void {
     // Create ground
     const ground = new Mesh(
       new CylinderGeometry(20, 20, 0.2, 40),
       new MeshStandardMaterial({ color: 0x2d2d2d, roughness: 0.9 }),
     );
     ground.position.y = -0.1;
-    threeService.scene.add(ground);
+    this.sceneRoot.add(ground);
 
     // Add lighting
     const directionalLight = new DirectionalLight(0xffffff, 1);
     directionalLight.position.set(4, 6, 3);
-    threeService.scene.add(directionalLight);
+    this.sceneRoot.add(directionalLight);
 
     const ambientLight = new AmbientLight(0x404040, 0.4);
-    threeService.scene.add(ambientLight);
+    this.sceneRoot.add(ambientLight);
   }
 
   private setupEntities(): void {
@@ -76,19 +72,16 @@ export class CombatScene extends Scene {
     }
   }
 
-  protected override update(dt: number): void {
+  override update(dt: number): void {
     super.update(dt);
 
     // Handle input and player movement
     this.handlePlayerInput(dt);
-
-    // Render the scene
-    const threeService = this.getService(ThreeService);
-    threeService.render();
   }
 
   private handlePlayerInput(dt: number): void {
     const input = this.getService(InputService);
+    if (!input) return;
 
     // Calculate movement direction
     let moveX = 0;

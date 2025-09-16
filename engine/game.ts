@@ -2,9 +2,6 @@ import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
 import { Application } from "pixi.js";
 import {
-  BoxGeometry,
-  Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
   WebGLRenderer as ThreeRenderer,
   Scene as ThreeScene,

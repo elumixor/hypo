@@ -8,7 +8,6 @@ import { MenuScene } from "../menu.scene";
 
 export class MenuWidget extends Widget {
   private readonly loadStatusText = new PixiText({ text: "Loading...", style: textStyle.basic });
-  private readonly startGameButton = new Button("Start Game");
   private readonly reloadGameButton = new Button("Reload Game");
 
   constructor() {
@@ -37,7 +36,7 @@ export class MenuWidget extends Widget {
     });
   }
 
-  private resize({ width, height, aspect }: ResizeData) {
+  private resize({ width, height }: ResizeData) {
     this.reloadGameButton.y = -height / 2 + 200;
     this.loadStatusText.y = height / 2 - 15;
     this.loadStatusText.x = -width / 2 + 15;

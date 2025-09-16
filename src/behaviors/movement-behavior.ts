@@ -1,5 +1,5 @@
 import "../utils/globals";
-import { Behavior } from "../../engine/behavior";
+import { Behavior } from "@engine";
 
 export interface MovementConfig {
   speed: number;
