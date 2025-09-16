@@ -1,14 +1,18 @@
 import { Game } from "@engine";
-import { MenuScene } from "scenes/menu/menu.scene";
-import { LoaderService } from "services/loader.service";
+import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
+import { ResourcesLoaderService } from "services/resources-loader.service";
+import { SaveLoadService } from "services/save-load.service";
+import { GameStateService } from "systems/game-state";
 
 export class GameHypo extends Game {
-  readonly menuScene = new MenuScene();
+  readonly menuScene = new MainMenuScene();
 
   constructor() {
     super();
 
-    this.addService(new LoaderService());
+    this.addService(new ResourcesLoaderService());
+    this.addService(new SaveLoadService());
+    this.addService(new GameStateService());
   }
 
   override async start() {

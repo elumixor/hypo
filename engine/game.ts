@@ -1,11 +1,7 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
 import { Application } from "pixi.js";
-import {
-  PerspectiveCamera,
-  WebGLRenderer as ThreeRenderer,
-  Scene as ThreeScene,
-} from "three";
+import { PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 
@@ -109,8 +105,10 @@ export abstract class Game {
     this.services.push(service);
   }
 
-  getService<T extends Service>(serviceClass: Constructor<T>): T | undefined {
-    return this.services.find((s) => s instanceof serviceClass) as T | undefined;
+  getService<T extends Service>(serviceClass: Constructor<T>): T {
+    const instance = this.services.find((s) => s instanceof serviceClass) as T | undefined;
+    if (!instance) throw new Error(`Service not found: ${serviceClass.name}`);
+    return instance;
   }
 
   async loadScene(scene: Scene) {

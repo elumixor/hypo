@@ -23,6 +23,7 @@ export abstract class Scene {
 
   set game(game: Game) {
     this._game = game;
+    for (const service of this.services) service.game = game;
   }
 
   /** Handy shortcut to the game camera */
@@ -81,10 +82,11 @@ export abstract class Scene {
   }
 
   addService(service: Service) {
+    service.scene = this;
     this.services.push(service);
   }
 
-  getService<T extends Service>(serviceClass: Constructor<T>): T | undefined {
+  getService<T extends Service>(serviceClass: Constructor<T>): T {
     const myService = this.services.find((s) => s instanceof serviceClass) as T | undefined;
     return myService ?? this.game.getService<T>(serviceClass);
   }

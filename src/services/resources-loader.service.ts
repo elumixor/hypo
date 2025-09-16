@@ -4,7 +4,7 @@ import { Service } from "@engine";
 import { resources } from "resources";
 
 /** For now just logs progress */
-export class LoaderService extends Service {
+export class ResourcesLoaderService extends Service {
   // fixme: This event will always fire before anyone subscribes to it
   // because we first load all services during init()
   // and only then they are available
@@ -15,7 +15,7 @@ export class LoaderService extends Service {
     await super.init();
 
     // Load resources
-    console.log("LoaderService: Loading resources...");
+    this.log("LoaderService: Loading resources...");
 
     // We need different resources groups and to be able to wait for them.
     // So that we can have resources group per-scene, for example
@@ -23,9 +23,9 @@ export class LoaderService extends Service {
     // But I think loadGroup("groupName") works better for this case
     // todo: update @elumixor/thrixi-resources package
     await resources.load((p) => {
-      console.log(`Loaded asset: ${p.current.name}. Progress: ${p.percentage}%`);
+      this.log(`Loaded asset: ${p.current.name}. Progress: ${p.percentage}%`);
       this.loadProgress.emit(p);
     });
-    console.log("LoaderService initialized");
+    this.log("LoaderService initialized");
   }
 }
