@@ -1,66 +1,52 @@
-import type { Behavior, Constructor } from "./behavior";
+import type { Constructor } from "@elumixor/frontils";
+import type { Behavior } from "./behavior";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 
+/**
+ * Entity is the core building block of a scene. It can have multiple behaviors attached to it to define its functionality.
+ */
 export abstract class Entity {
-  scene!: Scene;
-  private readonly behaviors: Behavior[] = [];
+  private _scene?: Scene;
+  readonly behaviors = [] as Behavior[];
 
-  onInit(): void {}
+  get scene() {
+    if (!this._scene) throw new Error("Entity is not part of a scene yet");
+    return this._scene;
+  }
 
-  onEnterScene(): void {}
+  set scene(scene: Scene) {
+    this._scene = scene;
+  }
 
-  onUpdate(_dt: number): void {}
+  /** Called when the entity is initialized. This is effectively when it appears in the scene */
+  async init() {
+    await Promise.all(this.behaviors.map((b) => b.init()));
+  }
 
-  onExitScene(): void {}
+  /** Called every frame while the entity is active in the scene. */
+  update(dt: number) {
+    for (const behavior of this.behaviors) behavior.update(dt);
+  }
 
-  onDestroy(): void {}
+  /** Called when the entity is destroyed. */
+  destroy() {
+    for (const behavior of this.behaviors) behavior.destroy();
+  }
 
-  addBehavior(behavior: Behavior): void {
+  /** This should be called before onInit() - in constructor() */
+  addBehavior(behavior: Behavior) {
     behavior.entity = this;
     this.behaviors.push(behavior);
-    if (this.scene) {
-      behavior.onInit();
-      behavior.onEnterScene();
-    }
   }
 
-  removeBehavior(behavior: Behavior): void {
-    const index = this.behaviors.indexOf(behavior);
-    if (index !== -1) {
-      behavior.onExitScene();
-      behavior.onDestroy();
-      this.behaviors.splice(index, 1);
-    }
+  removeBehavior(behavior: Behavior) {
+    if (!this.behaviors.includes(behavior)) return;
+    if (this._scene) behavior.destroy();
+    this.behaviors.remove(behavior);
   }
 
-  protected getService<T extends Service>(serviceClass: Constructor<T>): T {
+  getService<T extends Service>(serviceClass: Constructor<T>) {
     return this.scene.getService(serviceClass);
-  }
-
-  init(): void {
-    this.onInit();
-    for (const behavior of this.behaviors) behavior.onInit();
-  }
-
-  enterScene(): void {
-    this.onEnterScene();
-    for (const behavior of this.behaviors) behavior.onEnterScene();
-  }
-
-  update(dt: number): void {
-    this.onUpdate(dt);
-    for (const behavior of this.behaviors) behavior.onUpdate(dt);
-  }
-
-  exitScene(): void {
-    this.onExitScene();
-    for (const behavior of this.behaviors) behavior.onExitScene();
-  }
-
-  destroy(): void {
-    this.onDestroy();
-    for (const behavior of this.behaviors) behavior.onDestroy();
-    this.behaviors.length = 0;
   }
 }

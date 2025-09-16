@@ -1,4 +1,6 @@
-export { Behavior, type Constructor } from "./behavior";
+import "@elumixor/frontils"; // import for extension methods
+
+export { Behavior } from "./behavior";
 export { Entity } from "./entity";
 export { Game } from "./game";
 export { Scene } from "./scene";

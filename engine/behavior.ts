@@ -1,32 +1,36 @@
+import type { Constructor } from "@elumixor/frontils";
 import type { Entity } from "./entity";
 import type { Service } from "./service";
 
+/**
+ * Behaviors define reusable logic that can be attached to entities.
+ */
 export abstract class Behavior {
-  entity!: Entity;
+  private _entity?: Entity;
 
-  onInit(): void {
+  get entity() {
+    if (!this._entity) throw new Error("Behavior is not attached to an entity yet");
+    return this._entity;
+  }
+
+  set entity(entity: Entity) {
+    this._entity = entity;
+  }
+
+  /** Called when the behavior appears in the scene. */
+  async init() {
     // Override in subclasses
   }
 
-  onEnterScene(): void {
+  update(_dt: number) {
     // Override in subclasses
   }
 
-  onUpdate(_dt: number): void {
+  destroy() {
     // Override in subclasses
   }
 
-  onExitScene(): void {
-    // Override in subclasses
-  }
-
-  onDestroy(): void {
-    // Override in subclasses
-  }
-
-  protected getService<T extends Service>(serviceClass: Constructor<T>): T {
-    return this.entity.scene.getService(serviceClass);
+  protected getService<T extends Service>(serviceClass: Constructor<T>) {
+    return this.entity.getService(serviceClass);
   }
 }
-
-export type Constructor<T> = new (...args: any[]) => T;
