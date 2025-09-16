@@ -39,6 +39,7 @@
           }
         },
         "useConsistentMemberAccessibility": {
+          "level": "warn",
           "options": {
             "accessibility": "noPublic"
           }

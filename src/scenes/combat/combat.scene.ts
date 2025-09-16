@@ -1,6 +1,7 @@
 import { Scene } from "@engine";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
+import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { Player } from "./entities/player";
 
 export class CombatScene extends Scene {
@@ -49,6 +50,9 @@ export class CombatScene extends Scene {
     this.directionalLight.shadow.camera.bottom = -20;
 
     this.sceneRoot.add(this.directionalLight);
+
+    // Set the scene input context
+    this.input = new CombatInputMappingContext();
 
     // Add the player entity
     this.addEntity(new Player());

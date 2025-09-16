@@ -1,5 +1,7 @@
 import type { Constructor } from "@elumixor/frontils";
 import type { Behavior } from "./behavior";
+import { InputService } from "./input/input.service";
+import type { InputMappingContext } from "./input/input-mapping-context";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 
@@ -17,6 +19,10 @@ export abstract class Entity {
 
   set scene(scene: Scene) {
     this._scene = scene;
+  }
+
+  get input() {
+    return this.scene.input;
   }
 
   /** Called when the entity is initialized. This is effectively when it appears in the scene */
@@ -55,5 +61,9 @@ export abstract class Entity {
     const behavior = this.behaviors.find((b) => b instanceof behaviorClass) as T | undefined;
     if (!behavior) throw new Error(`Behavior ${behaviorClass.name} not found on entity`);
     return behavior;
+  }
+
+  getInputContext(): InputMappingContext | undefined {
+    return this.getService(InputService).context;
   }
 }

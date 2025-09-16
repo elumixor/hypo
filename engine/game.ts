@@ -2,6 +2,7 @@ import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
 import { Application } from "pixi.js";
 import { PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
+import { InputService } from "./input";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 
@@ -48,6 +49,11 @@ export abstract class Game {
     const { renderer } = this.pixiApp;
     if (!renderer) throw new Error("PixiJS renderer is not initialized yet");
     return renderer;
+  }
+
+  constructor() {
+    // Add game-wide services here
+    this.addService(new InputService());
   }
 
   /** Start the game - initialize rendering contexts, initialize services start update loop */

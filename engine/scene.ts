@@ -3,6 +3,7 @@ import { Container } from "pixi.js";
 import { Group } from "three";
 import type { Entity } from "./entity";
 import type { Game } from "./game";
+import { type InputMappingContext, InputService } from "./input";
 import type { Service } from "./service";
 import type { Widget } from "./widget";
 
@@ -15,6 +16,8 @@ export abstract class Scene {
 
   readonly uiRoot = new Container();
   readonly sceneRoot = new Group();
+
+  input?: InputMappingContext;
 
   get game() {
     if (!this._game) throw new Error("Scene is not part of a game yet");
@@ -32,6 +35,9 @@ export abstract class Scene {
   }
 
   async init() {
+    // Set the input context if we have one. The input service is always available as global on the Game
+    if (this.input) this.getService(InputService).context = this.input;
+
     this.game.uiRoot.addChild(this.uiRoot);
     this.game.sceneRoot.add(this.sceneRoot);
 

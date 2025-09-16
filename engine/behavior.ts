@@ -17,6 +17,14 @@ export abstract class Behavior {
     this._entity = entity;
   }
 
+  get scene() {
+    return this.entity.scene;
+  }
+
+  protected get input() {
+    return this.scene.input;
+  }
+
   /** Called when the behavior appears in the scene. */
   async init() {
     // Override in subclasses
