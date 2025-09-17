@@ -40,7 +40,7 @@ export class Projectile extends Entity {
     this.collider.collided.subscribe(this.onCollision);
 
     // Create red sphere geometry
-    const geometry = new SphereGeometry(0.2, 8, 8);
+    const geometry = new SphereGeometry(1, 8, 8);
     const material = new MeshLambertMaterial({ color: 0xff0000 }); // Red color
 
     this.mesh = new Mesh(geometry, material);
