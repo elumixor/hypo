@@ -1,3 +1,4 @@
+import { EventEmitter } from "@elumixor/event-emitter";
 import { delay, Entity, ticker } from "@engine";
 import { ColliderBehavior } from "behaviors/collider.behavior";
 import { HealthBehavior } from "behaviors/health.behavior";
@@ -11,21 +12,31 @@ import { Player } from "./player";
 import { Projectile } from "./projectile";
 
 export class Enemy extends Entity {
-  private model!: Object3D;
+  readonly enemyDied = new EventEmitter();
+
+  // Self behaviors
   private readonly transform = this.addBehavior(new TransformBehavior());
   private readonly collider = this.addBehavior(new ColliderBehavior());
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
-  // Enemy AI properties
-  private readonly speed = 5;
-  private readonly radius = 15; // Distance from player
+  // Referenced behaviors
   private playerTransform!: TransformBehavior;
+
+  // Enemy AI properties
+  private readonly speed = 10;
+  private readonly radius = 15; // Distance from player
+  private model!: Object3D;
 
   override async init() {
     await super.init();
 
     // Find player in the scene
     this.playerTransform = this.scene.getEntity(Player).getBehavior(TransformBehavior);
+
+    // Listen to health changes to emit death event
+    this.health.healthChanged.subscribe((event) => {
+      if (!event.isAlive) this.enemyDied.emit();
+    });
 
     // Load the drone model for enemy (same as player for now)
     const { scene } = resources.get("models/drone");

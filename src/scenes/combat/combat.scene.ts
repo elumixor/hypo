@@ -3,7 +3,7 @@ import { HealthBehavior } from "behaviors/health.behavior";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
-import { Enemy } from "./entities/enemy";
+import { EnemyManager } from "./entities/enemy-manager";
 import { Player } from "./entities/player";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 
@@ -11,6 +11,7 @@ export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
   private readonly directionalLight: DirectionalLight;
   private readonly groundMesh: Mesh;
+  private readonly enemyManager = this.addEntity(new EnemyManager());
 
   constructor() {
     super();
@@ -67,22 +68,19 @@ export class CombatScene extends Scene {
       if (!event.isAlive) this.onPlayerDied();
     });
 
-    // Add enemy entities and subscribe to their deaths
-    for (let i = 0; i < 3; i++) {
-      const enemy = new Enemy();
-      this.addEntity(enemy);
+    // Add enemy manager
 
-      // Subscribe to enemy death to remove enemy and check if all enemies are dead
-      const enemyHealth = enemy.getBehavior(HealthBehavior);
-      enemyHealth.healthChanged.subscribe((event) => {
-        if (!event.isAlive) {
-          this.onEnemyDied(enemy);
-        }
-      });
-    }
+    // Listen to all enemies cleared event
+    this.enemyManager.enemiesCleared.subscribe(this.onAllEnemiesCleared);
 
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
+  }
+
+  override async init() {
+    await super.init();
+
+    this.enemyManager.spawn();
   }
 
   private readonly onPlayerDied = () => {
@@ -90,21 +88,10 @@ export class CombatScene extends Scene {
     void this.game.loadScene(new CombatScene());
   };
 
-  private onEnemyDied(enemy: Enemy) {
-    // Remove the dead enemy from the scene
-    this.removeEntity(enemy);
-
-    // Check if all enemies are dead
-    this.checkEnemiesAlive();
-  }
-
-  private checkEnemiesAlive() {
-    const enemies = this.entities.filter((entity) => entity instanceof Enemy);
-    if (enemies.length === 0) {
-      // All enemies are dead, reload the scene
-      void this.game.loadScene(new CombatScene());
-    }
-  }
+  private readonly onAllEnemiesCleared = () => {
+    // All enemies are dead, reload the scene
+    void this.game.loadScene(new CombatScene());
+  };
 
   override destroy() {
     super.destroy();
