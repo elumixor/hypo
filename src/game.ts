@@ -18,6 +18,8 @@ export class GameHypo extends Game {
     await super.start();
 
     await this.loadScene(new MainMenuScene());
-    await this.loadScene(new CombatScene()); // temporary, instantly load combat scene
+    if (__DEV__) {
+      await this.loadScene(new CombatScene()); // temporary, instantly load combat scene
+    }
   }
 }
