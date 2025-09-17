@@ -12,5 +12,6 @@ export class CombatInputMappingContext extends InputMappingContext {
   );
 
   readonly dashActivated = this.mapEvent("Space");
+  readonly touchDashActivated = this.mapEvent("TouchDash");
   readonly shieldActive = this.mapFlag("KeyQ");
 }

@@ -1,3 +1,4 @@
+import type { TouchInput } from "../input.service";
 import type { InputVariable } from "./input-variable";
 
 export class InputComputed<TInputs extends InputVariable<unknown>[], TOutput> implements InputVariable<TOutput> {
@@ -11,7 +12,8 @@ export class InputComputed<TInputs extends InputVariable<unknown>[], TOutput> im
     this.value = this.mapper(...(this.dependencies.map((d) => d.value) as UnwrapInputVariables<TInputs>));
   }
 
-  update() {
+  update(_pressedKeys: Set<string>, _touchInput?: TouchInput) {
+    // Dependencies are updated elsewhere, just compute the new value
     this.value = this.mapper(...(this.dependencies.map((d) => d.value) as UnwrapInputVariables<TInputs>));
   }
 }

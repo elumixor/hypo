@@ -14,7 +14,6 @@ export class Enemy extends Entity {
 
   // Self behaviors
   private readonly transform = this.addBehavior(new TransformBehavior());
-  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
   // Referenced behaviors
@@ -24,6 +23,13 @@ export class Enemy extends Entity {
   private readonly speed = 10;
   private readonly radius = 15; // Distance from player
   private model!: Object3D;
+
+  constructor() {
+    super();
+    
+    // Add collision behavior
+    this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
+  }
 
   override async init() {
     await super.init();

@@ -6,6 +6,7 @@ import { destroy } from "utils";
 import { CameraFollowBehavior } from "../behaviors/camera-follow.behavior";
 import { PlayerAutoAttackBehavior } from "../behaviors/player-auto-attack.behavior";
 import { PlayerMovementBehavior } from "../behaviors/player-movement.behavior";
+import { PlayerShieldBehavior } from "../behaviors/player-shield.behavior";
 import { CollisionGroup } from "../collision-group";
 
 export class Player extends Entity {
@@ -16,6 +17,7 @@ export class Player extends Entity {
 
     this.addBehavior(new TransformBehavior());
     this.addBehavior(new PlayerMovementBehavior());
+    this.addBehavior(new PlayerShieldBehavior());
     this.addBehavior(new CameraFollowBehavior());
     this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
     this.addBehavior(new ColliderBehavior(CollisionGroup.Player));

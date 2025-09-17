@@ -7,6 +7,7 @@ import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { Player } from "./entities/player";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
+import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
@@ -81,6 +82,7 @@ export class CombatScene extends Scene {
 
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
+    this.addWidget(new VirtualJoystickWidget());
   }
 
   override async init() {
