@@ -1,6 +1,11 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Behavior } from "@engine";
 
+// Interface to avoid circular dependency with dash behavior
+interface DashBehaviorInterface {
+  isCurrentlyInvulnerable: boolean;
+}
+
 export interface HealthEvent {
   health: number;
   maxHealth: number;
@@ -30,6 +35,22 @@ export class HealthBehavior extends Behavior {
   }
 
   takeDamage(amount: number) {
+    // Check for invulnerability frames from dash behavior
+    try {
+      // Use dynamic class name lookup to avoid import issues
+      const dashBehavior = this.entity.behaviors.find((b) => b.constructor.name === "DashBehavior");
+      if (
+        dashBehavior &&
+        "isCurrentlyInvulnerable" in dashBehavior &&
+        (dashBehavior as DashBehaviorInterface).isCurrentlyInvulnerable
+      ) {
+        console.log(`${this.entity.constructor.name} is invulnerable - damage blocked!`);
+        return;
+      }
+    } catch {
+      // DashBehavior not found or method not available, continue with normal damage
+    }
+
     this._health = Math.max(0, this._health - amount);
     console.log(`${this.entity.constructor.name} took ${amount} damage. Health: ${this._health}/${this._maxHealth}`);
     this.emitHealthChanged();

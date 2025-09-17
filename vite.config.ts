@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     sourcemap: false,
   },
   define: {
-    __DEV__: mode === 'development',
+    __DEV__: mode === "development",
   },
   resolve: {
     alias: {
