@@ -1,7 +1,7 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
 import { Application } from "pixi.js";
-import { PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
+import { PCFSoftShadowMap, PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
 import { InputService } from "./input";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
@@ -64,9 +64,10 @@ export abstract class Game {
     this.domRoot.style.height = `${window.innerHeight}px`;
 
     // Initialize ThreeJS renderer with its own context
+    this.threeRenderer.setPixelRatio(window.devicePixelRatio ?? 1);
     this.threeRenderer.setSize(window.innerWidth, window.innerHeight);
     this.threeRenderer.shadowMap.enabled = true;
-    this.threeRenderer.shadowMap.type = 2; // PCFSoftShadowMap for better quality
+    this.threeRenderer.shadowMap.type = PCFSoftShadowMap; // PCFSoftShadowMap for better quality
     this.threeCanvas.style.position = "absolute";
     this.threeCanvas.style.top = "0";
     this.threeCanvas.style.left = "0";
@@ -152,6 +153,7 @@ export abstract class Game {
     const aspect = width / height;
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
+    this.threeRenderer.setSize(width, height);
 
     // Place the uiRoot at the center of the screen
     this.uiRoot.position.set(width / 2, height / 2);

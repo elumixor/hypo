@@ -1,5 +1,5 @@
 import { Behavior } from "@engine";
-import type { TransformBehavior } from "behaviors/transform-behavior";
+import type { TransformBehavior } from "behaviors/transform.behavior";
 import { Vector3 } from "three";
 
 export class CameraFollowBehavior extends Behavior {

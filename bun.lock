@@ -4,7 +4,7 @@
     "": {
       "name": "hypo",
       "dependencies": {
-        "@elumixor/event-emitter": "^1.0.2",
+        "@elumixor/event-emitter": "^1.0.3",
         "@elumixor/frontils": "^2.14.1",
         "@elumixor/thrixi-resources": "^1.0.10",
         "gsap": "^3.13.0",
@@ -48,7 +48,7 @@
 
     "@elumixor/asset-viewer": ["@elumixor/asset-viewer@2.0.4", "", { "bin": { "asset-viewer": "dist/server/index.js" } }, "sha512-s1n0R/DPH09sT2TLL8V45EAhnZE61NDfa+6tWu1nQDPcLwHF5d56yBmKeqYlolF3GHJgs4GKcarY0oGLXDa73w=="],
 
-    "@elumixor/event-emitter": ["@elumixor/event-emitter@1.0.2", "", {}, "sha512-fWAP1IixG8WmQ1t9E4vvAwG0HJEIybgU9pYQr/Nv2AcMtlGXd0kraNUxfmTfCz0E/fxpiLURsyXJEZWALK4fxQ=="],
+    "@elumixor/event-emitter": ["@elumixor/event-emitter@1.0.3", "", {}, "sha512-tL1vMAMIr9M1WZhI04F7IkTU/XDtxjrDIaofA1Pi1MHSMp5vBHB4jt/SLBJOepM3HiuViTohxLd4boWf+XayVw=="],
 
     "@elumixor/frontils": ["@elumixor/frontils@2.14.1", "", {}, "sha512-IeJvXwS/vhLq6O1CBeEfHW7OMgpGz4HDZPXGToDr8huvcardCBZZDZvqoWQ15pW/WnCdkpOk7AX0yGCR/LFLqQ=="],
 

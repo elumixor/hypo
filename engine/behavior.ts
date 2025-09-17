@@ -8,8 +8,12 @@ import type { Service } from "./service";
 export abstract class Behavior {
   private _entity?: Entity;
 
+  get name() {
+    return this.constructor.name;
+  }
+
   get entity() {
-    if (!this._entity) throw new Error("Behavior is not attached to an entity yet");
+    if (!this._entity) throw new Error(`Behavior ${this.name} is not attached to an entity yet`);
     return this._entity;
   }
 

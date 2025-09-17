@@ -12,8 +12,12 @@ export abstract class Entity {
   private _scene?: Scene;
   readonly behaviors = [] as Behavior[];
 
+  get name() {
+    return this.constructor.name;
+  }
+
   get scene() {
-    if (!this._scene) throw new Error("Entity is not part of a scene yet");
+    if (!this._scene) throw new Error(`Entity ${this.name} is not part of a scene yet`);
     return this._scene;
   }
 
@@ -59,7 +63,7 @@ export abstract class Entity {
 
   getBehavior<T extends Behavior>(behaviorClass: Constructor<T>) {
     const behavior = this.behaviors.find((b) => b instanceof behaviorClass) as T | undefined;
-    if (!behavior) throw new Error(`Behavior ${behaviorClass.name} not found on entity`);
+    if (!behavior) throw new Error(`Behavior ${behaviorClass.name} not found on entity ${this.name}`);
     return behavior;
   }
 

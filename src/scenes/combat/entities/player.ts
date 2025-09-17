@@ -1,10 +1,12 @@
 import { Entity, ticker } from "@engine";
-import { TransformBehavior } from "behaviors/transform-behavior";
+import { ColliderBehavior } from "behaviors/collider.behavior";
+import { HealthBehavior } from "behaviors/health.behavior";
+import { TransformBehavior } from "behaviors/transform.behavior";
 import { resources } from "resources";
 import type { Object3D } from "three";
 import { destroy } from "utils";
 import { CameraFollowBehavior } from "../behaviors/camera-follow.behavior";
-import { PlayerHealthBehavior } from "../behaviors/player-health.behavior";
+import { PlayerAutoAttackBehavior } from "../behaviors/player-auto-attack.behavior";
 import { PlayerMovementBehavior } from "../behaviors/player-movement.behavior";
 
 export class Player extends Entity {
@@ -16,7 +18,9 @@ export class Player extends Entity {
     this.addBehavior(new TransformBehavior());
     this.addBehavior(new PlayerMovementBehavior());
     this.addBehavior(new CameraFollowBehavior());
-    this.addBehavior(new PlayerHealthBehavior());
+    this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
+    this.addBehavior(new ColliderBehavior());
+    this.addBehavior(new PlayerAutoAttackBehavior());
   }
 
   override async init() {

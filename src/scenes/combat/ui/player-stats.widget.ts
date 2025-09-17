@@ -1,15 +1,15 @@
 import { Widget } from "@engine";
 import type { ResizeData } from "@engine/game";
+import { HealthBehavior } from "behaviors/health.behavior";
 import { Graphics, Text } from "pixi.js";
 import { textStyle } from "ui/fonts";
-import { PlayerHealthBehavior } from "../behaviors/player-health.behavior";
 import { Player } from "../entities/player";
 
 export class PlayerStatsWidget extends Widget {
   private healthBar!: Graphics;
   private healthText!: Text;
   private background!: Graphics;
-  private playerHealthBehavior!: PlayerHealthBehavior;
+  private playerHealthComponent!: HealthBehavior;
   private readonly baseWidth = 300;
   private readonly baseHeight = 40;
   private scale = 1;
@@ -17,12 +17,12 @@ export class PlayerStatsWidget extends Widget {
   override async init() {
     await super.init();
 
-    // Find player and get health behavior
+    // Find player and get health component
     const player = this.scene.getEntity(Player);
-    this.playerHealthBehavior = player.getBehavior(PlayerHealthBehavior);
+    this.playerHealthComponent = player.getBehavior(HealthBehavior);
 
     // Listen to health changes
-    this.playerHealthBehavior.healthChanged.subscribeImmediate(this.updateHealthDisplay);
+    this.playerHealthComponent.healthChanged.subscribeImmediate(this.updateHealthDisplay);
 
     // Create health bar background
     this.background = new Graphics();
@@ -44,7 +44,7 @@ export class PlayerStatsWidget extends Widget {
     this.addChild(this.background, this.healthBar, this.healthText);
 
     // Listen to resize events
-    this.game.resized.subscribeImmediate(this.resize);
+    this.game.resized.subscribeImmediate(this.resize.bind(this));
   }
 
   private readonly updateHealthDisplay = () => {
@@ -64,9 +64,9 @@ export class PlayerStatsWidget extends Widget {
   }
 
   private updateHealthBar() {
-    if (!this.playerHealthBehavior) return;
+    if (!this.playerHealthComponent) return;
 
-    const healthPercent = this.playerHealthBehavior.health / this.playerHealthBehavior.maxHealth;
+    const healthPercent = this.playerHealthComponent.health / this.playerHealthComponent.maxHealth;
     const barWidth = (this.baseWidth - 10) * this.scale * healthPercent; // 290 scaled minus padding
 
     this.healthBar.clear();
@@ -83,9 +83,9 @@ export class PlayerStatsWidget extends Widget {
   }
 
   private updateHealthText() {
-    if (!this.playerHealthBehavior) return;
+    if (!this.playerHealthComponent) return;
 
-    this.healthText.text = `${this.playerHealthBehavior.health}/${this.playerHealthBehavior.maxHealth}`;
+    this.healthText.text = `${this.playerHealthComponent.health}/${this.playerHealthComponent.maxHealth}`;
     this.updateTextPosition();
   }
 
@@ -94,7 +94,10 @@ export class PlayerStatsWidget extends Widget {
     this.healthText.scale.set(this.scale);
   }
 
-  private readonly resize = ({ width, height }: ResizeData) => {
+  private resize({ width, height }: ResizeData) {
+    // Guard against resize events after widget destruction
+    if (!this.container || this.container.destroyed) return;
+
     // Calculate scale based on screen size (responsive scaling)
     // Base scale on smaller dimension to ensure it fits on mobile
     const minDimension = Math.min(width, height);
@@ -106,13 +109,13 @@ export class PlayerStatsWidget extends Widget {
     this.updateTextPosition();
 
     // Position at bottom-left with 15px margin
-    this.container.position.set(-width / 2 + 15, -height / 2 + 15);
-  };
+    this.container.position.set(-width / 2 + 15, height / 2 - this.baseHeight * this.scale - 15);
+  }
 
   override destroy() {
-    // Clean up events subscriptions
+    // Clean up resize subscription
     this.game.resized.unsubscribe(this.resize);
-    this.playerHealthBehavior.healthChanged.unsubscribe(this.updateHealthDisplay);
+    this.playerHealthComponent.healthChanged.unsubscribe(this.updateHealthDisplay);
 
     super.destroy();
   }

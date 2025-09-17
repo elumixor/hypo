@@ -1,5 +1,7 @@
 import { delay, Entity, ticker } from "@engine";
-import { TransformBehavior } from "behaviors/transform-behavior";
+import { ColliderBehavior } from "behaviors/collider.behavior";
+import { HealthBehavior } from "behaviors/health.behavior";
+import { TransformBehavior } from "behaviors/transform.behavior";
 import gsap from "gsap";
 import { resources } from "resources";
 import type { Object3D } from "three";
@@ -10,27 +12,20 @@ import { Projectile } from "./projectile";
 
 export class Enemy extends Entity {
   private model!: Object3D;
-  private transform!: TransformBehavior;
+  private readonly transform = this.addBehavior(new TransformBehavior());
+  private readonly collider = this.addBehavior(new ColliderBehavior());
+  private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
   // Enemy AI properties
-  private readonly speed = 10;
+  private readonly speed = 5;
   private readonly radius = 15; // Distance from player
   private playerTransform!: TransformBehavior;
-
-  constructor() {
-    super();
-
-    this.addBehavior(new TransformBehavior());
-  }
 
   override async init() {
     await super.init();
 
-    this.transform = this.getBehavior(TransformBehavior);
-
     // Find player in the scene
-    const player = this.scene.entities.find((entity) => entity instanceof Player);
-    if (player) this.playerTransform = player.getBehavior(TransformBehavior);
+    this.playerTransform = this.scene.getEntity(Player).getBehavior(TransformBehavior);
 
     // Load the drone model for enemy (same as player for now)
     const { scene } = resources.get("models/drone");
@@ -49,14 +44,16 @@ export class Enemy extends Entity {
   }
 
   private async startLoop() {
-    while (true) {
+    while (this.health.isAlive) {
       // Set initial target position
       await this.moveTowardsTarget(this.getNextTargetPosition());
       await this.shoot();
     }
   }
 
-  override update() {
+  override update(dt: number) {
+    super.update(dt);
+
     // Add subtle hover animation to the model
     this.model.position.y = Math.sin(ticker.lastTime * 0.002) * 0.1;
   }
@@ -69,7 +66,7 @@ export class Enemy extends Entity {
     // Rotation tween
     gsap.to(this.transform.group.rotation, {
       y: Math.atan2(direction.x, direction.z),
-      duration: 0.5,
+      duration: 0.3,
       ease: "power1.inOut",
     });
 
@@ -92,12 +89,14 @@ export class Enemy extends Entity {
   }
 
   private async shoot() {
-    // Create 4 projectiles with intervals: 0.2, 0.2, 0.5 seconds
-    for (const time of [0, 0.2, 0.2, 0.5]) {
+    // Create 3 projectiles with intervals: 0.2, 0.5 seconds
+    for (const time of [0, 0.2, 0.5]) {
       await delay(time);
+      if (!this.health.isAlive) return; // Stop shooting if dead
       const projectile = new Projectile(
         this.transform.group.position.clone(),
         this.playerTransform.group.position.clone(),
+        false, // This is an enemy projectile
       );
       this.scene.addEntity(projectile);
     }

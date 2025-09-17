@@ -1,24 +1,19 @@
 import { Scene } from "@engine";
+import { HealthBehavior } from "behaviors/health.behavior";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { Enemy } from "./entities/enemy";
 import { Player } from "./entities/player";
-import { HealthService } from "./services/health.service";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
   private readonly directionalLight: DirectionalLight;
   private readonly groundMesh: Mesh;
-  private readonly healthService: HealthService;
 
   constructor() {
     super();
-
-    // Add services
-    this.healthService = this.addService(new HealthService());
-    this.healthService.died.subscribe(this.onPlayerDied);
 
     // Add the ground plane
     // Create a large ground plane
@@ -65,9 +60,25 @@ export class CombatScene extends Scene {
     // Add the player entity
     this.addEntity(new Player());
 
-    // Add enemy entities
+    // Subscribe to player death
+    const player = this.getEntity(Player);
+    const playerHealth = player.getBehavior(HealthBehavior);
+    playerHealth.healthChanged.subscribe((event) => {
+      if (!event.isAlive) this.onPlayerDied();
+    });
+
+    // Add enemy entities and subscribe to their deaths
     for (let i = 0; i < 3; i++) {
-      this.addEntity(new Enemy());
+      const enemy = new Enemy();
+      this.addEntity(enemy);
+
+      // Subscribe to enemy death to remove enemy and check if all enemies are dead
+      const enemyHealth = enemy.getBehavior(HealthBehavior);
+      enemyHealth.healthChanged.subscribe((event) => {
+        if (!event.isAlive) {
+          this.onEnemyDied(enemy);
+        }
+      });
     }
 
     // Add UI widgets
@@ -79,11 +90,24 @@ export class CombatScene extends Scene {
     void this.game.loadScene(new CombatScene());
   };
 
+  private onEnemyDied(enemy: Enemy) {
+    // Remove the dead enemy from the scene
+    this.removeEntity(enemy);
+
+    // Check if all enemies are dead
+    this.checkEnemiesAlive();
+  }
+
+  private checkEnemiesAlive() {
+    const enemies = this.entities.filter((entity) => entity instanceof Enemy);
+    if (enemies.length === 0) {
+      // All enemies are dead, reload the scene
+      void this.game.loadScene(new CombatScene());
+    }
+  }
+
   override destroy() {
     super.destroy();
-
-    // Clean up event listeners
-    this.healthService.died.unsubscribe(this.onPlayerDied);
 
     // Clean up lights
     this.sceneRoot.remove(this.ambientLight);

@@ -4,7 +4,7 @@
   "private": true,
   "homepage": "https://elumixor.github.io/hypo/",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --force",
     "build": "vite build",
     "check": "tsc --noEmit && bun run lint && bun run format",
     "lint": "biome check . --fix",
@@ -14,7 +14,7 @@
     "asset-viewer": "asset-viewer ./public/assets"
   },
   "dependencies": {
-    "@elumixor/event-emitter": "^1.0.2",
+    "@elumixor/event-emitter": "^1.0.3",
     "@elumixor/frontils": "^2.14.1",
     "@elumixor/thrixi-resources": "^1.0.10",
     "gsap": "^3.13.0",

@@ -1,6 +1,7 @@
 import type { Constructor } from "@elumixor/frontils";
 import { Container } from "pixi.js";
 import { Group } from "three";
+import type { Behavior } from "./behavior";
 import type { Entity } from "./entity";
 import type { Game } from "./game";
 import { type InputMappingContext, InputService } from "./input";
@@ -69,9 +70,10 @@ export abstract class Scene {
 
   addEntity<T extends Entity>(entity: T) {
     entity.scene = this;
-    this.entities.push(entity);
 
-    if (this.initialized) entity.init();
+    if (this.initialized) void entity.init().then(() => this.entities.push(entity));
+    else this.entities.push(entity);
+
     return entity;
   }
 
@@ -109,5 +111,19 @@ export abstract class Scene {
     const entity = this.entities.find((e) => e instanceof entityClass) as T | undefined;
     if (!entity) throw new Error(`Entity ${entityClass.name} not found in scene`);
     return entity;
+  }
+
+  getEntities<T extends Entity>(entityClass: Constructor<T>): T[] {
+    return this.entities.filter((e) => e instanceof entityClass) as T[];
+  }
+
+  getBehaviors<T extends Behavior>(behaviorClass: Constructor<T>): T[] {
+    const behaviors: T[] = [];
+    for (const entity of this.entities) {
+      for (const behavior of entity.behaviors) {
+        if (behavior instanceof behaviorClass) behaviors.push(behavior as T);
+      }
+    }
+    return behaviors;
   }
 }

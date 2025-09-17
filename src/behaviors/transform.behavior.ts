@@ -15,7 +15,7 @@ export class TransformBehavior extends Behavior {
   }
 
   override destroy() {
-    super.destroy();
     this.entity.scene.sceneRoot.remove(this.group);
+    super.destroy();
   }
 }
