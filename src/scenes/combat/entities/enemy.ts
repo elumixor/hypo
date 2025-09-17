@@ -31,6 +31,9 @@ export class Enemy extends Entity {
     // Find player in the scene
     this.playerTransform = this.scene.getEntity(Player).getBehavior(TransformBehavior);
 
+    // Listen to collision events
+    this.collider.collided.subscribe(this.onCollision);
+
     // Listen to health changes to emit death event
     this.health.healthChanged.subscribe((event) => {
       if (!event.isAlive) this.enemyDied.emit();
@@ -111,7 +114,24 @@ export class Enemy extends Entity {
     }
   }
 
+  private readonly onCollision = (event: { other: ColliderBehavior; self: ColliderBehavior }) => {
+    const { other } = event;
+    const otherEntity = other.entity;
+
+    // Only handle collisions with player projectiles
+    if (other.collisionGroup !== CollisionGroup.PlayerProjectile) return;
+
+    // Apply damage to enemy
+    const damage = 10; // Default projectile damage
+    this.health.takeDamage(damage);
+
+    // Remove the projectile
+    this.scene.removeEntity(otherEntity);
+  };
+
   override destroy() {
+    // Unsubscribe from collision events
+    this.collider.collided.unsubscribe(this.onCollision);
     destroy(this.model);
 
     super.destroy();

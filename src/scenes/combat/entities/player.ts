@@ -1,4 +1,5 @@
 import { ColliderBehavior, Entity, TransformBehavior, ticker } from "@engine";
+import type { CollisionEvent } from "@engine/systems/collision/collider.behavior";
 import { HealthBehavior } from "behaviors/health.behavior";
 import { resources } from "resources";
 import type { Object3D } from "three";
@@ -11,6 +12,7 @@ import { CollisionGroup } from "../collision-group";
 
 export class Player extends Entity {
   private model!: Object3D;
+  private collider!: ColliderBehavior;
 
   constructor() {
     super();
@@ -19,7 +21,7 @@ export class Player extends Entity {
     this.addBehavior(new PlayerMovementBehavior());
     this.addBehavior(new CameraFollowBehavior());
     this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
-    this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
+    this.collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
     this.addBehavior(new PlayerAutoAttackBehavior());
     this.addBehavior(new BlockBehavior());
   }
@@ -28,6 +30,9 @@ export class Player extends Entity {
     await super.init();
 
     this.getBehavior(CameraFollowBehavior).targetTransform = this.getBehavior(TransformBehavior);
+
+    // Listen to collision events
+    this.collider.collided.subscribe(this.onCollision);
 
     // Load the drone model
     const { scene } = resources.get("models/drone");
@@ -44,6 +49,35 @@ export class Player extends Entity {
     transform.group.position.y = 5;
   }
 
+  private readonly onCollision = (event: { other: ColliderBehavior; self: ColliderBehavior }) => {
+    const { other } = event;
+    const otherEntity = other.entity;
+
+    // Only handle collisions with enemy projectiles
+    if (other.collisionGroup !== CollisionGroup.EnemyProjectile) return;
+
+    // Try to block with shield first
+    let damage = 10; // Default projectile damage
+    
+    try {
+      const blockBehavior = this.getBehavior(BlockBehavior);
+      if (blockBehavior.blockingActive) {
+        damage = blockBehavior.absorbDamage(damage);
+      }
+    } catch {
+      // BlockBehavior might be disabled, continue with full damage
+    }
+
+    // Apply remaining damage to health
+    if (damage > 0) {
+      const healthBehavior = this.getBehavior(HealthBehavior);
+      healthBehavior.takeDamage(damage);
+    }
+
+    // Remove the projectile
+    this.scene.removeEntity(otherEntity);
+  };
+
   override update(dt: number) {
     super.update(dt);
 
@@ -52,6 +86,9 @@ export class Player extends Entity {
   }
 
   override destroy() {
+    // Unsubscribe from collision events
+    this.collider.collided.unsubscribe(this.onCollision);
+
     destroy(this.model);
 
     super.destroy();

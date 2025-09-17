@@ -1,10 +1,7 @@
 import { ColliderBehavior, Entity, TransformBehavior } from "@engine";
-import { HealthBehavior } from "behaviors/health.behavior";
 import { Mesh, MeshLambertMaterial, SphereGeometry, Vector3 } from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "../collision-group";
-import { Enemy } from "./enemy";
-import { Player } from "./player";
 
 export class Projectile extends Entity {
   private readonly speed = 3;
@@ -37,9 +34,6 @@ export class Projectile extends Entity {
 
     this.transform.group.position.copy(this.startPosition);
 
-    // Listen to collision events
-    this.collider.collided.subscribe(this.onCollision);
-
     // Create red sphere geometry
     const geometry = new SphereGeometry(1, 8, 8);
     const material = new MeshLambertMaterial({ color: 0xff0000 }); // Red color
@@ -66,28 +60,7 @@ export class Projectile extends Entity {
     if (this.lifetime >= this.maxLifetime) this.scene.removeEntity(this);
   }
 
-  private readonly onCollision = (event: { other: ColliderBehavior; self: ColliderBehavior }) => {
-    const { other } = event;
-    const targetEntity = other.entity;
-
-    // Skip collision with player if this is a player projectile
-    if (this.isPlayerProjectile && !(targetEntity instanceof Enemy)) return;
-
-    // Skip collision with enemies if this is an enemy projectile
-    if (!this.isPlayerProjectile && !(targetEntity instanceof Player)) return;
-
-    // Try to get health component and apply damage
-    const healthComponent = targetEntity.getBehavior(HealthBehavior);
-    healthComponent.takeDamage(this.damage);
-
-    // Destroy the projectile
-    this.scene.removeEntity(this);
-  };
-
   override destroy() {
-    // Unsubscribe from collision events
-    this.collider.collided.unsubscribe(this.onCollision);
-
     destroy(this.mesh);
 
     super.destroy();

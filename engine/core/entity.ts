@@ -30,12 +30,14 @@ export abstract class Entity {
 
   /** Called when the entity is initialized. This is effectively when it appears in the scene */
   async init() {
-    await Promise.all(this.behaviors.map((b) => b.init()));
+    await Promise.all(this.behaviors.filter(b => b.enabled).map((b) => b.init()));
   }
 
   /** Called every frame while the entity is active in the scene. */
   update(dt: number) {
-    for (const behavior of this.behaviors) behavior.update(dt);
+    for (const behavior of this.behaviors) {
+      if (behavior.enabled) behavior.update(dt);
+    }
   }
 
   /** Called when the entity is destroyed. */
@@ -61,7 +63,7 @@ export abstract class Entity {
   }
 
   getBehavior<T extends Behavior>(behaviorClass: Constructor<T>) {
-    const behavior = this.behaviors.find((b) => b instanceof behaviorClass) as T | undefined;
+    const behavior = this.behaviors.find((b) => b instanceof behaviorClass && b.enabled) as T | undefined;
     if (!behavior) throw new Error(`Behavior ${behaviorClass.name} not found on entity ${this.name}`);
     return behavior;
   }
