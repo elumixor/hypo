@@ -3,6 +3,7 @@ import { HealthBehavior } from "behaviors/health.behavior";
 import { resources } from "resources";
 import type { Object3D } from "three";
 import { destroy } from "utils";
+import { BlockBehavior } from "../behaviors/block.behavior";
 import { CameraFollowBehavior } from "../behaviors/camera-follow.behavior";
 import { PlayerAutoAttackBehavior } from "../behaviors/player-auto-attack.behavior";
 import { PlayerMovementBehavior } from "../behaviors/player-movement.behavior";
@@ -20,6 +21,7 @@ export class Player extends Entity {
     this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
     this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
     this.addBehavior(new PlayerAutoAttackBehavior());
+    this.addBehavior(new BlockBehavior());
   }
 
   override async init() {
