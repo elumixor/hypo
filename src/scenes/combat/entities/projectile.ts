@@ -70,16 +70,12 @@ export class Projectile extends Entity {
     const targetEntity = other.entity;
 
     // Skip collision with player if this is a player projectile
-    if (this.isPlayerProjectile && !(targetEntity instanceof Enemy)) {
-      console.log(`Projectile hit non-enemy: ${targetEntity.name}`);
-      return;
-    }
+    if (this.isPlayerProjectile && !(targetEntity instanceof Enemy)) return;
 
     // Skip collision with enemies if this is an enemy projectile
     if (!this.isPlayerProjectile && !(targetEntity instanceof Player)) return;
 
     // Try to get health component and apply damage
-    console.log(`Projectile hit ${targetEntity.name}`);
     const healthComponent = targetEntity.getBehavior(HealthBehavior);
     healthComponent.takeDamage(this.damage);
 

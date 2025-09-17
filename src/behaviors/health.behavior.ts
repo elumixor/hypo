@@ -47,7 +47,6 @@ export class HealthBehavior extends Behavior {
   }
 
   private emitHealthChanged() {
-    console.log(`Emitting healthChanged: ${this._health}/${this._maxHealth}`);
     this.healthChanged.emit({
       health: this.health,
       maxHealth: this.maxHealth,
