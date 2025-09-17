@@ -2,18 +2,20 @@ import { Entity } from "@engine";
 import { TransformBehavior } from "behaviors/transform-behavior";
 import { Mesh, MeshLambertMaterial, SphereGeometry, Vector3 } from "three";
 import { destroy } from "utils";
+import { PlayerHealthBehavior } from "../behaviors/player-health.behavior";
+import { Player } from "./player";
 
 export class Projectile extends Entity {
   private readonly speed = 5;
   private mesh!: Mesh;
-  private direction = new Vector3();
-  private targetPosition = new Vector3();
+  private readonly direction = new Vector3();
+  private readonly targetPosition = new Vector3();
   private lifetime = 0;
   private readonly maxLifetime = 5000; // 5 seconds
   private transform!: TransformBehavior;
 
   constructor(
-    private startPosition: Vector3,
+    private readonly startPosition: Vector3,
     targetPosition: Vector3,
   ) {
     super();
@@ -24,8 +26,6 @@ export class Projectile extends Entity {
 
   override async init() {
     await super.init();
-
-    console.log("Projectile fired!");
 
     this.transform = this.getBehavior(TransformBehavior);
     this.transform.group.position.copy(this.startPosition);
@@ -48,6 +48,9 @@ export class Projectile extends Entity {
 
     this.lifetime += dt;
 
+    // Check for collision with player
+    this.checkCollision();
+
     // Move towards target
     const moveAmount = this.speed * dt * 0.01;
     this.transform.group.position.add(this.direction.clone().multiplyScalar(moveAmount));
@@ -58,9 +61,28 @@ export class Projectile extends Entity {
     }
   }
 
-  override destroy() {
-    super.destroy();
+  private checkCollision() {
+    // Find player in the scene
+    const player = this.scene.entities.find((entity) => entity instanceof Player) as Player;
+    if (!player) return;
 
+    const playerTransform = player.getBehavior(TransformBehavior);
+    const distance = this.transform.group.position.distanceTo(playerTransform.group.position);
+
+    // Simple collision check - if projectile is within 1 unit of player
+    if (distance < 1) {
+      // Get player's health behavior and apply damage
+      const healthBehavior = player.getBehavior(PlayerHealthBehavior);
+      healthBehavior.takeDamage(10); // 10 damage per hit
+
+      // Destroy the projectile
+      this.scene.removeEntity(this);
+    }
+  }
+
+  override destroy() {
     destroy(this.mesh);
+
+    super.destroy();
   }
 }

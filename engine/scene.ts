@@ -104,4 +104,10 @@ export abstract class Scene {
     const myService = this.services.find((s) => s instanceof serviceClass) as T | undefined;
     return myService ?? this.game.getService<T>(serviceClass);
   }
+
+  getEntity<T extends Entity>(entityClass: Constructor<T>): T {
+    const entity = this.entities.find((e) => e instanceof entityClass) as T | undefined;
+    if (!entity) throw new Error(`Entity ${entityClass.name} not found in scene`);
+    return entity;
+  }
 }

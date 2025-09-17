@@ -104,7 +104,8 @@ export class Enemy extends Entity {
   }
 
   override destroy() {
-    super.destroy();
     destroy(this.model);
+
+    super.destroy();
   }
 }

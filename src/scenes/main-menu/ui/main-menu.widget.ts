@@ -45,7 +45,7 @@ export class MainMenuWidget extends Widget {
     this.loadGameButton.visible = this.saveLoadService.savedGames.nonEmpty;
 
     // Resize
-    this.game.resized.subscribeImmediate(this.resize.bind(this));
+    this.game.resized.subscribeImmediate(this.resize);
 
     // For testing - show load progress
     const loaderService = this.getService(ResourcesLoaderService);
@@ -83,7 +83,7 @@ export class MainMenuWidget extends Widget {
     });
   }
 
-  private resize({ width, height }: ResizeData) {
+  private readonly resize = ({ width, height }: ResizeData) => {
     // Position title at top
     this.gameTitle.y = -225;
 
@@ -97,5 +97,12 @@ export class MainMenuWidget extends Widget {
     // Position load status at bottom left
     this.loadStatusText.y = height / 2 - 15;
     this.loadStatusText.x = -width / 2 + 15;
+  };
+
+  override destroy() {
+    // Clean up resize subscription
+    this.game.resized.unsubscribe(this.resize);
+
+    super.destroy();
   }
 }

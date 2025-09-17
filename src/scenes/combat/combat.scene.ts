@@ -4,14 +4,21 @@ import { destroy } from "utils";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { Enemy } from "./entities/enemy";
 import { Player } from "./entities/player";
+import { HealthService } from "./services/health.service";
+import { PlayerStatsWidget } from "./ui/player-stats.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
   private readonly directionalLight: DirectionalLight;
   private readonly groundMesh: Mesh;
+  private readonly healthService: HealthService;
 
   constructor() {
     super();
+
+    // Add services
+    this.healthService = this.addService(new HealthService());
+    this.healthService.died.subscribe(this.onPlayerDied);
 
     // Add the ground plane
     // Create a large ground plane
@@ -62,10 +69,21 @@ export class CombatScene extends Scene {
     for (let i = 0; i < 3; i++) {
       this.addEntity(new Enemy());
     }
+
+    // Add UI widgets
+    this.addWidget(new PlayerStatsWidget());
   }
+
+  private readonly onPlayerDied = () => {
+    // Let's just reload the scene for now
+    void this.game.loadScene(new CombatScene());
+  };
 
   override destroy() {
     super.destroy();
+
+    // Clean up event listeners
+    this.healthService.died.unsubscribe(this.onPlayerDied);
 
     // Clean up lights
     this.sceneRoot.remove(this.ambientLight);
