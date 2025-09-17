@@ -1,10 +1,5 @@
 import "@elumixor/frontils"; // import for extension methods
 
-export * from "./behavior";
-export * from "./entity";
-export * from "./game";
-export * from "./input";
-export * from "./scene";
-export * from "./service";
-export * from "./ticker";
-export * from "./widget";
+export * from "./behaviors";
+export * from "./core";
+export * from "./systems";

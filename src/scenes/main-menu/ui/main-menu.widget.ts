@@ -1,6 +1,5 @@
 import { nonNullAssert } from "@elumixor/frontils";
-import { Widget } from "@engine";
-import type { ResizeData } from "@engine/game";
+import { type ResizeData, Widget } from "@engine";
 import { Text as PixiText } from "pixi.js";
 import { CombatScene } from "scenes/combat/combat.scene";
 import { ResourcesLoaderService } from "services/resources-loader.service";

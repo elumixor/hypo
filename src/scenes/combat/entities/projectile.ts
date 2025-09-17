@@ -1,9 +1,8 @@
-import { Entity } from "@engine";
-import { ColliderBehavior } from "behaviors/collider.behavior";
+import { ColliderBehavior, Entity, TransformBehavior } from "@engine";
 import { HealthBehavior } from "behaviors/health.behavior";
-import { TransformBehavior } from "behaviors/transform.behavior";
 import { Mesh, MeshLambertMaterial, SphereGeometry, Vector3 } from "three";
 import { destroy } from "utils";
+import { CollisionGroup } from "../collision-group";
 import { Enemy } from "./enemy";
 import { Player } from "./player";
 
@@ -26,7 +25,9 @@ export class Projectile extends Entity {
     super();
 
     this.transform = this.addBehavior(new TransformBehavior());
-    this.collider = this.addBehavior(new ColliderBehavior());
+    this.collider = this.addBehavior(
+      new ColliderBehavior(isPlayerProjectile ? CollisionGroup.PlayerProjectile : CollisionGroup.EnemyProjectile),
+    );
 
     this.targetPosition.copy(targetPosition);
   }

@@ -1,13 +1,11 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { delay, Entity, ticker } from "@engine";
-import { ColliderBehavior } from "behaviors/collider.behavior";
+import { ColliderBehavior, delay, Entity, TransformBehavior, ticker } from "@engine";
 import { HealthBehavior } from "behaviors/health.behavior";
-import { TransformBehavior } from "behaviors/transform.behavior";
-import gsap from "gsap";
+import { gsap } from "gsap";
 import { resources } from "resources";
-import type { Object3D } from "three";
-import { Vector3 } from "three";
+import { type Object3D, Vector3 } from "three";
 import { destroy } from "utils";
+import { CollisionGroup } from "../collision-group";
 import { Player } from "./player";
 import { Projectile } from "./projectile";
 
@@ -16,7 +14,7 @@ export class Enemy extends Entity {
 
   // Self behaviors
   private readonly transform = this.addBehavior(new TransformBehavior());
-  private readonly collider = this.addBehavior(new ColliderBehavior());
+  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
   // Referenced behaviors

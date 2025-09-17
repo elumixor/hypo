@@ -1,6 +1,5 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { Entity } from "@engine";
-import { TransformBehavior } from "behaviors/transform.behavior";
+import { Entity, TransformBehavior } from "@engine";
 import { Enemy } from "./enemy";
 import { Player } from "./player";
 

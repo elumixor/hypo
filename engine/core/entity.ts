@@ -1,7 +1,6 @@
 import type { Constructor } from "@elumixor/frontils";
+import { type InputMappingContext, InputService } from "@engine/systems/input";
 import type { Behavior } from "./behavior";
-import { InputService } from "./input/input.service";
-import type { InputMappingContext } from "./input/input-mapping-context";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 

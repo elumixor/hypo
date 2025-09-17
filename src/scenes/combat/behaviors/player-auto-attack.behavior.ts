@@ -1,5 +1,4 @@
-import { Behavior } from "@engine";
-import { TransformBehavior } from "behaviors/transform.behavior";
+import { Behavior, TransformBehavior } from "@engine";
 import { Enemy } from "../entities/enemy";
 import { Projectile } from "../entities/projectile";
 

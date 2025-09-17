@@ -1,4 +1,4 @@
-import { InputMappingContext } from "@engine/input";
+import { InputMappingContext } from "@engine";
 import { Vector2 } from "three";
 
 export class CombatInputMappingContext extends InputMappingContext {

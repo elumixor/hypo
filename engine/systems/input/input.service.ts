@@ -1,4 +1,4 @@
-import { Service } from "../service";
+import { Service } from "@engine/core/service";
 import type { InputMappingContext } from "./input-mapping-context";
 
 export class InputService extends Service {

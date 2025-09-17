@@ -1,7 +1,8 @@
-import { Scene } from "@engine";
+import { CollisionService, Scene } from "@engine";
 import { HealthBehavior } from "behaviors/health.behavior";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
+import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { Player } from "./entities/player";
@@ -12,6 +13,7 @@ export class CombatScene extends Scene {
   private readonly directionalLight: DirectionalLight;
   private readonly groundMesh: Mesh;
   private readonly enemyManager = this.addEntity(new EnemyManager());
+  private readonly collisionService = this.addService(new CollisionService());
 
   constructor() {
     super();
@@ -72,6 +74,10 @@ export class CombatScene extends Scene {
 
     // Listen to all enemies cleared event
     this.enemyManager.enemiesCleared.subscribe(this.onAllEnemiesCleared);
+
+    // Setup collision groups
+    this.collisionService.addCollisionGroup(CollisionGroup.Player, [CollisionGroup.EnemyProjectile]);
+    this.collisionService.addCollisionGroup(CollisionGroup.Enemy, [CollisionGroup.PlayerProjectile]);
 
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());

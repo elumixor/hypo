@@ -1,8 +1,8 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import type { Constructor } from "@elumixor/frontils";
+import { InputService } from "@engine/systems/input";
 import { Application } from "pixi.js";
 import { PCFSoftShadowMap, PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene } from "three";
-import { InputService } from "./input";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
 import { ticker } from "./ticker";

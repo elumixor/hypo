@@ -1,10 +1,10 @@
 import type { Constructor } from "@elumixor/frontils";
+import { type InputMappingContext, InputService } from "@engine/systems/input";
 import { Container } from "pixi.js";
 import { Group } from "three";
 import type { Behavior } from "./behavior";
 import type { Entity } from "./entity";
 import type { Game } from "./game";
-import { type InputMappingContext, InputService } from "./input";
 import type { Service } from "./service";
 import type { Widget } from "./widget";
 

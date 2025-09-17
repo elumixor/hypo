@@ -1,4 +1,4 @@
-import { Behavior } from "@engine";
+import { Behavior } from "@engine/core";
 import { Group } from "three";
 
 /**

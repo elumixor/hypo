@@ -1,5 +1,4 @@
-import { Behavior } from "@engine";
-import { TransformBehavior } from "behaviors/transform.behavior";
+import { Behavior, TransformBehavior } from "@engine";
 import { Vector3 } from "three";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
 

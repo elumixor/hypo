@@ -1,13 +1,12 @@
-import { Entity, ticker } from "@engine";
-import { ColliderBehavior } from "behaviors/collider.behavior";
+import { ColliderBehavior, Entity, TransformBehavior, ticker } from "@engine";
 import { HealthBehavior } from "behaviors/health.behavior";
-import { TransformBehavior } from "behaviors/transform.behavior";
 import { resources } from "resources";
 import type { Object3D } from "three";
 import { destroy } from "utils";
 import { CameraFollowBehavior } from "../behaviors/camera-follow.behavior";
 import { PlayerAutoAttackBehavior } from "../behaviors/player-auto-attack.behavior";
 import { PlayerMovementBehavior } from "../behaviors/player-movement.behavior";
+import { CollisionGroup } from "../collision-group";
 
 export class Player extends Entity {
   private model!: Object3D;
@@ -19,7 +18,7 @@ export class Player extends Entity {
     this.addBehavior(new PlayerMovementBehavior());
     this.addBehavior(new CameraFollowBehavior());
     this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
-    this.addBehavior(new ColliderBehavior());
+    this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
     this.addBehavior(new PlayerAutoAttackBehavior());
   }
 

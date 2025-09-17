@@ -1,5 +1,4 @@
-import { Widget } from "@engine";
-import type { ResizeData } from "@engine/game";
+import { type ResizeData, Widget } from "@engine";
 import { HealthBehavior } from "behaviors/health.behavior";
 import { Graphics, Text } from "pixi.js";
 import { textStyle } from "ui/fonts";
