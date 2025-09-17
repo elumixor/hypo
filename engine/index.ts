@@ -6,4 +6,5 @@ export * from "./game";
 export * from "./input";
 export * from "./scene";
 export * from "./service";
+export * from "./ticker";
 export * from "./widget";

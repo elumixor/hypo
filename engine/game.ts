@@ -5,6 +5,7 @@ import { PerspectiveCamera, WebGLRenderer as ThreeRenderer, Scene as ThreeScene 
 import { InputService } from "./input";
 import type { Scene } from "./scene";
 import type { Service } from "./service";
+import { ticker } from "./ticker";
 
 export interface ResizeData {
   width: number;
@@ -95,15 +96,8 @@ export abstract class Game {
     this.domRoot.appendChild(this.pixiCanvas);
 
     // Set up render loop
-    let lastTime = performance.now();
-    const animate = (time: number) => {
-      const dt = time - lastTime;
-      lastTime = time;
-
-      requestAnimationFrame(animate);
-      this.update(dt);
-    };
-    requestAnimationFrame(animate);
+    ticker.add(({ deltaMS }) => this.update(deltaMS));
+    ticker.start();
 
     // Listen to resize events
     window.addEventListener("resize", this.resize.bind(this));

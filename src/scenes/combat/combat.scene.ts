@@ -2,6 +2,7 @@ import { Scene } from "@engine";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
+import { Enemy } from "./entities/enemy";
 import { Player } from "./entities/player";
 
 export class CombatScene extends Scene {
@@ -56,6 +57,11 @@ export class CombatScene extends Scene {
 
     // Add the player entity
     this.addEntity(new Player());
+
+    // Add enemy entities
+    for (let i = 0; i < 3; i++) {
+      this.addEntity(new Enemy());
+    }
   }
 
   override destroy() {

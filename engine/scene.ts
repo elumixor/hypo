@@ -34,6 +34,10 @@ export abstract class Scene {
     return this.game.camera;
   }
 
+  private get initialized() {
+    return !!this._game;
+  }
+
   async init() {
     // Set the input context if we have one. The input service is always available as global on the Game
     if (this.input) this.getService(InputService).context = this.input;
@@ -63,10 +67,12 @@ export abstract class Scene {
     for (const widget of Array.from(this.widgets.values())) widget.destroy();
   }
 
-  /** Should be called before onInit() - in constructor() */
   addEntity<T extends Entity>(entity: T) {
     entity.scene = this;
     this.entities.push(entity);
+
+    if (this.initialized) entity.init();
+    return entity;
   }
 
   removeEntity(entity: Entity) {
