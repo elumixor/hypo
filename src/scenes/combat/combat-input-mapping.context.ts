@@ -12,7 +12,6 @@ export class CombatInputMappingContext extends InputMappingContext {
     combined.rotateAround(new Vector2(0, 0), Math.PI / 4),
   );
 
-  readonly dashActivated = this.mapEvent("Space");
-  readonly touchDashActivated = this.mapEvent("TouchDash");
-  readonly shieldActive = this.mapFlag("KeyQ");
+  readonly dashActivated = this.mapEvent("Space").on;
+  readonly shield = this.mapEvent("KeyQ");
 }

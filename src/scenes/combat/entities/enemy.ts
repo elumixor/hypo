@@ -1,10 +1,10 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { ColliderBehavior, delay, Entity, TransformBehavior, ticker } from "@engine";
-import { HealthBehavior } from "behaviors/health.behavior";
+import { ColliderBehavior, type CollisionEvent, cast, delay, Entity, TransformBehavior, ticker } from "@engine";
 import { gsap } from "gsap";
 import { resources } from "resources";
 import { type Object3D, Vector3 } from "three";
 import { destroy } from "utils";
+import { HealthBehavior } from "../behaviors/health.behavior";
 import { CollisionGroup } from "../collision-group";
 import { Player } from "./player";
 import { Projectile } from "./projectile";
@@ -14,6 +14,9 @@ export class Enemy extends Entity {
 
   // Self behaviors
   private readonly transform = this.addBehavior(new TransformBehavior());
+
+  // Add collision behavior
+  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
   // Referenced behaviors
@@ -24,18 +27,14 @@ export class Enemy extends Entity {
   private readonly radius = 15; // Distance from player
   private model!: Object3D;
 
-  constructor() {
-    super();
-
-    // Add collision behavior
-    this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
-  }
-
   override async init() {
     await super.init();
 
     // Find player in the scene
     this.playerTransform = this.scene.getEntity(Player).getBehavior(TransformBehavior);
+
+    // Listen to collision events
+    this.collider.collided.subscribe(this.onCollision);
 
     // Listen to health changes to emit death event
     this.health.healthChanged.subscribe((event) => {
@@ -117,9 +116,15 @@ export class Enemy extends Entity {
     }
   }
 
-  override destroy() {
-    destroy(this.model);
+  private readonly onCollision = (event: CollisionEvent) => {
+    const projectile = cast(Projectile, event.other.entity);
+    this.health.health -= projectile.damage;
+    projectile.destroy();
+  };
 
+  override destroy() {
+    this.collider.collided.unsubscribe(this.onCollision);
+    destroy(this.model);
     super.destroy();
   }
 }

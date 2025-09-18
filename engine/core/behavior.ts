@@ -7,9 +7,18 @@ import type { Service } from "./service";
  */
 export abstract class Behavior {
   private _entity?: Entity;
+  private _enabled = true;
 
   get name() {
     return this.constructor.name;
+  }
+
+  get enabled() {
+    return this._enabled;
+  }
+
+  set enabled(value: boolean) {
+    this._enabled = value;
   }
 
   get entity() {
@@ -39,7 +48,7 @@ export abstract class Behavior {
   }
 
   destroy() {
-    // Override in subclasses
+    this._entity?.removeBehavior(this);
   }
 
   protected getService<T extends Service>(serviceClass: Constructor<T>) {

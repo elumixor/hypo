@@ -1,5 +1,5 @@
 import { CollisionService, Scene } from "@engine";
-import { HealthBehavior } from "behaviors/health.behavior";
+import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "./collision-group";
@@ -102,14 +102,14 @@ export class CombatScene extends Scene {
   };
 
   override destroy() {
-    super.destroy();
-
     // Clean up lights
-    this.sceneRoot.remove(this.ambientLight);
-    this.sceneRoot.remove(this.directionalLight);
+    this.ambientLight.removeFromParent();
+    this.directionalLight.removeFromParent();
     this.directionalLight.dispose();
 
     // Clean up ground mesh
     destroy(this.groundMesh);
+
+    super.destroy();
   }
 }
