@@ -3,6 +3,7 @@ import { resources } from "resources";
 import type { Object3D } from "three";
 import { destroy } from "utils";
 import { CameraFollowBehavior } from "../behaviors/camera-follow.behavior";
+import { DashBehavior } from "../behaviors/dash.behavior";
 import { EnergyBehavior } from "../behaviors/energy.behavior";
 import { HealthBehavior } from "../behaviors/health.behavior";
 import { PlayerAutoAttackBehavior } from "../behaviors/player-auto-attack.behavior";
@@ -23,6 +24,7 @@ export class Player extends Entity {
 
     this.addBehavior(new TransformBehavior());
     this.addBehavior(new PlayerMovementBehavior());
+    this.addBehavior(new DashBehavior());
     this.addBehavior(new CameraFollowBehavior());
     this.addBehavior(new EnergyBehavior(50, 50, 15)); // Player has 50 energy, regenerates at 5 per second
     this.addBehavior(new PlayerAutoAttackBehavior()).enabled = false;
