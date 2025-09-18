@@ -25,6 +25,10 @@ export class PlayerShieldBehavior extends Behavior {
     this.shieldMesh = new Mesh(geometry, material);
     this.shieldMesh.visible = false;
     this.transform.group.add(this.shieldMesh);
+
+    // Listen to shield input events
+    this.input.shield.on.subscribe(() => this.activateShield());
+    this.input.shield.off.subscribe(() => this.deactivateShield());
   }
 
   override get input() {
@@ -34,35 +38,31 @@ export class PlayerShieldBehavior extends Behavior {
   override update(dt: number) {
     super.update(dt);
 
-    const shouldShield = this.input.shieldActive.value;
-
-    if (shouldShield && !this.isShielding) {
-      this.activateShield();
-    } else if (!shouldShield && this.isShielding) {
-      this.deactivateShield();
-    }
-
     // Rotate shield slightly for visual effect
     if (this.isShielding) {
       this.shieldMesh.rotation.y += dt * 0.005;
     }
   }
 
-  private activateShield() {
+  private activateShield = () => {
     this.isShielding = true;
     this.shieldMesh.visible = true;
-  }
+  };
 
-  private deactivateShield() {
+  private deactivateShield = () => {
     this.isShielding = false;
     this.shieldMesh.visible = false;
-  }
+  };
 
   get shielding() {
     return this.isShielding;
   }
 
   override destroy() {
+    // Unsubscribe from shield events
+    this.input.shield.on.unsubscribe(this.activateShield);
+    this.input.shield.off.unsubscribe(this.deactivateShield);
+    
     destroy(this.shieldMesh);
     super.destroy();
   }
