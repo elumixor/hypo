@@ -1,10 +1,10 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { ColliderBehavior, delay, Entity, TransformBehavior, ticker } from "@engine";
-import { HealthBehavior } from "behaviors/health.behavior";
+import { ColliderBehavior, type CollisionEvent, cast, delay, Entity, TransformBehavior, ticker } from "@engine";
 import { gsap } from "gsap";
 import { resources } from "resources";
 import { type Object3D, Vector3 } from "three";
 import { destroy } from "utils";
+import { HealthBehavior } from "../behaviors/health.behavior";
 import { CollisionGroup } from "../collision-group";
 import { Player } from "./player";
 import { Projectile } from "./projectile";
@@ -114,26 +114,15 @@ export class Enemy extends Entity {
     }
   }
 
-  private readonly onCollision = (event: { other: ColliderBehavior; self: ColliderBehavior }) => {
-    const { other } = event;
-    const otherEntity = other.entity;
-
-    // Only handle collisions with player projectiles
-    if (other.collisionGroup !== CollisionGroup.PlayerProjectile) return;
-
-    // Apply damage to enemy
-    const damage = 10; // Default projectile damage
-    this.health.takeDamage(damage);
-
-    // Remove the projectile
-    this.scene.removeEntity(otherEntity);
+  private readonly onCollision = (event: CollisionEvent) => {
+    const projectile = cast(Projectile, event.other.entity);
+    this.health.health -= projectile.damage;
+    projectile.destroy();
   };
 
   override destroy() {
-    // Unsubscribe from collision events
     this.collider.collided.unsubscribe(this.onCollision);
     destroy(this.model);
-
     super.destroy();
   }
 }

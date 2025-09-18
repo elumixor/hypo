@@ -48,7 +48,7 @@ export abstract class Behavior {
   }
 
   destroy() {
-    // Override in subclasses
+    this._entity?.removeBehavior(this);
   }
 
   protected getService<T extends Service>(serviceClass: Constructor<T>) {

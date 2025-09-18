@@ -79,8 +79,8 @@ export abstract class Scene {
 
   removeEntity(entity: Entity) {
     if (!this.entities.includes(entity)) return;
-    if (this._game) entity.destroy();
     this.entities.remove(entity);
+    entity.destroy();
   }
 
   /** Should be called before onInit() - in constructor() */
@@ -118,12 +118,6 @@ export abstract class Scene {
   }
 
   getBehaviors<T extends Behavior>(behaviorClass: Constructor<T>): T[] {
-    const behaviors: T[] = [];
-    for (const entity of this.entities) {
-      for (const behavior of entity.behaviors) {
-        if (behavior instanceof behaviorClass) behaviors.push(behavior as T);
-      }
-    }
-    return behaviors;
+    return this.entities.flatMap((e) => e.getBehaviors(behaviorClass));
   }
 }

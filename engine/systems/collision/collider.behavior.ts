@@ -13,13 +13,14 @@ export class ColliderBehavior extends Behavior {
   private transform!: TransformBehavior;
   private debugMesh?: Mesh;
   readonly currentCollisions = new Set<ColliderBehavior>();
-  public radius: number; // Simple sphere radius for all entities
 
   readonly collided = new EventEmitter<CollisionEvent>();
 
-  constructor(readonly collisionGroup: string, radius = 1) {
+  constructor(
+    readonly collisionGroup: string,
+    readonly radius = 1,
+  ) {
     super();
-    this.radius = radius;
   }
 
   override async init() {

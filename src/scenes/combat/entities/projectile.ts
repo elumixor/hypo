@@ -11,18 +11,18 @@ export class Projectile extends Entity {
   private lifetime = 0;
   private readonly maxLifetime = 5000; // 5 seconds
   private readonly transform: TransformBehavior;
-  private readonly collider: ColliderBehavior;
 
   constructor(
     private readonly startPosition: Vector3,
     targetPosition: Vector3,
-    private readonly isPlayerProjectile = false,
-    private readonly damage = 10,
+    isPlayerProjectile = false,
+    // biome-ignore lint/style/useConsistentMemberAccessibility: We declare a field that is public and not readonly
+    public damage = 10,
   ) {
     super();
 
     this.transform = this.addBehavior(new TransformBehavior());
-    this.collider = this.addBehavior(
+    this.addBehavior(
       new ColliderBehavior(isPlayerProjectile ? CollisionGroup.PlayerProjectile : CollisionGroup.EnemyProjectile),
     );
 

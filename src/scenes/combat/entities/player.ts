@@ -1,18 +1,22 @@
-import { ColliderBehavior, Entity, TransformBehavior, ticker } from "@engine";
-import type { CollisionEvent } from "@engine/systems/collision/collider.behavior";
-import { HealthBehavior } from "behaviors/health.behavior";
+import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior, ticker } from "@engine";
 import { resources } from "resources";
 import type { Object3D } from "three";
 import { destroy } from "utils";
-import { BlockBehavior } from "../behaviors/block.behavior";
 import { CameraFollowBehavior } from "../behaviors/camera-follow.behavior";
+import { EnergyBehavior } from "../behaviors/energy.behavior";
+import { HealthBehavior } from "../behaviors/health.behavior";
 import { PlayerAutoAttackBehavior } from "../behaviors/player-auto-attack.behavior";
 import { PlayerMovementBehavior } from "../behaviors/player-movement.behavior";
+import { ShieldBehavior } from "../behaviors/shield.behavior";
 import { CollisionGroup } from "../collision-group";
+import { Projectile } from "./projectile";
 
 export class Player extends Entity {
+  // Self behaviors
+  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
+  private readonly health = this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
+
   private model!: Object3D;
-  private collider!: ColliderBehavior;
 
   constructor() {
     super();
@@ -20,10 +24,9 @@ export class Player extends Entity {
     this.addBehavior(new TransformBehavior());
     this.addBehavior(new PlayerMovementBehavior());
     this.addBehavior(new CameraFollowBehavior());
-    this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
-    this.collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
-    this.addBehavior(new PlayerAutoAttackBehavior());
-    this.addBehavior(new BlockBehavior());
+    this.addBehavior(new EnergyBehavior(50, 50, 15)); // Player has 50 energy, regenerates at 5 per second
+    this.addBehavior(new PlayerAutoAttackBehavior()).enabled = false;
+    this.addBehavior(new ShieldBehavior());
   }
 
   override async init() {
@@ -47,35 +50,14 @@ export class Player extends Entity {
     const transform = this.getBehavior(TransformBehavior);
     transform.group.add(this.model);
     transform.group.position.y = 5;
+
+    this.collider.debugSphereShown = true;
   }
 
-  private readonly onCollision = (event: { other: ColliderBehavior; self: ColliderBehavior }) => {
-    const { other } = event;
-    const otherEntity = other.entity;
-
-    // Only handle collisions with enemy projectiles
-    if (other.collisionGroup !== CollisionGroup.EnemyProjectile) return;
-
-    // Try to block with shield first
-    let damage = 10; // Default projectile damage
-    
-    try {
-      const blockBehavior = this.getBehavior(BlockBehavior);
-      if (blockBehavior.blockingActive) {
-        damage = blockBehavior.absorbDamage(damage);
-      }
-    } catch {
-      // BlockBehavior might be disabled, continue with full damage
-    }
-
-    // Apply remaining damage to health
-    if (damage > 0) {
-      const healthBehavior = this.getBehavior(HealthBehavior);
-      healthBehavior.takeDamage(damage);
-    }
-
-    // Remove the projectile
-    this.scene.removeEntity(otherEntity);
+  private readonly onCollision = ({ other }: CollisionEvent) => {
+    const projectile = cast(Projectile, other.entity);
+    this.health.health -= projectile.damage;
+    projectile.destroy();
   };
 
   override update(dt: number) {
@@ -86,11 +68,8 @@ export class Player extends Entity {
   }
 
   override destroy() {
-    // Unsubscribe from collision events
     this.collider.collided.unsubscribe(this.onCollision);
-
     destroy(this.model);
-
     super.destroy();
   }
 }
