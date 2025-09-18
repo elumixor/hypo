@@ -26,7 +26,7 @@ export class Enemy extends Entity {
 
   constructor() {
     super();
-    
+
     // Add collision behavior
     this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
   }

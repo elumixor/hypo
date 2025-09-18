@@ -1,14 +1,12 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import type { Vector2 } from "three";
+import { Vector2 } from "three";
 import { InputComputed, InputFlag, type InputVariable, InputVector2, type UnwrapInputVariables } from "./variables";
-import type { TouchInput } from "./input.service";
 
 export abstract class InputMappingContext {
   private readonly eventMappings = new Map<string, EventEmitter<void>>();
   private readonly variableMappings: InputVariable<unknown>[] = [];
   private readonly previousPressedKeys = new Set<string>();
   protected readonly pressedKeys = new Set<string>();
-  protected touchInput: TouchInput = { joystick: null, dashTapped: false, blockPressed: false };
 
   protected map2D(positiveX: string, negativeX: string, positiveY: string, negativeY: string): InputVariable<Vector2> {
     const input = new InputVector2(positiveX, negativeX, positiveY, negativeY);
@@ -22,15 +20,34 @@ export abstract class InputMappingContext {
     return input;
   }
 
-  protected combine2D(first: InputVariable<Vector2>, second: InputVariable<Vector2>): InputVariable<Vector2> {
-    return this.computed([first, second], (a, b) => {
-      const result = a.clone().add(b);
-      if (result.length() > 0) result.normalize();
+  protected map2DManual() {
+    const result = {
+      value: new Vector2(),
+      update: (v: Vector2) => {
+        result.value.copy(v);
+        this.updateManual();
+      },
+    };
+
+    return result;
+  }
+
+  protected combine2D(...variables: { value: Vector2 }[]): InputVariable<Vector2> {
+    return this.computed(variables, (...values) => {
+      let x = 0;
+      let y = 0;
+      for (const vec of values) {
+        x += vec.x;
+        y += vec.y;
+      }
+      const result = new Vector2(x, y);
+      const length = result.length();
+      if (length > 1) result.divideScalar(length);
       return result;
     });
   }
 
-  protected computed<TInputs extends InputVariable<unknown>[], TOutput>(
+  protected computed<TInputs extends { value: unknown }[], TOutput>(
     dependencies: TInputs,
     mapper: (...values: UnwrapInputVariables<TInputs>) => TOutput,
   ): InputVariable<TOutput> {
@@ -61,27 +78,11 @@ export abstract class InputMappingContext {
     }
 
     // Update all variables
-    for (const mapping of this.variableMappings) {
-      mapping.update(this.pressedKeys, this.touchInput);
-    }
+    for (const mapping of this.variableMappings) mapping.update(this.pressedKeys);
   }
 
-  // Called by service to update touch input
-  updateTouch(touchInput: TouchInput) {
-    this.touchInput = touchInput;
-    
-    // Emit dash event if tapped
-    if (touchInput.dashTapped) {
-      this.eventMappings.get("TouchDash")?.emit();
-    }
-    
-    // Update all variables with new touch input
-    for (const mapping of this.variableMappings) {
-      mapping.update(this.pressedKeys, this.touchInput);
-    }
-  }
-
-  update() {
-    // Additional update logic if needed
+  updateManual() {
+    // Update all variables
+    for (const mapping of this.variableMappings) mapping.update(this.pressedKeys);
   }
 }

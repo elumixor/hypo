@@ -19,7 +19,7 @@ export class PlayerShieldBehavior extends Behavior {
       color: 0x4488ff,
       transparent: true,
       opacity: 0.3,
-      wireframe: true
+      wireframe: true,
     });
 
     this.shieldMesh = new Mesh(geometry, material);
