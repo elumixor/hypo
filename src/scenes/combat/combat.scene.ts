@@ -1,6 +1,7 @@
 import { CollisionService, Scene } from "@engine";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
+import { ProgressionService } from "services/progression.service";
 import { destroy } from "utils";
 import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
@@ -15,6 +16,7 @@ export class CombatScene extends Scene {
   private readonly groundMesh: Mesh;
   private readonly enemyManager = this.addEntity(new EnemyManager());
   private readonly collisionService = this.addService(new CollisionService());
+  private readonly progressionService = this.addService(new ProgressionService());
 
   constructor() {
     super();
@@ -77,7 +79,7 @@ export class CombatScene extends Scene {
     this.enemyManager.enemiesCleared.subscribe(this.onAllEnemiesCleared);
 
     // Setup collision groups
-    this.collisionService.addCollisionGroup(CollisionGroup.Player, [CollisionGroup.EnemyProjectile]);
+    this.collisionService.addCollisionGroup(CollisionGroup.Player, [CollisionGroup.EnemyProjectile, CollisionGroup.PickUps]);
     this.collisionService.addCollisionGroup(CollisionGroup.Enemy, [CollisionGroup.PlayerProjectile]);
 
     // Add UI widgets
@@ -87,6 +89,15 @@ export class CombatScene extends Scene {
 
   override async init() {
     await super.init();
+
+    // Listen to progression events for debugging
+    this.progressionService.levelUp.subscribe((event) => {
+      console.log(`Player leveled up! Level ${event.previousLevel} -> ${event.newLevel}`);
+    });
+
+    this.progressionService.xpGained.subscribe((event) => {
+      console.log(`XP gained: ${event.amount}, Total: ${event.totalXP}, Level: ${event.currentLevel}`);
+    });
 
     this.enemyManager.spawn();
   }

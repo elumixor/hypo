@@ -1,5 +1,6 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Entity, TransformBehavior } from "@engine";
+import { XPCrystalEntity } from "entities/xp-crystal.entity";
 import { Enemy } from "./enemy";
 import { Player } from "./player";
 
@@ -48,8 +49,22 @@ export class EnemyManager extends Entity {
   }
 
   private onEnemyDied(enemy: Enemy) {
+    console.log("EnemyManager: Enemy died, spawning XP crystal");
+    
+    // Get enemy position before removing it
+    const enemyTransform = enemy.getBehavior(TransformBehavior);
+    const enemyPosition = enemyTransform.group.position.clone();
+
     this.enemies.remove(enemy);
     this.scene.removeEntity(enemy);
+
+    // Spawn XP crystal at enemy position
+    const xpCrystal = new XPCrystalEntity(15); // Give 15 XP per enemy
+    const crystalTransform = xpCrystal.getBehavior(TransformBehavior);
+    crystalTransform.group.position.copy(enemyPosition);
+    crystalTransform.group.position.y = 1; // Slightly above ground
+    this.scene.addEntity(xpCrystal);
+    console.log("XP crystal spawned at position:", enemyPosition);
 
     // Check if all enemies are cleared
     if (this.enemies.isEmpty) this.enemiesCleared.emit();
