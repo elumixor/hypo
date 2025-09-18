@@ -1,14 +1,18 @@
 import { type ResizeData, Widget } from "@engine";
+import { DashBehavior } from "scenes/combat/behaviors/dash.behavior";
 import { EnergyBehavior } from "scenes/combat/behaviors/energy.behavior";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
+import { DashChargeIndicator } from "ui/dash-charge-indicator";
 import { StatusBar } from "ui/status-bar";
 import { Player } from "../entities/player";
 
 export class PlayerStatsWidget extends Widget {
   private healthBar!: StatusBar;
   private energyBar!: StatusBar;
+  private dashChargeIndicator!: DashChargeIndicator;
   private playerHealthComponent!: HealthBehavior;
   private playerEnergyComponent!: EnergyBehavior;
+  private playerDashComponent!: DashBehavior;
 
   override async init() {
     await super.init();
@@ -17,6 +21,7 @@ export class PlayerStatsWidget extends Widget {
     const player = this.scene.getEntity(Player);
     this.playerHealthComponent = player.getBehavior(HealthBehavior);
     this.playerEnergyComponent = player.getBehavior(EnergyBehavior);
+    this.playerDashComponent = player.getBehavior(DashBehavior);
 
     // Create status bars
     this.healthBar = new StatusBar();
@@ -35,12 +40,19 @@ export class PlayerStatsWidget extends Widget {
     this.energyBar.maxValue = this.playerEnergyComponent.maxEnergy;
     this.energyBar.value = this.playerEnergyComponent.energy;
 
-    // Add status bars to container
-    this.addChild(this.healthBar, this.energyBar);
+    // Create dash charge indicator
+    this.dashChargeIndicator = new DashChargeIndicator();
+    this.dashChargeIndicator.position.set(0, -75);
+    this.dashChargeIndicator.maxCharges = this.playerDashComponent.maxCharges;
+    this.dashChargeIndicator.currentCharges = this.playerDashComponent.availableCharges;
+
+    // Add status bars and dash indicator to container
+    this.addChild(this.healthBar, this.energyBar, this.dashChargeIndicator);
 
     // Listen to health and energy changes
     this.playerHealthComponent.healthChanged.subscribeImmediate(this.updateHealthDisplay);
     this.playerEnergyComponent.energyChanged.subscribeImmediate(this.updateEnergyDisplay);
+    this.playerDashComponent.chargeChanged.subscribeImmediate(this.updateDashDisplay);
 
     // Listen to resize events
     this.game.resized.subscribeImmediate(this.resize.bind(this));
@@ -53,6 +65,16 @@ export class PlayerStatsWidget extends Widget {
 
   private readonly updateEnergyDisplay = () => {
     this.energyBar.value = this.playerEnergyComponent.energy;
+  };
+
+  private readonly updateDashDisplay = (event: {
+    currentCharges: number;
+    maxCharges: number;
+    chargeTimers: readonly number[];
+  }) => {
+    this.dashChargeIndicator.currentCharges = event.currentCharges;
+    this.dashChargeIndicator.maxCharges = event.maxCharges;
+    this.dashChargeIndicator.updateChargeTimers(event.chargeTimers);
   };
 
   private updateHealthColor() {
@@ -82,6 +104,7 @@ export class PlayerStatsWidget extends Widget {
     this.game.resized.unsubscribe(this.resize);
     this.playerHealthComponent.healthChanged.unsubscribe(this.updateHealthDisplay);
     this.playerEnergyComponent.energyChanged.unsubscribe(this.updateEnergyDisplay);
+    this.playerDashComponent.chargeChanged.unsubscribe(this.updateDashDisplay);
 
     super.destroy();
   }
