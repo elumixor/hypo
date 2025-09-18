@@ -33,7 +33,19 @@ More information is in the `docs/` folder.
 - Vite for development, Bun for package management
 - Biome for linting/formatting
 
----
+--
+
+## To check if you implemented the code correctly
+
+Run:
+
+```sh
+bun run check
+```
+
+Fix all errors until there are none.
+
+--
 
 ## Game docs
 
