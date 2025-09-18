@@ -11,7 +11,7 @@ export class EnemyManager extends Entity {
   private playerTransform!: TransformBehavior;
 
   // Configuration
-  private readonly enemyCount = 3;
+  private readonly enemyCount = 1;
 
   // State
   private readonly enemies: Enemy[] = [];

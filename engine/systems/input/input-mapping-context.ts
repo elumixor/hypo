@@ -3,7 +3,7 @@ import type { Vector2 } from "three";
 import { InputComputed, InputFlag, type InputVariable, InputVector2, type UnwrapInputVariables } from "./variables";
 
 export abstract class InputMappingContext {
-  private readonly eventMappings = new Map<string, EventEmitter<void>>();
+  private readonly eventMappings = new Map<string, { on: EventEmitter; off: EventEmitter }>();
   private readonly variableMappings: InputVariable<unknown>[] = [];
   private readonly previousPressedKeys = new Set<string>();
   protected readonly pressedKeys = new Set<string>();
@@ -37,10 +37,10 @@ export abstract class InputMappingContext {
     return computed;
   }
 
-  protected mapEvent(key: string): EventEmitter<void> {
-    const emitter = new EventEmitter<void>();
-    this.eventMappings.set(key, emitter);
-    return emitter;
+  protected mapEvent(key: string) {
+    const events = { on: new EventEmitter(), off: new EventEmitter() };
+    this.eventMappings.set(key, events);
+    return events;
   }
 
   // Called by service to update key states
@@ -52,16 +52,13 @@ export abstract class InputMappingContext {
     for (const key of pressedKeys) this.pressedKeys.add(key);
 
     // Emit events for newly pressed keys
-    for (const key of this.pressedKeys) {
-      if (!this.previousPressedKeys.has(key)) {
-        this.eventMappings.get(key)?.emit();
-      }
-    }
+    for (const key of this.pressedKeys) if (!this.previousPressedKeys.has(key)) this.eventMappings.get(key)?.on.emit();
+
+    // Emit events for newly released keys
+    for (const key of this.previousPressedKeys) if (!this.pressedKeys.has(key)) this.eventMappings.get(key)?.off.emit();
 
     // Update all variables
-    for (const mapping of this.variableMappings) {
-      mapping.update(this.pressedKeys);
-    }
+    for (const mapping of this.variableMappings) mapping.update(this.pressedKeys);
   }
 
   update() {

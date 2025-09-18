@@ -35,12 +35,13 @@ export abstract class Entity {
 
   /** Called every frame while the entity is active in the scene. */
   update(dt: number) {
-    for (const behavior of this.behaviors) behavior.update(dt);
+    for (const behavior of this.behaviors) if (behavior.enabled) behavior.update(dt);
   }
 
   /** Called when the entity is destroyed. */
   destroy() {
-    for (const behavior of this.behaviors) behavior.destroy();
+    this._scene?.removeEntity(this);
+    while (this.behaviors.length) this.removeBehavior(this.behaviors.first);
   }
 
   /** This should be called before onInit() - in constructor() */
@@ -52,8 +53,8 @@ export abstract class Entity {
 
   removeBehavior(behavior: Behavior) {
     if (!this.behaviors.includes(behavior)) return;
-    if (this._scene) behavior.destroy();
     this.behaviors.remove(behavior);
+    behavior.destroy();
   }
 
   getService<T extends Service>(serviceClass: Constructor<T>) {
@@ -61,9 +62,13 @@ export abstract class Entity {
   }
 
   getBehavior<T extends Behavior>(behaviorClass: Constructor<T>) {
-    const behavior = this.behaviors.find((b) => b instanceof behaviorClass) as T | undefined;
+    const behavior = this.behaviors.find((b) => b instanceof behaviorClass && b.enabled) as T | undefined;
     if (!behavior) throw new Error(`Behavior ${behaviorClass.name} not found on entity ${this.name}`);
     return behavior;
+  }
+
+  getBehaviors<T extends Behavior>(behaviorClass: Constructor<T>): T[] {
+    return this.behaviors.filter((b) => b instanceof behaviorClass && b.enabled) as T[];
   }
 
   getInputContext(): InputMappingContext | undefined {
