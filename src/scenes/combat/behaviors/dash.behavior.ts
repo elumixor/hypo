@@ -8,7 +8,7 @@ export class DashBehavior extends Behavior {
   private readonly cooldownDuration = 0.5; // seconds
 
   private transform!: TransformBehavior;
-  private isDashing = false;
+  isDashing = false;
   private cooldownRemaining = 0;
   private dashTimeRemaining = 0;
   private readonly dashDirection = new Vector3();
@@ -18,10 +18,8 @@ export class DashBehavior extends Behavior {
 
     this.transform = this.getBehavior(TransformBehavior);
 
-    const dashActivated = this.input.dashActivated;
-
     // Subscribe to dash event if we haven't already
-    dashActivated.subscribe(this.attemptDash);
+    this.input.dashActivated.subscribe(this.attemptDash);
   }
 
   override get input() {

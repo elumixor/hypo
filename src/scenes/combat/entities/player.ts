@@ -27,7 +27,7 @@ export class Player extends Entity {
     this.addBehavior(new DashBehavior());
     this.addBehavior(new CameraFollowBehavior());
     this.addBehavior(new EnergyBehavior(50, 50, 15)); // Player has 50 energy, regenerates at 5 per second
-    this.addBehavior(new PlayerAutoAttackBehavior()).enabled = false;
+    this.addBehavior(new PlayerAutoAttackBehavior());
     this.addBehavior(new ShieldBehavior());
   }
 
@@ -52,8 +52,6 @@ export class Player extends Entity {
     const transform = this.getBehavior(TransformBehavior);
     transform.group.add(this.model);
     transform.group.position.y = 5;
-
-    this.collider.debugSphereShown = true;
   }
 
   private readonly onCollision = ({ other }: CollisionEvent) => {

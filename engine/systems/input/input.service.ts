@@ -31,6 +31,7 @@ export class InputService extends Service {
     window.removeEventListener("focus", this.onWindowFocus);
     window.removeEventListener("blur", this.onWindowBlur);
   }
+
   private readonly onKeyDown = (event: KeyboardEvent) => {
     if (!this.isWindowFocused) return;
     this.pressedKeys.add(event.code);

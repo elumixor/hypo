@@ -4,7 +4,8 @@ import { Vector2 } from "three";
 export class CombatInputMappingContext extends InputMappingContext {
   private readonly move1 = this.map2D("KeyD", "KeyA", "KeyW", "KeyS"); // WASD
   private readonly move2 = this.map2D("ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"); // Arrows
-  private readonly moveCombined = this.combine2D(this.move1, this.move2);
+  readonly moveJoystick = this.map2DManual();
+  private readonly moveCombined = this.combine2D(this.move1, this.move2, this.moveJoystick);
 
   readonly playerMovement = this.computed([this.moveCombined], (combined) =>
     // Rotate by 45 degrees counterclockwise

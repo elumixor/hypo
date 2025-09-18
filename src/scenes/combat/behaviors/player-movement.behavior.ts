@@ -2,31 +2,14 @@ import { Behavior, TransformBehavior } from "@engine";
 import { Vector3 } from "three";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
 
-// Interface to avoid circular dependency with dash behavior
-interface DashBehaviorInterface {
-  isCurrentlyDashing: boolean;
-}
-
 export class PlayerMovementBehavior extends Behavior {
   private readonly speed = 5;
   private readonly moveDirection = new Vector3();
   private transform!: TransformBehavior;
-  private dashBehavior?: DashBehaviorInterface;
   override async init() {
     await super.init();
 
     this.transform = this.getBehavior(TransformBehavior);
-
-    // Try to get dash behavior if it exists
-    try {
-      // Use dynamic class name lookup to avoid import issues
-      const dashBehavior = this.entity.behaviors.find((b) => b.constructor.name === "DashBehavior");
-      if (dashBehavior && "isCurrentlyDashing" in dashBehavior) {
-        this.dashBehavior = dashBehavior as DashBehaviorInterface;
-      }
-    } catch {
-      // DashBehavior not found, continue without it
-    }
   }
 
   override get input() {
@@ -35,11 +18,6 @@ export class PlayerMovementBehavior extends Behavior {
 
   override update(dt: number) {
     super.update(dt);
-
-    // Don't apply normal movement if dashing
-    if (this.dashBehavior?.isCurrentlyDashing) {
-      return;
-    }
 
     // Reset movement direction
     this.moveDirection.set(0, 0, 0);

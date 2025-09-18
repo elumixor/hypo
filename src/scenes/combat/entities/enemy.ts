@@ -14,6 +14,8 @@ export class Enemy extends Entity {
 
   // Self behaviors
   private readonly transform = this.addBehavior(new TransformBehavior());
+
+  // Add collision behavior
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 

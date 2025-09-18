@@ -1,6 +1,6 @@
 import type { InputVariable } from "./input-variable";
 
-export class InputComputed<TInputs extends InputVariable<unknown>[], TOutput> implements InputVariable<TOutput> {
+export class InputComputed<TInputs extends { value: unknown }[], TOutput> implements InputVariable<TOutput> {
   value: TOutput;
 
   constructor(
@@ -16,7 +16,7 @@ export class InputComputed<TInputs extends InputVariable<unknown>[], TOutput> im
   }
 }
 
-type InputVariableType<T> = T extends InputVariable<infer U> ? U : never;
-export type UnwrapInputVariables<T extends InputVariable<unknown>[]> = {
+type InputVariableType<T> = T extends { value: infer U } ? U : never;
+export type UnwrapInputVariables<T extends { value: unknown }[]> = {
   [K in keyof T]: InputVariableType<T[K]>;
 };
