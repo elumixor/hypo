@@ -23,6 +23,6 @@ export const resources = new Resources("/hypo/assets")
   .add("textures/ground/normal.jpg", "three") // Ground normal map
   .add("textures/ground/arm.jpg", "three") // Ground AO/Roughness/Metalness
   // Skybox
-  .add("textures/skybox/sky.hdr"); // HDR skybox texture
+  .add("textures/skybox/storm.hdr"); // HDR skybox texture
 
 export type GameResources = typeof resources;

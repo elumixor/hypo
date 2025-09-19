@@ -156,7 +156,7 @@ export class CombatScene extends Scene {
     // Create skybox using HDR texture
     const skyboxGeometry = new SphereGeometry(1000, 32, 16);
     const skyboxMaterial = new MeshBasicMaterial({
-      map: resources.get("textures/skybox/sky"),
+      map: resources.get("textures/skybox/storm"),
       side: BackSide, // Render on the inside
       fog: false, // Don't apply fog to skybox
     });
