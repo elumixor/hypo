@@ -3,7 +3,7 @@ import { Container, Graphics } from "pixi.js";
 export class DashChargeIndicator extends Container {
   private readonly charges: Graphics[] = [];
   private _maxCharges = 2;
-  private _currentCharges = 2;
+  private _chargeRegenTime = 0.5;
   private readonly chargeTimers: number[] = [];
 
   private readonly chargeSize = 20;
@@ -26,42 +26,37 @@ export class DashChargeIndicator extends Container {
     this.updateDisplay();
   }
 
-  get currentCharges() {
-    return this._currentCharges;
+  get chargeRegenTime() {
+    return this._chargeRegenTime;
   }
 
-  set currentCharges(value: number) {
-    this._currentCharges = Math.max(0, Math.min(value, this._maxCharges));
+  set chargeRegenTime(value: number) {
+    this._chargeRegenTime = value;
     this.updateDisplay();
   }
 
   updateChargeTimers(timers: readonly number[]) {
-    this.chargeTimers.length = 0;
+    this.chargeTimers.clear();
     this.chargeTimers.push(...timers);
     this.updateDisplay();
   }
 
   private updateDisplay() {
     // Clear existing charges
-    for (const charge of this.charges) {
-      charge.destroy();
-    }
-    this.charges.length = 0;
+    for (const charge of this.charges) charge.destroy();
+    this.charges.clear();
 
     // Create charge indicators
     for (let i = 0; i < this._maxCharges; i++) {
       const charge = new Graphics();
-      const x = i * (this.chargeSize + this.chargeSpacing);
+      const x = (this._maxCharges - 1 - i) * (this.chargeSize + this.chargeSpacing);
 
-      // Determine if this charge is available, recharging, or empty
-      const isAvailable = i < this._currentCharges;
-      const chargeTimer = this.chargeTimers[i];
-      const isRecharging = chargeTimer !== undefined && chargeTimer > 0;
+      // Determine if this charge is available or recharging based on timer
+      const chargeTimer = this.chargeTimers[i] ?? 0;
+      const isAvailable = chargeTimer === 0;
+      const isRecharging = chargeTimer > 0;
 
-      let fillColor = this.rechargingColor;
-      if (isAvailable) {
-        fillColor = this.availableColor;
-      }
+      const fillColor = isAvailable ? this.availableColor : this.rechargingColor;
 
       // Draw charge indicator (circle)
       charge
@@ -70,8 +65,8 @@ export class DashChargeIndicator extends Container {
         .stroke({ color: this.borderColor, width: 2 });
 
       // Add recharge progress arc if recharging
-      if (isRecharging && chargeTimer !== undefined) {
-        const progress = 1 - chargeTimer / 0.5; // Assuming 0.5s recharge time
+      if (isRecharging) {
+        const progress = 1 - chargeTimer / this._chargeRegenTime;
         const endAngle = -Math.PI / 2 + Math.PI * 2 * progress;
 
         charge

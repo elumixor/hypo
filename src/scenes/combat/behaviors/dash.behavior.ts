@@ -24,22 +24,24 @@ export class DashBehavior extends Behavior {
   private readonly dashDirection = new Vector3();
 
   // Charge system
-  private currentCharges: number;
   private readonly chargeTimers: number[];
 
   constructor(stats: CharacterStats = defaultCharacterStats) {
     super();
     this.config = stats.dash;
-    this.currentCharges = this.config.maxCharges;
     this.chargeTimers = Array(this.config.maxCharges).fill(0);
   }
 
-  get availableCharges() {
-    return this.currentCharges;
+  get currentCharges() {
+    return this.chargeTimers.filter((t) => t === 0).length;
   }
 
   get maxCharges() {
     return this.config.maxCharges;
+  }
+
+  get chargeRegenTime() {
+    return this.config.chargeRegenTime;
   }
 
   override async init() {
@@ -64,21 +66,10 @@ export class DashBehavior extends Behavior {
     const deltaTime = dt / 1000;
 
     // Update charge timers
-    for (let i = 0; i < this.chargeTimers.length; i++) {
-      const currentTimer = this.chargeTimers[i];
-      if (currentTimer !== undefined && currentTimer > 0) {
-        const newTimer = currentTimer - deltaTime;
+    for (const [i, currentTimer] of this.chargeTimers.entries())
+      this.chargeTimers[i] = Math.max(currentTimer - deltaTime, 0);
 
-        // Charge is ready
-        if (newTimer <= 0) {
-          this.chargeTimers[i] = 0;
-          this.currentCharges = Math.min(this.currentCharges + 1, this.config.maxCharges);
-          this.emitChargeChanged();
-        } else {
-          this.chargeTimers[i] = newTimer;
-        }
-      }
-    }
+    this.emitChargeChanged();
 
     // Update dash
     if (this.isDashing && this.dashTimeRemaining > 0) {
@@ -113,21 +104,12 @@ export class DashBehavior extends Behavior {
     this.isDashing = true;
     this.dashTimeRemaining = this.config.dashDuration;
 
-    // Use one charge
-    this.currentCharges--;
-
     // Start recharge timer for this charge
-    const nextAvailableSlot = this.findNextAvailableChargeSlot();
-    if (nextAvailableSlot !== -1) {
-      this.chargeTimers[nextAvailableSlot] = this.config.chargeRegenTime;
-    }
+    const nextAvailableSlot = this.chargeTimers.indexOf(0);
+    if (nextAvailableSlot !== -1) this.chargeTimers[nextAvailableSlot] = this.config.chargeRegenTime;
 
     this.emitChargeChanged();
   };
-
-  private findNextAvailableChargeSlot(): number {
-    return this.chargeTimers.indexOf(0);
-  }
 
   private emitChargeChanged() {
     this.chargeChanged.emit({
