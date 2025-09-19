@@ -73,8 +73,9 @@ export class FloatingLightSphere extends Entity {
   }
 
   override destroy() {
-    super.destroy();
     destroy(this.mesh);
     destroy(this.light);
+
+    super.destroy();
   }
 }

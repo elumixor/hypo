@@ -5,13 +5,21 @@ import { CollisionGroup } from "../collision-group";
 
 export class Projectile extends Entity {
   private readonly speed = 3;
-  private mesh!: Mesh;
-  private light!: PointLight;
+
+  // Create red sphere geometry with emissive material
+  private readonly mesh = new Mesh(
+    new SphereGeometry(0.5, 8, 8),
+    new MeshLambertMaterial({
+      color: 0xff4444,
+      emissive: 0xff0000, // Stronger red glow
+    }),
+  );
+  private readonly light = new PointLight(0xff4444, 15.0, 50);
   private readonly direction = new Vector3();
   private readonly targetPosition = new Vector3();
   private lifetime = 0;
   private readonly maxLifetime = 5000; // 5 seconds
-  private readonly transform: TransformBehavior;
+  private readonly transform = this.addBehavior(new TransformBehavior());
   private readonly collider: ColliderBehavior;
 
   constructor(
@@ -23,7 +31,6 @@ export class Projectile extends Entity {
   ) {
     super();
 
-    this.transform = this.addBehavior(new TransformBehavior());
     this.collider = this.addBehavior(
       new ColliderBehavior(isPlayerProjectile ? CollisionGroup.PlayerProjectile : CollisionGroup.EnemyProjectile),
     );
@@ -36,23 +43,8 @@ export class Projectile extends Entity {
 
     this.transform.group.position.copy(this.startPosition);
 
-    // Create red sphere geometry with emissive material
-    const geometry = new SphereGeometry(1, 8, 8);
-    const material = new MeshLambertMaterial({
-      color: 0xff4444,
-      emissive: 0x440000, // Subtle red glow
-    });
-
-    this.mesh = new Mesh(geometry, material);
-    this.mesh.castShadow = true;
-
-    // Add point light for projectile glow
-    this.light = new PointLight(0xff4444, 1.0, 10);
-    this.light.position.set(0, 0, 0);
-
     // Add to transform group
-    this.transform.group.add(this.mesh);
-    this.transform.group.add(this.light);
+    this.transform.group.add(this.mesh, this.light);
 
     // Calculate direction towards target
     this.direction.copy(this.targetPosition).sub(this.transform.group.position).normalize();
@@ -76,14 +68,14 @@ export class Projectile extends Entity {
 
   private readonly onCollision = (event: CollisionEvent) => {
     // If hit static object (rocks), just destroy the projectile
-    if (event.other.collisionGroup === CollisionGroup.Static) {
-      this.destroy();
-    }
+    if (event.other.collisionGroup === CollisionGroup.Static) this.destroy();
+
     // Other collision handling is done by the target entities (Player/Enemy)
   };
 
   override destroy() {
     this.collider.collided.unsubscribe(this.onCollision);
+
     destroy(this.mesh);
     destroy(this.light);
 

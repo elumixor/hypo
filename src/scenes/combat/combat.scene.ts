@@ -1,17 +1,18 @@
 import { CollisionService, Scene } from "@engine";
+import { resources } from "resources";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
 import { ProgressionService } from "services/progression.service";
 import {
   AmbientLight,
   BackSide,
-  BoxGeometry,
   DirectionalLight,
   Fog,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   PlaneGeometry,
+  SphereGeometry,
 } from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "./collision-group";
@@ -26,8 +27,8 @@ import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
   private readonly directionalLight: DirectionalLight;
-  private readonly groundMesh: Mesh;
-  private readonly skybox: Mesh;
+  private groundMesh!: Mesh;
+  private skybox!: Mesh;
   private readonly fog: Fog;
   private readonly enemyManager = this.addEntity(new EnemyManager());
   private readonly collisionService = this.addService(new CollisionService());
@@ -38,41 +39,6 @@ export class CombatScene extends Scene {
   constructor() {
     super();
 
-    // Add the ground plane with improved material
-    const geometry = new PlaneGeometry(50, 50);
-    // Use MeshStandardMaterial for better lighting and potential PBR textures
-    const material = new MeshStandardMaterial({
-      color: 0xc2b280, // Desert sand color for ground
-      roughness: 0.8,
-      metalness: 0.0,
-      // TODO: Add textures when available:
-      // map: textureLoader.load('/assets/textures/ground/diffuse.png'),
-      // normalMap: textureLoader.load('/assets/textures/ground/normal.png'),
-      // roughnessMap: textureLoader.load('/assets/textures/ground/arm.png'),
-      // metalnessMap: textureLoader.load('/assets/textures/ground/arm.png'),
-    });
-
-    this.groundMesh = new Mesh(geometry, material);
-
-    // Rotate the plane to be horizontal (by default it's vertical)
-    this.groundMesh.rotation.x = -Math.PI / 2;
-    this.groundMesh.position.y = 0;
-
-    // Enable shadow receiving
-    this.groundMesh.receiveShadow = true;
-    this.sceneRoot.add(this.groundMesh);
-
-    // Create skybox - a large cube with gradient material
-    const skyboxGeometry = new BoxGeometry(200, 200, 200);
-    const skyboxMaterial = new MeshBasicMaterial({
-      color: 0x1a1a2e, // Dark blue-purple base color
-      side: BackSide, // Render on the inside
-      fog: false, // Don't apply fog to skybox
-    });
-
-    this.skybox = new Mesh(skyboxGeometry, skyboxMaterial);
-    this.sceneRoot.add(this.skybox);
-
     // Add volumetric fog for atmospheric effect
     this.fog = new Fog(0x2a2a3a, 5, 80); // Dark blue-gray fog, starts at distance 5, ends at 80
 
@@ -81,7 +47,7 @@ export class CombatScene extends Scene {
     this.sceneRoot.add(this.ambientLight);
 
     // Add directional lighting for better depth and shadows
-    this.directionalLight = new DirectionalLight(0xffffff, 1.0);
+    this.directionalLight = new DirectionalLight(0xffffff, 0.25);
     this.directionalLight.position.set(10, 10, 5);
     this.directionalLight.castShadow = true;
 
@@ -143,17 +109,17 @@ export class CombatScene extends Scene {
 
   private createFloatingLights() {
     const lightPositions = [
-      { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 1.0 }, // Warm white
-      { x: 20, y: 15, z: 8, color: 0xaaddff, intensity: 0.8 }, // Cool blue
-      { x: 5, y: 18, z: -18, color: 0xffffaa, intensity: 1.2 }, // Bright yellow
-      { x: -8, y: 14, z: 15, color: 0xffaadd, intensity: 0.9 }, // Pink
+      { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 10.0 }, // Warm white
+      { x: 20, y: 15, z: 8, color: 0xaaddff, intensity: 8 }, // Cool blue
+      { x: 5, y: 18, z: -18, color: 0xffffaa, intensity: 12 }, // Bright yellow
+      { x: -8, y: 14, z: 15, color: 0xffaadd, intensity: 9 }, // Pink
     ];
 
     for (const pos of lightPositions) {
       const light = new FloatingLightSphere(
         pos.color,
         pos.intensity,
-        30, // distance
+        200, // distance
         0.0008 + Math.random() * 0.0004, // slightly different float speeds
         1.5 + Math.random(), // random amplitude
       );
@@ -166,6 +132,39 @@ export class CombatScene extends Scene {
 
   override async init() {
     await super.init();
+
+    // Add the ground plane with improved material
+    const geometry = new PlaneGeometry(50, 50);
+    // Use MeshStandardMaterial for better lighting and potential PBR textures
+    const material = new MeshStandardMaterial({
+      map: resources.get("textures/ground/diffuse"),
+      normalMap: resources.get("textures/ground/normal"),
+      roughnessMap: resources.get("textures/ground/arm"),
+      metalnessMap: resources.get("textures/ground/arm"),
+    });
+
+    this.groundMesh = new Mesh(geometry, material);
+
+    // Rotate the plane to be horizontal (by default it's vertical)
+    this.groundMesh.rotation.x = -Math.PI / 2;
+    this.groundMesh.position.y = 0;
+
+    // Enable shadow receiving
+    this.groundMesh.receiveShadow = true;
+    this.sceneRoot.add(this.groundMesh);
+
+    // Create skybox using HDR texture
+    const skyboxGeometry = new SphereGeometry(1000, 32, 16);
+    const skyboxMaterial = new MeshBasicMaterial({
+      map: resources.get("textures/skybox/sky"),
+      side: BackSide, // Render on the inside
+      fog: false, // Don't apply fog to skybox
+    });
+
+    this.skybox = new Mesh(skyboxGeometry, skyboxMaterial);
+    this.skybox.rotation.y = (-3 * Math.PI) / 4; // Rotate 90 degrees
+    this.skybox.rotation.x = -Math.PI / 2; // Rotate 90 degrees
+    this.camera.add(this.skybox);
 
     // Apply fog to the scene
     this.game.sceneRoot.fog = this.fog;

@@ -51,7 +51,7 @@ export class RockManager extends Entity {
 
       // Position and scale the rock
       rock.setPosition(position.x, 0, position.z);
-      rock.setScale(position.scale);
+      rock.setScale(position.scale * 5);
 
       // Add some random rotation for variety
       rock.setRotation(0, Math.random() * Math.PI * 2, 0);
@@ -61,10 +61,5 @@ export class RockManager extends Entity {
     }
 
     console.log(`Placed ${this.rocks.length} rocks in the scene`);
-  }
-
-  override destroy() {
-    // Rocks will be cleaned up automatically as entities
-    super.destroy();
   }
 }

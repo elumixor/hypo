@@ -9,7 +9,9 @@ import { CollisionGroup } from "../scenes/combat/collision-group";
  */
 export class StaticSceneObject extends Entity {
   private readonly transform = this.addBehavior(new TransformBehavior());
+  private readonly collider;
   private readonly mesh: Object3D;
+  private readonly originalRadius: number;
 
   constructor(mesh: Object3D, collisionGroup = CollisionGroup.Static) {
     super();
@@ -22,8 +24,11 @@ export class StaticSceneObject extends Entity {
     const size = box.getSize(new Vector3());
     const radius = Math.max(size.x, size.y, size.z) * 0.5;
 
+    // Store original radius
+    this.originalRadius = radius;
+
     // Add collider with calculated radius
-    this.addBehavior(new ColliderBehavior(collisionGroup, radius));
+    this.collider = this.addBehavior(new ColliderBehavior(collisionGroup, radius));
 
     // Enable shadow casting for all meshes in the object
     this.mesh.traverse((child) => {
@@ -41,33 +46,27 @@ export class StaticSceneObject extends Entity {
     this.transform.group.add(this.mesh);
   }
 
-  /**
-   * Set the position of this static object
-   */
   setPosition(x: number, y: number, z: number) {
     this.transform.group.position.set(x, y, z);
   }
 
-  /**
-   * Set the rotation of this static object
-   */
   setRotation(x: number, y: number, z: number) {
     this.transform.group.rotation.set(x, y, z);
   }
 
-  /**
-   * Set the scale of this static object
-   */
   setScale(scale: number | Vector3) {
     if (typeof scale === "number") {
       this.transform.group.scale.setScalar(scale);
+      this.collider.radius = this.originalRadius * scale;
     } else {
       this.transform.group.scale.copy(scale);
+      const scaleFactor = Math.max(scale.x, scale.y, scale.z);
+      this.collider.radius = this.originalRadius * scaleFactor;
     }
   }
 
   override destroy() {
-    super.destroy();
     destroy(this.mesh);
+    super.destroy();
   }
 }

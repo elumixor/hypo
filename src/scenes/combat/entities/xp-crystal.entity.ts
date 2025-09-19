@@ -10,7 +10,8 @@ export class XPCrystalEntity extends Entity {
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 5)); // Larger radius for easier pickup
 
   private readonly mesh: Mesh;
-  private readonly light: PointLight;
+  // Add point light for crystal glow
+  private readonly light = new PointLight(0x0066ff, 15.0, 50);
   private readonly xpValue: number;
 
   constructor(xpValue = 10) {
@@ -18,19 +19,11 @@ export class XPCrystalEntity extends Entity {
     this.xpValue = xpValue;
 
     // Create small blue cube
-    const geometry = new BoxGeometry(2, 2, 2);
+    const geometry = new BoxGeometry(1, 1, 1);
     const material = new MeshStandardMaterial({
-      color: 0x0066ff,
-      emissive: 0x002244,
-      metalness: 0.8,
-      roughness: 0.2,
+      emissive: 0x0055ff,
     });
     this.mesh = new Mesh(geometry, material);
-    this.mesh.castShadow = true;
-
-    // Add point light for crystal glow
-    this.light = new PointLight(0x0066ff, 0.8, 15);
-    this.light.position.set(0, 0, 0);
   }
 
   override async init() {
@@ -38,8 +31,7 @@ export class XPCrystalEntity extends Entity {
 
     this.transform.group.position.y = 5; // Slightly above ground
     // Add mesh and light to the transform group
-    this.transform.group.add(this.mesh);
-    this.transform.group.add(this.light);
+    this.transform.group.add(this.mesh, this.light);
 
     // Listen for collision with player
     this.collider.collided.subscribe(this.onCollision);
