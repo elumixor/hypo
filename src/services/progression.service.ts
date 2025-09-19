@@ -55,9 +55,9 @@ export class ProgressionService extends Service {
   }
 
   xpForLevel(level: number): number {
-    // Simple XP formula: level * 100
-    // Level 1: 100 XP, Level 2: 200 XP, Level 3: 300 XP, etc.
-    return level * 100;
+    // Simple XP formula: level^2 * 100
+    // Level 1: 100 XP, Level 2: 400 XP, Level 3: 900 XP, etc.
+    return level * level * 100;
   }
 
   private calculateLevelFromXP(xp: number): number {
