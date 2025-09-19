@@ -1,4 +1,5 @@
 import type { Constructor } from "@elumixor/frontils";
+import type { Effects } from "@engine/effects";
 import { type InputMappingContext, InputService } from "@engine/systems/input";
 import { Container } from "pixi.js";
 import { Group } from "three";
@@ -7,7 +8,6 @@ import type { Entity } from "./entity";
 import type { Game } from "./game";
 import type { Service } from "./service";
 import type { Widget } from "./widget";
-import type { Effects, EffectsConfig } from "../../src/rendering/effects";
 
 export abstract class Scene {
   protected _game?: Game;
@@ -20,10 +20,7 @@ export abstract class Scene {
   readonly sceneRoot = new Group();
 
   input?: InputMappingContext;
-
-  // Optional post-processing effects
-  protected effects?: Effects;
-  protected effectsConfig?: EffectsConfig;
+  effects?: Effects;
 
   get game() {
     if (!this._game) throw new Error("Scene is not part of a game yet");
@@ -40,16 +37,6 @@ export abstract class Scene {
     return this.game.camera;
   }
 
-  /** Get the effects instance if enabled */
-  getEffects() {
-    return this.effects;
-  }
-
-  /** Check if effects are enabled for this scene */
-  hasEffects() {
-    return !!this.effects;
-  }
-
   private get initialized() {
     return !!this._game;
   }
@@ -61,22 +48,6 @@ export abstract class Scene {
     this.game.uiRoot.addChild(this.uiRoot);
     this.game.sceneRoot.add(this.sceneRoot);
 
-    // Initialize effects if config is provided
-    if (this.effectsConfig) {
-      const { Effects } = await import("../../src/rendering/effects");
-      this.effects = new Effects(
-        this.game.sceneRoot,
-        this.game.camera,
-        this.game.threeRenderer,
-        this.effectsConfig
-      );
-      
-      // Subscribe to resize events
-      this.game.resized.subscribe(({ width, height }) => {
-        this.effects?.resize(width, height);
-      });
-    }
-
     await Promise.all([
       ...this.services.map((s) => s.init()),
       ...this.entities.map((e) => e.init()),
@@ -86,8 +57,8 @@ export abstract class Scene {
 
   update(dt: number) {
     for (const service of this.services) service.update(dt);
-    for (const entity of Array.from(this.entities.values())) entity.update(dt);
-    for (const widget of Array.from(this.widgets.values())) widget.update(dt);
+    for (const entity of this.entities) if (entity.enabled) entity.update(dt);
+    for (const widget of this.widgets) widget.update(dt);
   }
 
   destroy() {
@@ -95,14 +66,11 @@ export abstract class Scene {
     this.game.sceneRoot.remove(this.sceneRoot);
 
     // Clean up effects
-    if (this.effects) {
-      this.effects.destroy();
-      this.effects = undefined;
-    }
+    this.effects?.destroy();
 
     for (const service of this.services) service.destroy();
-    for (const entity of Array.from(this.entities.values())) entity.destroy();
-    for (const widget of Array.from(this.widgets.values())) widget.destroy();
+    for (const entity of this.entities) entity.destroy();
+    for (const widget of this.widgets) widget.destroy();
   }
 
   addEntity<T extends Entity>(entity: T) {
@@ -145,21 +113,16 @@ export abstract class Scene {
   }
 
   getEntity<T extends Entity>(entityClass: Constructor<T>): T {
-    const entity = this.entities.find((e) => e instanceof entityClass) as T | undefined;
+    const entity = this.entities.find((e) => e instanceof entityClass && e.enabled) as T | undefined;
     if (!entity) throw new Error(`Entity ${entityClass.name} not found in scene`);
     return entity;
   }
 
   getEntities<T extends Entity>(entityClass: Constructor<T>): T[] {
-    return this.entities.filter((e) => e instanceof entityClass) as T[];
+    return this.entities.filter((e) => e instanceof entityClass && e.enabled) as T[];
   }
 
   getBehaviors<T extends Behavior>(behaviorClass: Constructor<T>): T[] {
-    return this.entities.flatMap((e) => e.getBehaviors(behaviorClass));
-  }
-
-  /** Configure post-processing effects for this scene. Must be called before init() */
-  protected configureEffects(config: EffectsConfig) {
-    this.effectsConfig = config;
+    return this.entities.filter((e) => e.enabled).flatMap((e) => e.getBehaviors(behaviorClass));
   }
 }

@@ -1,4 +1,4 @@
-import { CollisionService, Scene } from "@engine";
+import { CollisionService, Effects, Scene } from "@engine";
 import { resources } from "resources";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
@@ -24,7 +24,6 @@ import { Player } from "./entities/player";
 import { RockManager } from "./entities/rock-manager";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
-import { EffectsControlWidget } from "./ui/effects-control.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
@@ -41,27 +40,8 @@ export class CombatScene extends Scene {
   constructor() {
     super();
 
-    // Configure post-processing effects
-    this.configureEffects({
-      bloom: {
-        enabled: true,
-        intensity: 1.5,
-        radius: 0.4,
-      },
-      chromaticAberration: {
-        enabled: true,
-        offset: new Vector2(0.001, 0.001),
-      },
-      depthOfField: {
-        enabled: false, // Can be enabled dynamically
-        focusDistance: 0.02,
-        focalLength: 0.02,
-        bokehScale: 2.0,
-      },
-    });
-
     // Add volumetric fog for atmospheric effect
-    this.fog = new Fog(0x2a2a3a, 5, 80); // Dark blue-gray fog, starts at distance 5, ends at 80
+    this.fog = new Fog(0x2a2a3a, 10, 120); // Dark blue-gray fog, starts at distance 5, ends at 80
 
     // Add ambient lighting for general illumination
     this.ambientLight = new AmbientLight(0x404040, 0.6); // Soft white light
@@ -123,17 +103,8 @@ export class CombatScene extends Scene {
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
     this.addWidget(new VirtualJoystickWidget());
-    
-    // Add effects control widget for debugging/demo purposes
-    if (__DEV__) {
-      this.addWidget(new EffectsControlWidget());
-    }
 
     // Create floating light spheres for ambient lighting
-    this.createFloatingLights();
-  }
-
-  private createFloatingLights() {
     const lightPositions = [
       { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 10.0 }, // Warm white
       { x: 20, y: 15, z: 8, color: 0xaaddff, intensity: 8 }, // Cool blue
@@ -158,6 +129,27 @@ export class CombatScene extends Scene {
 
   override async init() {
     await super.init();
+
+    // Configure post-processing effects
+    this.effects = new Effects(this.game.sceneRoot, this.game.camera, this.game.threeRenderer, {
+      bloom: {
+        enabled: true,
+        intensity: 10,
+        radius: 0.5,
+        luminanceThreshold: 0.2,
+        luminanceSmoothing: 0.3,
+      },
+      chromaticAberration: {
+        enabled: true,
+        offset: new Vector2(0.002, 0.002),
+      },
+      depthOfField: {
+        enabled: true, // Can be enabled dynamically
+        focusDistance: 0.035,
+        focalLength: 0.02,
+        bokehScale: 3.0,
+      },
+    });
 
     // Add the ground plane with improved material
     const geometry = new PlaneGeometry(50, 50);
@@ -218,45 +210,6 @@ export class CombatScene extends Scene {
     // All enemies are dead, reload the scene
     this.enemyManager.spawn();
   };
-
-  // Runtime effect control methods
-  toggleBloom() {
-    const effects = this.getEffects();
-    if (effects) {
-      const config = effects.getConfig();
-      const bloomEnabled = !config.bloom?.enabled;
-      effects.enableEffect('bloom', bloomEnabled);
-      console.log(`Bloom effect ${bloomEnabled ? 'enabled' : 'disabled'}`);
-    }
-  }
-
-  toggleChromaticAberration() {
-    const effects = this.getEffects();
-    if (effects) {
-      const config = effects.getConfig();
-      const caEnabled = !config.chromaticAberration?.enabled;
-      effects.enableEffect('chromaticAberration', caEnabled);
-      console.log(`Chromatic aberration effect ${caEnabled ? 'enabled' : 'disabled'}`);
-    }
-  }
-
-  toggleDepthOfField() {
-    const effects = this.getEffects();
-    if (effects) {
-      const config = effects.getConfig();
-      const dofEnabled = !config.depthOfField?.enabled;
-      effects.enableEffect('depthOfField', dofEnabled);
-      console.log(`Depth of field effect ${dofEnabled ? 'enabled' : 'disabled'}`);
-    }
-  }
-
-  setBloomIntensity(intensity: number) {
-    const effects = this.getEffects();
-    if (effects) {
-      effects.setBloomIntensity(intensity);
-      console.log(`Bloom intensity set to ${intensity}`);
-    }
-  }
 
   override destroy() {
     // Clean up lights

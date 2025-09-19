@@ -8,8 +8,10 @@ import type { Service } from "./service";
  * Entity is the core building block of a scene. It can have multiple behaviors attached to it to define its functionality.
  */
 export abstract class Entity {
-  private _scene?: Scene;
   readonly behaviors = [] as Behavior[];
+  enabled = true;
+
+  private _scene?: Scene;
 
   get name() {
     return this.constructor.name;

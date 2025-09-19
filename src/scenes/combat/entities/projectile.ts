@@ -7,14 +7,8 @@ export class Projectile extends Entity {
   private readonly speed = 3;
 
   // Create red sphere geometry with emissive material
-  private readonly mesh = new Mesh(
-    new SphereGeometry(0.5, 8, 8),
-    new MeshLambertMaterial({
-      color: 0xff4444,
-      emissive: 0xff0000, // Stronger red glow
-    }),
-  );
-  private readonly light = new PointLight(0xff4444, 15.0, 50);
+  private readonly mesh = new Mesh(new SphereGeometry(0.5, 8, 8), new MeshLambertMaterial({ emissive: 0xff5500 }));
+  private readonly light = new PointLight(0xff4444, 30.0, 100);
   private readonly direction = new Vector3();
   private readonly targetPosition = new Vector3();
   private lifetime = 0;

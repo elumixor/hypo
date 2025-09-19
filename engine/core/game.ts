@@ -122,10 +122,13 @@ export abstract class Game {
   }
 
   async loadScene(scene: Scene) {
+    // we should pause update loop until the scene is switched and initialized
+    ticker.stop();
     this._currentScene?.destroy();
     this._currentScene = scene;
     scene.game = this;
-    await this._currentScene.init();
+    await scene.init();
+    ticker.start();
   }
 
   private update(dt: number) {
@@ -134,11 +137,8 @@ export abstract class Game {
     this._currentScene?.update(dt);
 
     // Render ThreeJS scene - use effects if available, otherwise direct rendering
-    if (this._currentScene?.hasEffects()) {
-      this._currentScene.getEffects()?.render(dt / 1000);
-    } else {
-      this.threeRenderer.render(this.sceneRoot, this.camera);
-    }
+    if (this._currentScene?.effects) this._currentScene.effects.render(dt / 1000);
+    else this.threeRenderer.render(this.sceneRoot, this.camera);
   }
 
   private resize() {
@@ -161,6 +161,9 @@ export abstract class Game {
 
     // Place the uiRoot at the center of the screen
     this.uiRoot.position.set(width / 2, height / 2);
+
+    // Resize effects if available
+    if (this._currentScene?.effects) this._currentScene.effects.resize(width, height);
 
     // Emit resize event for interested services
     this.resized.emit({ width, height, aspect });

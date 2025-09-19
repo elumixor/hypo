@@ -1,1 +1,0 @@
-console.log("Testing effects toggles"); window.combatScene = document.querySelector("canvas").parentElement.__scene; if (window.combatScene && window.combatScene.toggleBloom) { window.combatScene.toggleBloom(); console.log("Bloom toggled!"); }

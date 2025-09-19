@@ -23,7 +23,7 @@ export class ResourcesLoaderService extends Service {
     // But I think loadGroup("groupName") works better for this case
     // todo: update @elumixor/thrixi-resources package
     await resources.load((p) => {
-      this.log(`Loaded asset: ${p.current.name}. Progress: ${p.percentage}%`);
+      this.log(`Loaded asset: ${p.current.name}. Progress: ${p.percentage.toFixed(0)}%`);
       this.loadProgress.emit(p);
     });
     this.log("LoaderService initialized");
