@@ -34,10 +34,10 @@ export class ProgressionService extends Service {
 
   addXP(amount: number) {
     this._currentXP += amount;
-    
+
     const previousLevel = this._currentLevel;
     const newLevel = this.calculateLevelFromXP(this._currentXP);
-    
+
     if (newLevel > previousLevel) {
       this._currentLevel = newLevel;
       this.levelUp.emit({

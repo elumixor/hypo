@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --force",
     "build": "vite build",
-    "check": "tsc --noEmit && bun run lint && bun run format",
+    "check": "tsc --noEmit && npm run lint && npm run format",
     "lint": "biome check . --fix",
     "format": "biome format . --write",
     "preview": "vite preview",
