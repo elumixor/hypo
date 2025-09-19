@@ -1,4 +1,4 @@
-import { CollisionService, Scene } from "@engine";
+import { CollisionService, Effects, Scene } from "@engine";
 import { resources } from "resources";
 import { ProgressionService } from "services/progression.service";
 import {
@@ -11,6 +11,7 @@ import {
   MeshStandardMaterial,
   PlaneGeometry,
   SphereGeometry,
+  Vector2,
 } from "three";
 import { destroy } from "utils";
 import { HealthBehavior } from "./behaviors/health.behavior";
@@ -46,7 +47,7 @@ export class CombatScene extends Scene {
     this.addService(new DamageTextService());
 
     // Add volumetric fog for atmospheric effect
-    this.fog = new Fog(0x2a2a3a, 5, 80); // Dark blue-gray fog, starts at distance 5, ends at 80
+    this.fog = new Fog(0x2a2a3a, 10, 120); // Dark blue-gray fog, starts at distance 5, ends at 80
 
     // Add ambient lighting for general illumination
     this.ambientLight = new AmbientLight(0x404040, 0.6); // Soft white light
@@ -112,10 +113,6 @@ export class CombatScene extends Scene {
     this.addWidget(new XPBarWidget());
 
     // Create floating light spheres for ambient lighting
-    this.createFloatingLights();
-  }
-
-  private createFloatingLights() {
     const lightPositions = [
       { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 10.0 }, // Warm white
       { x: 20, y: 15, z: 8, color: 0xaaddff, intensity: 8 }, // Cool blue
@@ -140,6 +137,27 @@ export class CombatScene extends Scene {
 
   override async init() {
     await super.init();
+
+    // Configure post-processing effects
+    this.effects = new Effects(this.game.sceneRoot, this.game.camera, this.game.threeRenderer, {
+      bloom: {
+        enabled: true,
+        intensity: 10,
+        radius: 0.5,
+        luminanceThreshold: 0.2,
+        luminanceSmoothing: 0.3,
+      },
+      chromaticAberration: {
+        enabled: true,
+        offset: new Vector2(0.002, 0.002),
+      },
+      depthOfField: {
+        enabled: true, // Can be enabled dynamically
+        focusDistance: 0.035,
+        focalLength: 0.02,
+        bokehScale: 3.0,
+      },
+    });
 
     // Add the ground plane with improved material
     const geometry = new PlaneGeometry(50, 50);

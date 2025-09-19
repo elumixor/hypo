@@ -5,12 +5,10 @@ import { textStyle } from "./fonts";
 export class Button extends Container {
   readonly clicked = new EventEmitter();
 
-  constructor(text: string) {
+  constructor(text: string, { width = 400, height = 70 } = {}) {
     super();
 
     const button = new Graphics();
-    const width = 400;
-    const height = 70;
 
     const sizeParams = [-width / 2, -height / 2, width, height, 8] as const;
 

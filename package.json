@@ -19,6 +19,7 @@
     "@elumixor/thrixi-resources": "^1.2.0",
     "gsap": "^3.13.0",
     "pixi.js": "^8.4.1",
+    "postprocessing": "^6.37.8",
     "three": "^0.180.0"
   },
   "devDependencies": {

@@ -1,7 +1,7 @@
 import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior, ticker } from "@engine";
+import { ProgressionService } from "services/progression.service";
 import { BoxGeometry, Mesh, MeshStandardMaterial, PointLight } from "three";
 import { destroy } from "utils";
-import { ProgressionService } from "../../../services/progression.service";
 import { CollisionGroup } from "../collision-group";
 import { Player } from "./player";
 
@@ -11,7 +11,7 @@ export class XPCrystalEntity extends Entity {
 
   private readonly mesh: Mesh;
   // Add point light for crystal glow
-  private readonly light = new PointLight(0x0066ff, 15.0, 50);
+  private readonly light = new PointLight(0x0066ff, 30.0, 100);
 
   constructor(private readonly xpValue: number) {
     super();
@@ -19,7 +19,7 @@ export class XPCrystalEntity extends Entity {
     // Create small blue cube
     const geometry = new BoxGeometry(1, 1, 1);
     const material = new MeshStandardMaterial({
-      emissive: 0x0055ff,
+      emissive: 0x66aaff,
     });
     this.mesh = new Mesh(geometry, material);
   }
