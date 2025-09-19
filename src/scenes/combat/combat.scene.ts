@@ -1,5 +1,7 @@
 import { CollisionService, Scene } from "@engine";
-import { HealthBehavior } from "behaviors/health.behavior";
+import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
+import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
+import { ProgressionService } from "services/progression.service";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "./collision-group";
@@ -7,6 +9,7 @@ import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { Player } from "./entities/player";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
+import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
@@ -14,6 +17,7 @@ export class CombatScene extends Scene {
   private readonly groundMesh: Mesh;
   private readonly enemyManager = this.addEntity(new EnemyManager());
   private readonly collisionService = this.addService(new CollisionService());
+  private readonly progressionService = this.addService(new ProgressionService());
 
   constructor() {
     super();
@@ -76,15 +80,32 @@ export class CombatScene extends Scene {
     this.enemyManager.enemiesCleared.subscribe(this.onAllEnemiesCleared);
 
     // Setup collision groups
-    this.collisionService.addCollisionGroup(CollisionGroup.Player, [CollisionGroup.EnemyProjectile]);
+    this.collisionService.addCollisionGroup(CollisionGroup.Player, [
+      CollisionGroup.EnemyProjectile,
+      CollisionGroup.PickUps,
+    ]);
     this.collisionService.addCollisionGroup(CollisionGroup.Enemy, [CollisionGroup.PlayerProjectile]);
+
+    this.collisionService.logGroups();
 
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
+    this.addWidget(new VirtualJoystickWidget());
   }
 
   override async init() {
     await super.init();
+
+    // Listen to progression events for logging
+    this.progressionService.levelUp.subscribe((event) => {
+      console.log(`🎉 Level Up! ${event.previousLevel} → ${event.newLevel} (${event.xpToNextLevel} XP to next level)`);
+    });
+
+    this.progressionService.xpGained.subscribe((event) => {
+      console.log(`💎 +${event.amount} XP (Total: ${event.totalXP}, Level: ${event.currentLevel})`);
+    });
+
+    this.addEntity(new XPCrystalEntity(50));
 
     this.enemyManager.spawn();
   }
@@ -96,18 +117,18 @@ export class CombatScene extends Scene {
 
   private readonly onAllEnemiesCleared = () => {
     // All enemies are dead, reload the scene
-    void this.game.loadScene(new CombatScene());
+    this.enemyManager.spawn();
   };
 
   override destroy() {
-    super.destroy();
-
     // Clean up lights
-    this.sceneRoot.remove(this.ambientLight);
-    this.sceneRoot.remove(this.directionalLight);
+    this.ambientLight.removeFromParent();
+    this.directionalLight.removeFromParent();
     this.directionalLight.dispose();
 
     // Clean up ground mesh
     destroy(this.groundMesh);
+
+    super.destroy();
   }
 }

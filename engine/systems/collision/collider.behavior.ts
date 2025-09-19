@@ -13,11 +13,13 @@ export class ColliderBehavior extends Behavior {
   private transform!: TransformBehavior;
   private debugMesh?: Mesh;
   readonly currentCollisions = new Set<ColliderBehavior>();
-  readonly radius = 1; // Simple sphere radius for all entities
 
   readonly collided = new EventEmitter<CollisionEvent>();
 
-  constructor(readonly collisionGroup: string) {
+  constructor(
+    readonly collisionGroup: string,
+    readonly radius = 1,
+  ) {
     super();
   }
 
@@ -54,7 +56,6 @@ export class ColliderBehavior extends Behavior {
         wireframe: true,
         transparent: true,
         opacity: 0.4,
-        depthTest: false,
       });
 
       // Create mesh

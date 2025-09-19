@@ -1,120 +1,103 @@
 import { type ResizeData, Widget } from "@engine";
-import { HealthBehavior } from "behaviors/health.behavior";
-import { Graphics, Text } from "pixi.js";
-import { textStyle } from "ui/fonts";
+import { StatusBar } from "ui/status-bar";
+import { DashBehavior, type DashChargeEvent } from "../behaviors/dash.behavior";
+import { EnergyBehavior } from "../behaviors/energy.behavior";
+import { HealthBehavior } from "../behaviors/health.behavior";
 import { Player } from "../entities/player";
+import { DashChargeIndicator } from "./dash-charge-indicator";
 
 export class PlayerStatsWidget extends Widget {
-  private healthBar!: Graphics;
-  private healthText!: Text;
-  private background!: Graphics;
-  private playerHealthComponent!: HealthBehavior;
-  private readonly baseWidth = 300;
-  private readonly baseHeight = 40;
-  private scale = 1;
+  private health!: HealthBehavior;
+  private energy!: EnergyBehavior;
+  private dash!: DashBehavior;
+
+  private readonly healthBar = new StatusBar();
+  private readonly energyBar = new StatusBar();
+  private readonly dashChargeIndicator = new DashChargeIndicator();
 
   override async init() {
     await super.init();
 
-    // Find player and get health component
+    // Find player and get health and energy components
     const player = this.scene.getEntity(Player);
-    this.playerHealthComponent = player.getBehavior(HealthBehavior);
+    this.health = player.getBehavior(HealthBehavior);
+    this.energy = player.getBehavior(EnergyBehavior);
+    this.dash = player.getBehavior(DashBehavior);
 
-    // Listen to health changes
-    this.playerHealthComponent.healthChanged.subscribeImmediate(this.updateHealthDisplay);
+    // Create status bars
+    this.healthBar.barWidth = 290;
+    this.healthBar.barHeight = 30;
+    this.healthBar.position.set(0, -30);
+    this.healthBar.color = 0x00ff00; // Green
+    this.healthBar.maxValue = this.health.maxHealth;
+    this.healthBar.value = this.health.health;
 
-    // Create health bar background
-    this.background = new Graphics();
-    this.updateBackground();
+    this.energyBar.barWidth = 290;
+    this.energyBar.barHeight = 15;
+    this.energyBar.position.set(0, -55);
+    this.energyBar.color = 0x0080ff; // Blue
+    this.energyBar.maxValue = this.energy.maxEnergy;
+    this.energyBar.value = this.energy.energy;
 
-    // Create health bar foreground
-    this.healthBar = new Graphics();
-    this.updateHealthBar();
+    // Create dash charge indicator
+    this.dashChargeIndicator.position.set(0, -75);
+    this.dashChargeIndicator.maxCharges = this.dash.maxCharges;
+    this.dashChargeIndicator.chargeRegenTime = this.dash.chargeRegenTime;
 
-    // Create health text
-    this.healthText = new Text({
-      text: "100/100",
-      style: textStyle.basic,
-    });
-    this.healthText.anchor.set(0.5);
-    this.updateTextPosition();
+    // Add status bars and dash indicator to container
+    this.addChild(this.healthBar, this.energyBar, this.dashChargeIndicator);
 
-    // Add to container
-    this.addChild(this.background, this.healthBar, this.healthText);
+    // Listen to health and energy changes
+    this.health.healthChanged.subscribeImmediate(this.updateHealthDisplay);
+    this.energy.energyChanged.subscribeImmediate(this.updateEnergyDisplay);
+    this.dash.chargeChanged.subscribeImmediate(this.updateDashDisplay);
 
     // Listen to resize events
     this.game.resized.subscribeImmediate(this.resize.bind(this));
   }
 
   private readonly updateHealthDisplay = () => {
-    this.updateHealthBar();
-    this.updateHealthText();
+    this.healthBar.value = this.health.health;
+    this.updateHealthColor();
   };
 
-  private updateBackground() {
-    this.background.clear();
-    const scaledWidth = this.baseWidth * this.scale;
-    const scaledHeight = this.baseHeight * this.scale;
+  private readonly updateEnergyDisplay = () => {
+    this.energyBar.value = this.energy.energy;
+  };
 
-    this.background
-      .roundRect(0, 0, scaledWidth, scaledHeight, 5 * this.scale)
-      .fill({ color: 0x333333 })
-      .stroke({ color: 0x666666, width: 2 * this.scale });
-  }
+  private readonly updateDashDisplay = (event: DashChargeEvent) => {
+    this.dashChargeIndicator.maxCharges = event.maxCharges;
+    this.dashChargeIndicator.updateChargeTimers(event.chargeTimers);
+  };
 
-  private updateHealthBar() {
-    if (!this.playerHealthComponent) return;
-
-    const healthPercent = this.playerHealthComponent.health / this.playerHealthComponent.maxHealth;
-    const barWidth = (this.baseWidth - 10) * this.scale * healthPercent; // 290 scaled minus padding
-
-    this.healthBar.clear();
-
-    // Choose color based on health percentage
+  private updateHealthColor() {
+    const healthPercent = this.health.health / this.health.maxHealth;
     let color = 0x00ff00; // Green
     if (healthPercent < 0.3)
       color = 0xff0000; // Red
     else if (healthPercent < 0.6) color = 0xffff00; // Yellow
-
-    this.healthBar
-      .roundRect(5 * this.scale, 5 * this.scale, barWidth, (this.baseHeight - 10) * this.scale, 3 * this.scale)
-      .fill({ color });
-  }
-
-  private updateHealthText() {
-    if (!this.playerHealthComponent) return;
-
-    this.healthText.text = `${this.playerHealthComponent.health}/${this.playerHealthComponent.maxHealth}`;
-    this.updateTextPosition();
-  }
-
-  private updateTextPosition() {
-    this.healthText.position.set((this.baseWidth * this.scale) / 2, (this.baseHeight * this.scale) / 2);
-    this.healthText.scale.set(this.scale);
+    this.healthBar.color = color;
   }
 
   private resize({ width, height }: ResizeData) {
-    // Guard against resize events after widget destruction
-    if (!this.container || this.container.destroyed) return;
-
     // Calculate scale based on screen size (responsive scaling)
     // Base scale on smaller dimension to ensure it fits on mobile
     const minDimension = Math.min(width, height);
-    this.scale = Math.max(0.5, Math.min(1, minDimension / 800)); // Scale between 0.5 and 1.0
+    const scale = Math.max(0.5, Math.min(1, minDimension / 800)); // Scale between 0.5 and 1.0
 
-    // Update all visual elements
-    this.updateBackground();
-    this.updateHealthBar();
-    this.updateTextPosition();
+    // Update status bars
+    this.container.scale.set(scale);
 
     // Position at bottom-left with 15px margin
-    this.container.position.set(-width / 2 + 15, height / 2 - this.baseHeight * this.scale - 15);
+    this.container.position.set(-width / 2 + 15, height / 2 - 15);
   }
 
   override destroy() {
     // Clean up resize subscription
     this.game.resized.unsubscribe(this.resize);
-    this.playerHealthComponent.healthChanged.unsubscribe(this.updateHealthDisplay);
+    this.health.healthChanged.unsubscribe(this.updateHealthDisplay);
+    this.energy.energyChanged.unsubscribe(this.updateEnergyDisplay);
+    this.dash.chargeChanged.unsubscribe(this.updateDashDisplay);
 
     super.destroy();
   }

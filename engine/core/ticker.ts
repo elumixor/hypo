@@ -18,3 +18,20 @@ export function delay(seconds: number) {
     ticker.add(onTick);
   });
 }
+
+export interface TimeoutHandle {
+  cancel: () => void;
+}
+export function timeout(seconds: number, callback: () => void) {
+  let elapsed = 0;
+  const onTick = ({ deltaMS }: Ticker) => {
+    elapsed += deltaMS / 1000;
+    if (elapsed >= seconds) {
+      ticker.remove(onTick);
+      callback();
+    }
+  };
+  ticker.add(onTick);
+
+  return { cancel: () => ticker.remove(onTick) };
+}

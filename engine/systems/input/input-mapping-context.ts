@@ -1,9 +1,9 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import type { Vector2 } from "three";
+import { Vector2 } from "three";
 import { InputComputed, InputFlag, type InputVariable, InputVector2, type UnwrapInputVariables } from "./variables";
 
 export abstract class InputMappingContext {
-  private readonly eventMappings = new Map<string, EventEmitter<void>>();
+  private readonly eventMappings = new Map<string, { on: EventEmitter; off: EventEmitter }>();
   private readonly variableMappings: InputVariable<unknown>[] = [];
   private readonly previousPressedKeys = new Set<string>();
   protected readonly pressedKeys = new Set<string>();
@@ -20,15 +20,34 @@ export abstract class InputMappingContext {
     return input;
   }
 
-  protected combine2D(first: InputVariable<Vector2>, second: InputVariable<Vector2>): InputVariable<Vector2> {
-    return this.computed([first, second], (a, b) => {
-      const result = a.clone().add(b);
-      if (result.length() > 0) result.normalize();
+  protected map2DManual() {
+    const result = {
+      value: new Vector2(),
+      update: (v: Vector2) => {
+        result.value.copy(v);
+        this.updateManual();
+      },
+    };
+
+    return result;
+  }
+
+  protected combine2D(...variables: { value: Vector2 }[]): InputVariable<Vector2> {
+    return this.computed(variables, (...values) => {
+      let x = 0;
+      let y = 0;
+      for (const vec of values) {
+        x += vec.x;
+        y += vec.y;
+      }
+      const result = new Vector2(x, y);
+      const length = result.length();
+      if (length > 1) result.divideScalar(length);
       return result;
     });
   }
 
-  protected computed<TInputs extends InputVariable<unknown>[], TOutput>(
+  protected computed<TInputs extends { value: unknown }[], TOutput>(
     dependencies: TInputs,
     mapper: (...values: UnwrapInputVariables<TInputs>) => TOutput,
   ): InputVariable<TOutput> {
@@ -37,10 +56,10 @@ export abstract class InputMappingContext {
     return computed;
   }
 
-  protected mapEvent(key: string): EventEmitter<void> {
-    const emitter = new EventEmitter<void>();
-    this.eventMappings.set(key, emitter);
-    return emitter;
+  protected mapEvent(key: string) {
+    const events = { on: new EventEmitter(), off: new EventEmitter() };
+    this.eventMappings.set(key, events);
+    return events;
   }
 
   // Called by service to update key states
@@ -52,19 +71,17 @@ export abstract class InputMappingContext {
     for (const key of pressedKeys) this.pressedKeys.add(key);
 
     // Emit events for newly pressed keys
-    for (const key of this.pressedKeys) {
-      if (!this.previousPressedKeys.has(key)) {
-        this.eventMappings.get(key)?.emit();
-      }
-    }
+    for (const key of this.pressedKeys) if (!this.previousPressedKeys.has(key)) this.eventMappings.get(key)?.on.emit();
+
+    // Emit events for newly released keys
+    for (const key of this.previousPressedKeys) if (!this.pressedKeys.has(key)) this.eventMappings.get(key)?.off.emit();
 
     // Update all variables
-    for (const mapping of this.variableMappings) {
-      mapping.update(this.pressedKeys);
-    }
+    for (const mapping of this.variableMappings) mapping.update(this.pressedKeys);
   }
 
-  update() {
-    // Additional update logic if needed
+  updateManual() {
+    // Update all variables
+    for (const mapping of this.variableMappings) mapping.update(this.pressedKeys);
   }
 }
