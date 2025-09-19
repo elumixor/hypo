@@ -19,4 +19,10 @@ export const resources = new Resources("/hypo/assets")
   .add("sprites/characters/iris.png")
   .add("sprites/characters/kai.png");
 
+// TODO: Add these textures when they become available:
+// .add("textures/ground/diffuse.png") // Ground diffuse texture
+// .add("textures/ground/normal.png") // Ground normal map
+// .add("textures/ground/arm.png") // Ground AO/Roughness/Metalness
+// .add("textures/skybox/sky.hdr") // HDR skybox texture
+
 export type GameResources = typeof resources;

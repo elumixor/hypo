@@ -1,5 +1,5 @@
 import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior, ticker } from "@engine";
-import { BoxGeometry, Mesh, MeshStandardMaterial } from "three";
+import { BoxGeometry, Mesh, MeshStandardMaterial, PointLight } from "three";
 import { destroy } from "utils";
 import { ProgressionService } from "../../../services/progression.service";
 import { CollisionGroup } from "../collision-group";
@@ -10,6 +10,7 @@ export class XPCrystalEntity extends Entity {
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 5)); // Larger radius for easier pickup
 
   private readonly mesh: Mesh;
+  private readonly light: PointLight;
   private readonly xpValue: number;
 
   constructor(xpValue = 10) {
@@ -26,14 +27,19 @@ export class XPCrystalEntity extends Entity {
     });
     this.mesh = new Mesh(geometry, material);
     this.mesh.castShadow = true;
+
+    // Add point light for crystal glow
+    this.light = new PointLight(0x0066ff, 0.8, 15);
+    this.light.position.set(0, 0, 0);
   }
 
   override async init() {
     await super.init();
 
     this.transform.group.position.y = 5; // Slightly above ground
-    // Add mesh to the transform group
+    // Add mesh and light to the transform group
     this.transform.group.add(this.mesh);
+    this.transform.group.add(this.light);
 
     // Listen for collision with player
     this.collider.collided.subscribe(this.onCollision);
@@ -68,6 +74,7 @@ export class XPCrystalEntity extends Entity {
   override destroy() {
     this.collider.collided.unsubscribe(this.onCollision);
     destroy(this.mesh);
+    destroy(this.light);
     super.destroy();
   }
 }
