@@ -57,7 +57,7 @@ export class EnemyManager extends Entity {
     this.scene.removeEntity(enemy);
 
     // Spawn XP crystal at enemy position
-    const xpCrystal = new XPCrystalEntity(15); // Give 15 XP per enemy
+    const xpCrystal = new XPCrystalEntity(150); // Give 150 XP per enemy
     const crystalTransform = xpCrystal.getBehavior(TransformBehavior);
     crystalTransform.group.position.copy(enemyPosition);
     crystalTransform.group.position.y = 1; // Slightly above ground

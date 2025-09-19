@@ -1,8 +1,8 @@
 import { Widget } from "@engine";
 import { Text as PixiText } from "pixi.js";
 import { CombatScene } from "scenes/combat/combat.scene";
+import type { LevelConfig } from "services/level-progression.service";
 import { LevelProgressionService } from "services/level-progression.service";
-import type { LevelConfig } from "types/level-config";
 import { Button, textStyle } from "ui";
 
 export class SafeZoneWidget extends Widget {

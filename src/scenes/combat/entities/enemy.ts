@@ -6,6 +6,7 @@ import { type Object3D, Vector3 } from "three";
 import { destroy } from "utils";
 import { HealthBehavior } from "../behaviors/health.behavior";
 import { CollisionGroup } from "../collision-group";
+import { CombatEventsService } from "../services/combat-events.service";
 import { Player } from "./player";
 import { Projectile } from "./projectile";
 
@@ -118,7 +119,13 @@ export class Enemy extends Entity {
 
   private readonly onCollision = (event: CollisionEvent) => {
     const projectile = cast(Projectile, event.other.entity);
-    this.health.health -= projectile.damage;
+    const damage = projectile.damage;
+    this.health.health -= damage;
+
+    // Emit damage event through the service
+    const combatEvents = this.getService(CombatEventsService);
+    combatEvents.dealDamage(this, damage, this.transform.group.position.clone());
+
     projectile.destroy();
   };
 

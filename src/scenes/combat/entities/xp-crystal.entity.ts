@@ -1,7 +1,7 @@
 import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior, ticker } from "@engine";
-import { BoxGeometry, Mesh, MeshStandardMaterial } from "three";
+import { CharacterProgressionService } from "services/character-progression.service";
+import { BoxGeometry, Mesh, MeshStandardMaterial, PointLight } from "three";
 import { destroy } from "utils";
-import { ProgressionService } from "../../../services/progression.service";
 import { CollisionGroup } from "../collision-group";
 import { Player } from "./player";
 
@@ -10,30 +10,26 @@ export class XPCrystalEntity extends Entity {
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 5)); // Larger radius for easier pickup
 
   private readonly mesh: Mesh;
-  private readonly xpValue: number;
+  // Add point light for crystal glow
+  private readonly light = new PointLight(0x0066ff, 30.0, 100);
 
-  constructor(xpValue = 10) {
+  constructor(private readonly xpValue: number) {
     super();
-    this.xpValue = xpValue;
 
     // Create small blue cube
-    const geometry = new BoxGeometry(2, 2, 2);
+    const geometry = new BoxGeometry(1, 1, 1);
     const material = new MeshStandardMaterial({
-      color: 0x0066ff,
-      emissive: 0x002244,
-      metalness: 0.8,
-      roughness: 0.2,
+      emissive: 0x66aaff,
     });
     this.mesh = new Mesh(geometry, material);
-    this.mesh.castShadow = true;
   }
 
   override async init() {
     await super.init();
 
     this.transform.group.position.y = 5; // Slightly above ground
-    // Add mesh to the transform group
-    this.transform.group.add(this.mesh);
+    // Add mesh and light to the transform group
+    this.transform.group.add(this.mesh, this.light);
 
     // Listen for collision with player
     this.collider.collided.subscribe(this.onCollision);
@@ -58,7 +54,7 @@ export class XPCrystalEntity extends Entity {
     if (!player) return;
 
     // Grant XP to player through progression service
-    const progressionService = this.getService(ProgressionService);
+    const progressionService = this.getService(CharacterProgressionService);
     progressionService.addXP(this.xpValue);
 
     // Destroy this crystal
@@ -68,6 +64,7 @@ export class XPCrystalEntity extends Entity {
   override destroy() {
     this.collider.collided.unsubscribe(this.onCollision);
     destroy(this.mesh);
+    destroy(this.light);
     super.destroy();
   }
 }

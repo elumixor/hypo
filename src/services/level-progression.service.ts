@@ -1,7 +1,15 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Service } from "@engine";
 import { GameStateService } from "systems/game-state";
-import type { LevelConfig } from "types/level-config";
+import { CharacterProgressionService } from "./character-progression.service";
+
+export interface LevelConfig {
+  worldNumber: number;
+  worldName: string;
+  levelType: "safe_zone" | "combat" | "boss";
+  levelName: string;
+  sampleName?: string; // For combat levels: Sample-1, Sample-2, etc.
+}
 
 export interface LevelProgressionState {
   currentWorld: number;
@@ -40,12 +48,14 @@ export class LevelProgressionService extends Service {
   };
 
   private readonly sampledCombatLevels: Map<number, number[]> = new Map();
-  private gameStateService!: GameStateService; // Will be set in init
+  private gameStateService!: GameStateService;
+  private characterProgressionService!: CharacterProgressionService;
 
   override async init() {
     await super.init();
 
     this.gameStateService = this.getService(GameStateService);
+    this.characterProgressionService = this.getService(CharacterProgressionService);
   }
 
   get currentLevel(): LevelConfig {
@@ -94,13 +104,17 @@ export class LevelProgressionService extends Service {
   onPlayerDied() {
     this.playerDied.emit();
     this.resetProgression();
+    this.characterProgressionService.resetProgression();
   }
 
   onGameCompleted() {
     this.state.isCompleted = true;
     this.gameCompleted.emit();
     // Reset progression after completion
-    window.setTimeout(() => this.resetProgression(), 5000);
+    window.setTimeout(() => {
+      this.resetProgression();
+      this.characterProgressionService.resetProgression();
+    }, 5000);
   }
 
   private advanceLevel() {

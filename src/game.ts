@@ -1,6 +1,7 @@
 import { Game } from "@engine";
 import { CombatScene } from "scenes/combat/combat.scene";
 import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
+import { CharacterProgressionService } from "services/character-progression.service";
 import { LevelProgressionService } from "services/level-progression.service";
 import { ResourcesLoaderService } from "services/resources-loader.service";
 import { SaveLoadService } from "services/save-load.service";
@@ -14,6 +15,7 @@ export class GameHypo extends Game {
     this.addService(new SaveLoadService());
     this.addService(new GameStateService());
     this.addService(new LevelProgressionService());
+    this.addService(new CharacterProgressionService());
   }
 
   override async start() {

@@ -1,6 +1,6 @@
 import { Widget } from "@engine";
 import { Text as PixiText } from "pixi.js";
-import type { LevelConfig } from "types/level-config";
+import type { LevelConfig } from "services/level-progression.service";
 import { textStyle } from "ui/fonts";
 
 export class LevelInfoWidget extends Widget {

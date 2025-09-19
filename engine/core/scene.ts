@@ -1,4 +1,5 @@
 import type { Constructor } from "@elumixor/frontils";
+import type { Effects } from "@engine/effects";
 import { type InputMappingContext, InputService } from "@engine/systems/input";
 import { Container } from "pixi.js";
 import { Group } from "three";
@@ -19,6 +20,7 @@ export abstract class Scene {
   readonly sceneRoot = new Group();
 
   input?: InputMappingContext;
+  effects?: Effects;
 
   get game() {
     if (!this._game) throw new Error("Scene is not part of a game yet");
@@ -55,17 +57,20 @@ export abstract class Scene {
 
   update(dt: number) {
     for (const service of this.services) service.update(dt);
-    for (const entity of Array.from(this.entities.values())) entity.update(dt);
-    for (const widget of Array.from(this.widgets.values())) widget.update(dt);
+    for (const entity of this.entities) if (entity.enabled) entity.update(dt);
+    for (const widget of this.widgets) widget.update(dt);
   }
 
   destroy() {
     this.game.uiRoot.removeChild(this.uiRoot);
     this.game.sceneRoot.remove(this.sceneRoot);
 
+    // Clean up effects
+    this.effects?.destroy();
+
     for (const service of this.services) service.destroy();
-    for (const entity of Array.from(this.entities.values())) entity.destroy();
-    for (const widget of Array.from(this.widgets.values())) widget.destroy();
+    for (const entity of this.entities) entity.destroy();
+    for (const widget of this.widgets) widget.destroy();
   }
 
   addEntity<T extends Entity>(entity: T) {
@@ -108,16 +113,16 @@ export abstract class Scene {
   }
 
   getEntity<T extends Entity>(entityClass: Constructor<T>): T {
-    const entity = this.entities.find((e) => e instanceof entityClass) as T | undefined;
+    const entity = this.entities.find((e) => e instanceof entityClass && e.enabled) as T | undefined;
     if (!entity) throw new Error(`Entity ${entityClass.name} not found in scene`);
     return entity;
   }
 
   getEntities<T extends Entity>(entityClass: Constructor<T>): T[] {
-    return this.entities.filter((e) => e instanceof entityClass) as T[];
+    return this.entities.filter((e) => e instanceof entityClass && e.enabled) as T[];
   }
 
   getBehaviors<T extends Behavior>(behaviorClass: Constructor<T>): T[] {
-    return this.entities.flatMap((e) => e.getBehaviors(behaviorClass));
+    return this.entities.filter((e) => e.enabled).flatMap((e) => e.getBehaviors(behaviorClass));
   }
 }
