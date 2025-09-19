@@ -1,4 +1,5 @@
 import { Game } from "@engine";
+import { resources } from "resources";
 import { CombatScene } from "scenes/combat/combat.scene";
 import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
 import { ResourcesLoaderService } from "services/resources-loader.service";
@@ -21,5 +22,7 @@ export class GameHypo extends Game {
     if (__DEV__) {
       await this.loadScene(new CombatScene()); // temporary, instantly load combat scene
     }
+
+    console.log(resources.get("models/rocks").scene.children);
   }
 }
