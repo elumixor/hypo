@@ -1,6 +1,7 @@
 import { CollisionService, Scene } from "@engine";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
+import { CombatEventsService } from "services/combat-events.service";
 import { ProgressionService } from "services/progression.service";
 import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
 import { destroy } from "utils";
@@ -8,8 +9,11 @@ import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { Player } from "./entities/player";
+import { CharacterPortraitWidget } from "./ui/character-portrait.widget";
+import { DamageNumbersWidget } from "./ui/damage-numbers.widget";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
+import { XPBarWidget } from "./ui/xp-bar.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
@@ -21,6 +25,9 @@ export class CombatScene extends Scene {
 
   constructor() {
     super();
+
+    // Add combat events service
+    this.addService(new CombatEventsService());
 
     // Add the ground plane
     // Create a large ground plane
@@ -91,6 +98,9 @@ export class CombatScene extends Scene {
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
     this.addWidget(new VirtualJoystickWidget());
+    this.addWidget(new DamageNumbersWidget());
+    this.addWidget(new CharacterPortraitWidget());
+    this.addWidget(new XPBarWidget());
   }
 
   override async init() {

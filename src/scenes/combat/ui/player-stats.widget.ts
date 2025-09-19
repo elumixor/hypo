@@ -88,8 +88,11 @@ export class PlayerStatsWidget extends Widget {
     // Update status bars
     this.container.scale.set(scale);
 
-    // Position at bottom-left with 15px margin
-    this.container.position.set(-width / 2 + 15, height / 2 - 15);
+    // Position next to the character portrait (portrait takes ~100px width)
+    // Leave space for portrait (80px radius + margin) and position above XP bar
+    const portraitSpace = 110; // Space for character portrait
+    const xpBarSpace = 30; // Space for XP bar at bottom
+    this.container.position.set(-width / 2 + portraitSpace, height / 2 - xpBarSpace);
   }
 
   override destroy() {
