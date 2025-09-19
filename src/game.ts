@@ -21,7 +21,20 @@ export class GameHypo extends Game {
 
     await this.loadScene(new MainMenuScene());
     if (__DEV__) {
-      await this.loadScene(new CombatScene()); // temporary, instantly load combat scene
+      // In development, start a new game automatically but use proper progression
+      const saveLoadService = this.getService(SaveLoadService);
+      const levelProgressionService = this.getService(LevelProgressionService);
+
+      saveLoadService.startNewGame();
+      levelProgressionService.resetProgression();
+      const initialLevel = levelProgressionService.currentLevel;
+
+      if (initialLevel.levelType === "safe_zone") {
+        const { SafeZoneScene } = await import("scenes/safe-zone/safe-zone.scene");
+        await this.loadScene(new SafeZoneScene(initialLevel));
+      } else {
+        await this.loadScene(new CombatScene(initialLevel));
+      }
     }
   }
 }
