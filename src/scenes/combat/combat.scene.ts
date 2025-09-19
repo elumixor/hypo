@@ -1,8 +1,5 @@
 import { CollisionService, Scene } from "@engine";
 import { resources } from "resources";
-import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
-import { CombatEventsService } from "scenes/combat/services/combat-events.service";
-import { DamageTextService } from "scenes/combat/services/damage-text.service";
 import { ProgressionService } from "services/progression.service";
 import {
   AmbientLight,
@@ -16,12 +13,15 @@ import {
   SphereGeometry,
 } from "three";
 import { destroy } from "utils";
+import { HealthBehavior } from "./behaviors/health.behavior";
 import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { FloatingLightSphere } from "./entities/floating-light-sphere";
 import { Player } from "./entities/player";
 import { RockManager } from "./entities/rock-manager";
+import { CombatEventsService } from "./services/combat-events.service";
+import { DamageTextService } from "./services/damage-text.service";
 import { CharacterPortraitWidget } from "./ui/character-portrait.widget";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
@@ -35,17 +35,14 @@ export class CombatScene extends Scene {
   private readonly fog: Fog;
   private readonly enemyManager = this.addEntity(new EnemyManager());
   private readonly collisionService = this.addService(new CollisionService());
-  private readonly progressionService = this.addService(new ProgressionService());
 
   private readonly floatingLights: FloatingLightSphere[] = [];
 
   constructor() {
     super();
 
-    // Add combat events service
     this.addService(new CombatEventsService());
-
-    // Add damage text service for 3D damage numbers
+    this.addService(new ProgressionService());
     this.addService(new DamageTextService());
 
     // Add volumetric fog for atmospheric effect
@@ -179,15 +176,6 @@ export class CombatScene extends Scene {
 
     // Apply fog to the scene
     this.game.sceneRoot.fog = this.fog;
-
-    // Listen to progression events for logging
-    this.progressionService.levelUp.subscribe((event) => {
-      console.log(`🎉 Level Up! ${event.previousLevel} → ${event.newLevel} (${event.xpToNextLevel} XP to next level)`);
-    });
-
-    this.progressionService.xpGained.subscribe((event) => {
-      console.log(`💎 +${event.amount} XP (Total: ${event.totalXP}, Level: ${event.currentLevel})`);
-    });
 
     this.enemyManager.spawn();
   }

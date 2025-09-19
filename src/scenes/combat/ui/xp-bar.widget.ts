@@ -3,10 +3,10 @@ import { Container, Graphics } from "pixi.js";
 import { ProgressionService } from "services/progression.service";
 
 export class XPBarWidget extends Widget {
+  private progression!: ProgressionService;
   private readonly xpBarContainer = new Container();
   private readonly xpBarBg = new Graphics();
   private readonly xpBarFill = new Graphics();
-
   private barWidth = 0;
   private readonly barHeight = 6;
 
@@ -26,9 +26,9 @@ export class XPBarWidget extends Widget {
     this.addChild(this.xpBarContainer);
 
     // Subscribe to XP changes
-    const progression = this.getService(ProgressionService);
-    progression.xpGained.subscribe(this.updateXPBar);
-    progression.levelUp.subscribe(this.updateXPBar);
+    this.progression = this.getService(ProgressionService);
+    this.progression.xpGained.subscribe(this.updateXPBar);
+    this.progression.levelUp.subscribe(this.updateXPBar);
 
     // Initial update
     this.updateXPBar();
@@ -43,8 +43,8 @@ export class XPBarWidget extends Widget {
     const currentLevel = progression.currentLevel;
 
     // Calculate XP for current level and next level
-    const xpForCurrentLevel = this.calculateXPForLevel(currentLevel);
-    const xpForNextLevel = this.calculateXPForLevel(currentLevel + 1);
+    const xpForCurrentLevel = this.progression.xpForLevel(currentLevel);
+    const xpForNextLevel = this.progression.xpForLevel(currentLevel + 1);
     const xpInCurrentLevel = currentXP - xpForCurrentLevel;
     const xpNeededForLevel = xpForNextLevel - xpForCurrentLevel;
 
@@ -56,11 +56,6 @@ export class XPBarWidget extends Widget {
     this.xpBarFill.clear();
     this.xpBarFill.rect(0, 0, fillWidth, this.barHeight).fill({ color: 0x4a90e2 });
   };
-
-  private calculateXPForLevel(level: number): number {
-    // Same formula as in ProgressionService
-    return level * level * 100;
-  }
 
   private resize({ width, height }: ResizeData) {
     // XP bar spans full width at bottom with small margins
