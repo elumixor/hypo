@@ -1,4 +1,9 @@
+import type { LevelProgressionState } from "services/level-progression.service";
+
 export interface GameState {
-  // For now, just an empty object - we'll expand this later
+  // Level progression data
+  levelProgression?: LevelProgressionState;
+
+  // For future expansion
   data: null;
 }
