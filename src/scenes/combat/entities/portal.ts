@@ -1,12 +1,12 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { ColliderBehavior, type CollisionEvent, Entity, TransformBehavior } from "@engine";
+import { ColliderBehavior, Entity, TransformBehavior } from "@engine";
 import { resources } from "resources";
 import type { Object3D } from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "../collision-group";
 
 export class Portal extends Entity {
-  readonly reached = new EventEmitter<void>();
+  readonly reached = new EventEmitter();
 
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 2)); // Slightly larger collision radius
   private readonly transform = this.addBehavior(new TransformBehavior());
@@ -24,19 +24,13 @@ export class Portal extends Entity {
     this.transform.group.add(this.model);
 
     // Position portal at a distance from origin
-    this.transform.group.position.set(8, 0, 8);
-
-    // Add some animation - slowly rotating portal
-    this.model.rotation.y = 0;
+    this.transform.group.position.set(8, 5, 8);
 
     // Listen to collision events
     this.collider.collided.subscribe(this.onCollision);
   }
 
-  private readonly onCollision = ({ other }: CollisionEvent) => {
-    if (other.collisionGroup !== CollisionGroup.Player) return;
-
-    console.log("Player reached portal!");
+  private readonly onCollision = () => {
     this.reached.emit();
   };
 
@@ -44,9 +38,7 @@ export class Portal extends Entity {
     super.update(dt);
 
     // Rotate the portal slowly
-    if (this.model) {
-      this.model.rotation.y += dt * 0.001;
-    }
+    this.model.rotation.y += dt * 0.001;
   }
 
   override destroy() {

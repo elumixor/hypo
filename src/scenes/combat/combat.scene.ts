@@ -26,7 +26,7 @@ export class CombatScene extends Scene {
   private readonly portal = this.addEntity(new Portal());
   private readonly collisionService = this.addService(new CollisionService());
   private readonly progressionService = this.addService(new ProgressionService());
-  private readonly levelProgressionService = this.addService(new LevelProgressionService());
+  private levelProgressionService!: LevelProgressionService;
 
   private readonly levelInfoWidget?: LevelInfoWidget;
 
@@ -113,6 +113,8 @@ export class CombatScene extends Scene {
   override async init() {
     await super.init();
 
+    this.levelProgressionService = this.getService(LevelProgressionService);
+
     // Initialize level progression service from save data if available
     if (!this.levelConfig) {
       // If no level config provided, get it from progression service
@@ -125,24 +127,7 @@ export class CombatScene extends Scene {
     }
 
     // Listen to portal reaching event
-    this.portal.reached.subscribe(() => {
-      const nextLevel = this.levelProgressionService.nextLevel();
-
-      if (nextLevel.levelType === "safe_zone") {
-        // Moving to safe zone (next world)
-        this.game.loadScene(new SafeZoneScene(nextLevel));
-      } else if (nextLevel.levelType === "boss" && nextLevel.worldNumber === 6) {
-        // World 6 boss levels - check if game completed
-        if (this.levelProgressionService.currentState.isCompleted) {
-          this.game.loadScene(new SuccessScene());
-        } else {
-          this.game.loadScene(new CombatScene(nextLevel));
-        }
-      } else {
-        // Regular combat or boss level
-        this.game.loadScene(new CombatScene(nextLevel));
-      }
-    });
+    this.portal.reached.subscribe(this.onPortalReached);
 
     // Listen to progression events for logging
     this.progressionService.levelUp.subscribe((event) => {
@@ -168,7 +153,28 @@ export class CombatScene extends Scene {
     this.enemyManager.spawn();
   };
 
+  private readonly onPortalReached = () => {
+    const nextLevel = this.levelProgressionService.nextLevel();
+
+    if (nextLevel.levelType === "safe_zone") {
+      // Moving to safe zone (next world)
+      this.game.loadScene(new SafeZoneScene(nextLevel));
+    } else if (nextLevel.levelType === "boss" && nextLevel.worldNumber === 6) {
+      // World 6 boss levels - check if game completed
+      if (this.levelProgressionService.state.isCompleted) {
+        this.game.loadScene(new SuccessScene());
+      } else {
+        this.game.loadScene(new CombatScene(nextLevel));
+      }
+    } else {
+      // Regular combat or boss level
+      this.game.loadScene(new CombatScene(nextLevel));
+    }
+  };
+
   override destroy() {
+    this.portal.reached.unsubscribe(this.onPortalReached);
+
     // Clean up lights
     this.ambientLight.removeFromParent();
     this.directionalLight.removeFromParent();
