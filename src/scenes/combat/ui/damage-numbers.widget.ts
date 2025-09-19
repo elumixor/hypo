@@ -2,7 +2,7 @@ import { Widget } from "@engine";
 import { gsap } from "gsap";
 import { Text } from "pixi.js";
 import type { Vector3 } from "three";
-import { CombatEventsService, type DamageEvent } from "../../../services/combat-events.service";
+import { CombatEventsService, type DamageEvent } from "../services/combat-events.service";
 
 export class DamageNumbersWidget extends Widget {
   private readonly damageTexts: Text[] = [];

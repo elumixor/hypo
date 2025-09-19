@@ -1,8 +1,8 @@
 import { CollisionService, Scene } from "@engine";
 import { resources } from "resources";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
-import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
-import { CombatEventsService } from "services/combat-events.service";
+import { CombatEventsService } from "scenes/combat/services/combat-events.service";
+import { DamageTextService } from "scenes/combat/services/damage-text.service";
 import { ProgressionService } from "services/progression.service";
 import {
   AmbientLight,
@@ -23,7 +23,6 @@ import { FloatingLightSphere } from "./entities/floating-light-sphere";
 import { Player } from "./entities/player";
 import { RockManager } from "./entities/rock-manager";
 import { CharacterPortraitWidget } from "./ui/character-portrait.widget";
-import { DamageNumbersWidget } from "./ui/damage-numbers.widget";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
 import { XPBarWidget } from "./ui/xp-bar.widget";
@@ -45,6 +44,9 @@ export class CombatScene extends Scene {
 
     // Add combat events service
     this.addService(new CombatEventsService());
+
+    // Add damage text service for 3D damage numbers
+    this.addService(new DamageTextService());
 
     // Add volumetric fog for atmospheric effect
     this.fog = new Fog(0x2a2a3a, 5, 80); // Dark blue-gray fog, starts at distance 5, ends at 80
@@ -109,7 +111,6 @@ export class CombatScene extends Scene {
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
     this.addWidget(new VirtualJoystickWidget());
-    this.addWidget(new DamageNumbersWidget());
     this.addWidget(new CharacterPortraitWidget());
     this.addWidget(new XPBarWidget());
 
@@ -187,8 +188,6 @@ export class CombatScene extends Scene {
     this.progressionService.xpGained.subscribe((event) => {
       console.log(`💎 +${event.amount} XP (Total: ${event.totalXP}, Level: ${event.currentLevel})`);
     });
-
-    this.addEntity(new XPCrystalEntity(50));
 
     this.enemyManager.spawn();
   }

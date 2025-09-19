@@ -15,7 +15,7 @@ import { Projectile } from "./projectile";
 export class Player extends Entity {
   // Self behaviors
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Player));
-  private readonly health = this.addBehavior(new HealthBehavior(100)); // Player has 100 HP
+  private readonly health = this.addBehavior(new HealthBehavior(150)); // Player has 150 HP
 
   private model!: Object3D;
 

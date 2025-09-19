@@ -2,7 +2,7 @@ import { EventEmitter } from "@elumixor/event-emitter";
 import { ColliderBehavior, type CollisionEvent, cast, delay, Entity, TransformBehavior, ticker } from "@engine";
 import { gsap } from "gsap";
 import { resources } from "resources";
-import { CombatEventsService } from "services/combat-events.service";
+import { CombatEventsService } from "scenes/combat/services/combat-events.service";
 import { type Object3D, Vector3 } from "three";
 import { destroy } from "utils";
 import { HealthBehavior } from "../behaviors/health.behavior";

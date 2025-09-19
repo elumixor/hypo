@@ -12,11 +12,9 @@ export class XPCrystalEntity extends Entity {
   private readonly mesh: Mesh;
   // Add point light for crystal glow
   private readonly light = new PointLight(0x0066ff, 15.0, 50);
-  private readonly xpValue: number;
 
-  constructor(xpValue = 10) {
+  constructor(private readonly xpValue: number) {
     super();
-    this.xpValue = xpValue;
 
     // Create small blue cube
     const geometry = new BoxGeometry(1, 1, 1);
