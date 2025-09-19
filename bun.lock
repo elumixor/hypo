@@ -6,10 +6,10 @@
       "dependencies": {
         "@elumixor/event-emitter": "^1.0.3",
         "@elumixor/frontils": "^2.14.1",
-        "@elumixor/thrixi-resources": "^1.0.10",
+        "@elumixor/thrixi-resources": "^1.2.0",
         "gsap": "^3.13.0",
         "pixi.js": "^8.4.1",
-        "three": "^0.168.0",
+        "three": "^0.180.0",
       },
       "devDependencies": {
         "@biomejs/biome": "2.2.4",
@@ -52,7 +52,7 @@
 
     "@elumixor/frontils": ["@elumixor/frontils@2.14.1", "", {}, "sha512-IeJvXwS/vhLq6O1CBeEfHW7OMgpGz4HDZPXGToDr8huvcardCBZZDZvqoWQ15pW/WnCdkpOk7AX0yGCR/LFLqQ=="],
 
-    "@elumixor/thrixi-resources": ["@elumixor/thrixi-resources@1.0.10", "", { "peerDependencies": { "pixi.js": "^8.13.2", "three": "^0.180.0" } }, "sha512-polaiVlX35xz2hX2dMpA7wEHfZQk9ITbBIefny6NyLpRjPxFNRegx+UNwkL3r0CragyAmguhA0CnE7sp16YMGA=="],
+    "@elumixor/thrixi-resources": ["@elumixor/thrixi-resources@1.2.0", "", { "peerDependencies": { "pixi.js": "^8.13.2", "three": "^0.180.0" } }, "sha512-js5IvImwRLZ/tegNQx7OVe38wgTWctxP+1TVxCQXYVLp6jcCNmY7TDTWN6Lq1aK0uJkpBry0nx+JI+p3c97b3g=="],
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.21.5", "", { "os": "aix", "cpu": "ppc64" }, "sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ=="],
 
@@ -302,7 +302,7 @@
 
     "strip-outer": ["strip-outer@1.0.1", "", { "dependencies": { "escape-string-regexp": "^1.0.2" } }, "sha512-k55yxKHwaXnpYGsOzg4Vl8+tDrWylxDEpknGjhTiZB8dFRU5rTo9CAzeycivxV3s+zlTKwrs6WxMxR95n26kwg=="],
 
-    "three": ["three@0.168.0", "", {}, "sha512-6m6jXtDwMJEK/GGMbAOTSAmxNdzKvvBzgd7q8bE/7Tr6m7PaBh5kKLrN7faWtlglXbzj7sVba48Idwx+NRsZXw=="],
+    "three": ["three@0.180.0", "", {}, "sha512-o+qycAMZrh+TsE01GqWUxUIKR1AL0S8pq7zDkYOQw8GqfX8b8VoCKYUoHbhiX5j+7hr8XsuHDVU6+gkQJQKg9w=="],
 
     "tiny-lru": ["tiny-lru@11.4.5", "", {}, "sha512-hkcz3FjNJfKXjV4mjQ1OrXSLAehg8Hw+cEZclOVT+5c/cWQWImQ9wolzTjth+dmmDe++p3bme3fTxz6Q4Etsqw=="],
 

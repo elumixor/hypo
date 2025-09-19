@@ -1,51 +1,53 @@
 import { CollisionService, Scene } from "@engine";
+import { resources } from "resources";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
 import { ProgressionService } from "services/progression.service";
-import { AmbientLight, DirectionalLight, Mesh, MeshLambertMaterial, PlaneGeometry } from "three";
+import {
+  AmbientLight,
+  BackSide,
+  DirectionalLight,
+  Fog,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  PlaneGeometry,
+  SphereGeometry,
+} from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
+import { FloatingLightSphere } from "./entities/floating-light-sphere";
 import { Player } from "./entities/player";
+import { RockManager } from "./entities/rock-manager";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
   private readonly directionalLight: DirectionalLight;
-  private readonly groundMesh: Mesh;
+  private groundMesh!: Mesh;
+  private skybox!: Mesh;
+  private readonly fog: Fog;
   private readonly enemyManager = this.addEntity(new EnemyManager());
   private readonly collisionService = this.addService(new CollisionService());
   private readonly progressionService = this.addService(new ProgressionService());
 
+  private readonly floatingLights: FloatingLightSphere[] = [];
+
   constructor() {
     super();
 
-    // Add the ground plane
-    // Create a large ground plane
-    const geometry = new PlaneGeometry(50, 50);
-    const material = new MeshLambertMaterial({
-      color: 0xc2b280, // Desert sand color for ground
-      transparent: false,
-    });
-
-    this.groundMesh = new Mesh(geometry, material);
-
-    // Rotate the plane to be horizontal (by default it's vertical)
-    this.groundMesh.rotation.x = -Math.PI / 2;
-    this.groundMesh.position.y = 0;
-
-    // Enable shadow receiving
-    this.groundMesh.receiveShadow = true;
-    this.sceneRoot.add(this.groundMesh);
+    // Add volumetric fog for atmospheric effect
+    this.fog = new Fog(0x2a2a3a, 5, 80); // Dark blue-gray fog, starts at distance 5, ends at 80
 
     // Add ambient lighting for general illumination
     this.ambientLight = new AmbientLight(0x404040, 0.6); // Soft white light
     this.sceneRoot.add(this.ambientLight);
 
     // Add directional lighting for better depth and shadows
-    this.directionalLight = new DirectionalLight(0xffffff, 1.0);
+    this.directionalLight = new DirectionalLight(0xffffff, 0.25);
     this.directionalLight.position.set(10, 10, 5);
     this.directionalLight.castShadow = true;
 
@@ -67,6 +69,9 @@ export class CombatScene extends Scene {
     // Add the player entity
     this.addEntity(new Player());
 
+    // Add rocks to the scene
+    this.addEntity(new RockManager());
+
     // Subscribe to player death
     const player = this.getEntity(Player);
     const playerHealth = player.getBehavior(HealthBehavior);
@@ -86,15 +91,83 @@ export class CombatScene extends Scene {
     ]);
     this.collisionService.addCollisionGroup(CollisionGroup.Enemy, [CollisionGroup.PlayerProjectile]);
 
+    // Static objects (rocks) should collide with both player and enemy projectiles
+    this.collisionService.addCollisionGroup(CollisionGroup.Static, [
+      CollisionGroup.PlayerProjectile,
+      CollisionGroup.EnemyProjectile,
+    ]);
+
     this.collisionService.logGroups();
 
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
     this.addWidget(new VirtualJoystickWidget());
+
+    // Create floating light spheres for ambient lighting
+    this.createFloatingLights();
+  }
+
+  private createFloatingLights() {
+    const lightPositions = [
+      { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 10.0 }, // Warm white
+      { x: 20, y: 15, z: 8, color: 0xaaddff, intensity: 8 }, // Cool blue
+      { x: 5, y: 18, z: -18, color: 0xffffaa, intensity: 12 }, // Bright yellow
+      { x: -8, y: 14, z: 15, color: 0xffaadd, intensity: 9 }, // Pink
+    ];
+
+    for (const pos of lightPositions) {
+      const light = new FloatingLightSphere(
+        pos.color,
+        pos.intensity,
+        200, // distance
+        0.0008 + Math.random() * 0.0004, // slightly different float speeds
+        1.5 + Math.random(), // random amplitude
+      );
+
+      light.setPosition(pos.x, pos.y, pos.z);
+      this.floatingLights.push(light);
+      this.addEntity(light);
+    }
   }
 
   override async init() {
     await super.init();
+
+    // Add the ground plane with improved material
+    const geometry = new PlaneGeometry(50, 50);
+    // Use MeshStandardMaterial for better lighting and potential PBR textures
+    const material = new MeshStandardMaterial({
+      map: resources.get("textures/ground/diffuse"),
+      normalMap: resources.get("textures/ground/normal"),
+      roughnessMap: resources.get("textures/ground/arm"),
+      metalnessMap: resources.get("textures/ground/arm"),
+    });
+
+    this.groundMesh = new Mesh(geometry, material);
+
+    // Rotate the plane to be horizontal (by default it's vertical)
+    this.groundMesh.rotation.x = -Math.PI / 2;
+    this.groundMesh.position.y = 0;
+
+    // Enable shadow receiving
+    this.groundMesh.receiveShadow = true;
+    this.sceneRoot.add(this.groundMesh);
+
+    // Create skybox using HDR texture
+    const skyboxGeometry = new SphereGeometry(1000, 32, 16);
+    const skyboxMaterial = new MeshBasicMaterial({
+      map: resources.get("textures/skybox/sky"),
+      side: BackSide, // Render on the inside
+      fog: false, // Don't apply fog to skybox
+    });
+
+    this.skybox = new Mesh(skyboxGeometry, skyboxMaterial);
+    this.skybox.rotation.y = (-3 * Math.PI) / 4; // Rotate 90 degrees
+    this.skybox.rotation.x = -Math.PI / 2; // Rotate 90 degrees
+    this.camera.add(this.skybox);
+
+    // Apply fog to the scene
+    this.game.sceneRoot.fog = this.fog;
 
     // Listen to progression events for logging
     this.progressionService.levelUp.subscribe((event) => {
@@ -126,8 +199,12 @@ export class CombatScene extends Scene {
     this.directionalLight.removeFromParent();
     this.directionalLight.dispose();
 
-    // Clean up ground mesh
+    // Clean up ground mesh and skybox
     destroy(this.groundMesh);
+    destroy(this.skybox);
+
+    // Clear fog
+    if (this.game.sceneRoot.fog) this.game.sceneRoot.fog = null;
 
     super.destroy();
   }

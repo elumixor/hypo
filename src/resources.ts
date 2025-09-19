@@ -17,6 +17,12 @@ export const resources = new Resources("/hypo/assets")
   .add("sprites/characters/lucy.jpg")
   .add("sprites/characters/darius.png")
   .add("sprites/characters/iris.png")
-  .add("sprites/characters/kai.png");
+  .add("sprites/characters/kai.png")
+  // Ground texture
+  .add("textures/ground/diffuse.jpg", "three") // Ground diffuse texture
+  .add("textures/ground/normal.jpg", "three") // Ground normal map
+  .add("textures/ground/arm.jpg", "three") // Ground AO/Roughness/Metalness
+  // Skybox
+  .add("textures/skybox/sky.hdr"); // HDR skybox texture
 
 export type GameResources = typeof resources;

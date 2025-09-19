@@ -4,4 +4,5 @@ export enum CollisionGroup {
   PlayerProjectile = "playerProjectile",
   EnemyProjectile = "enemyProjectile",
   PickUps = "pickUps",
+  Static = "static",
 }
