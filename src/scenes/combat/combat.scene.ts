@@ -90,13 +90,13 @@ export class CombatScene extends Scene {
   override async init() {
     await super.init();
 
-    // Listen to progression events for debugging
+    // Listen to progression events for logging
     this.progressionService.levelUp.subscribe((event) => {
-      console.log(`Player leveled up! Level ${event.previousLevel} -> ${event.newLevel}`);
+      console.log(`🎉 Level Up! ${event.previousLevel} → ${event.newLevel} (${event.xpToNextLevel} XP to next level)`);
     });
 
     this.progressionService.xpGained.subscribe((event) => {
-      console.log(`XP gained: ${event.amount}, Total: ${event.totalXP}, Level: ${event.currentLevel}`);
+      console.log(`💎 +${event.amount} XP (Total: ${event.totalXP}, Level: ${event.currentLevel})`);
     });
 
     this.enemyManager.spawn();

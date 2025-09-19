@@ -17,7 +17,7 @@ export class Enemy extends Entity {
 
   // Add collision behavior
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
-  private readonly health = this.addBehavior(new HealthBehavior(5)); // Enemy has 5 HP for easier testing
+  private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
   // Referenced behaviors
   private playerTransform!: TransformBehavior;
@@ -38,11 +38,7 @@ export class Enemy extends Entity {
 
     // Listen to health changes to emit death event
     this.health.healthChanged.subscribe((event) => {
-      console.log(`Enemy health changed: ${event.health}/${event.maxHealth}, alive: ${event.isAlive}`);
-      if (!event.isAlive) {
-        console.log("Enemy died! Emitting death event");
-        this.enemyDied.emit();
-      }
+      if (!event.isAlive) this.enemyDied.emit();
     });
 
     // Load the drone model for enemy (same as player for now)

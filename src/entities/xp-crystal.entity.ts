@@ -7,7 +7,7 @@ import { ProgressionService } from "../services/progression.service";
 
 export class XPCrystalEntity extends Entity {
   private readonly transform = this.addBehavior(new TransformBehavior());
-  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 1));
+  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 2)); // Larger radius for easier pickup
   
   private readonly mesh: Mesh;
   private readonly xpValue: number;
@@ -51,13 +51,9 @@ export class XPCrystalEntity extends Entity {
   }
 
   private readonly onCollision = (event: CollisionEvent) => {
-    console.log("XP Crystal collision detected with:", event.other.entity.constructor.name);
-    
     // Check if collided with player
     const player = cast(Player, event.other.entity);
     if (!player) return;
-
-    console.log(`XP Crystal picked up! Granting ${this.xpValue} XP to player`);
 
     // Grant XP to player through progression service
     const progressionService = this.getService(ProgressionService);
