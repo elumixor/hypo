@@ -29,7 +29,7 @@ export class ProgressionService extends Service {
   }
 
   get xpToNextLevel() {
-    return this.calculateXPForLevel(this._currentLevel + 1) - this._currentXP;
+    return this.xpForLevel(this._currentLevel + 1) - this._currentXP;
   }
 
   addXP(amount: number) {
@@ -52,11 +52,9 @@ export class ProgressionService extends Service {
       totalXP: this._currentXP,
       currentLevel: this._currentLevel,
     });
-
-    this.log(`XP gained: ${amount}, Total XP: ${this._currentXP}, Level: ${this._currentLevel}`);
   }
 
-  private calculateXPForLevel(level: number): number {
+  xpForLevel(level: number): number {
     // Simple XP formula: level^2 * 100
     // Level 1: 100 XP, Level 2: 400 XP, Level 3: 900 XP, etc.
     return level * level * 100;
@@ -64,7 +62,7 @@ export class ProgressionService extends Service {
 
   private calculateLevelFromXP(xp: number): number {
     let level = 1;
-    while (this.calculateXPForLevel(level + 1) <= xp) {
+    while (this.xpForLevel(level + 1) <= xp) {
       level++;
     }
     return level;

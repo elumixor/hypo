@@ -1,7 +1,5 @@
 import { CollisionService, Effects, Scene } from "@engine";
 import { resources } from "resources";
-import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
-import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
 import { ProgressionService } from "services/progression.service";
 import {
   AmbientLight,
@@ -16,14 +14,19 @@ import {
   Vector2,
 } from "three";
 import { destroy } from "utils";
+import { HealthBehavior } from "./behaviors/health.behavior";
 import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { FloatingLightSphere } from "./entities/floating-light-sphere";
 import { Player } from "./entities/player";
 import { RockManager } from "./entities/rock-manager";
+import { CombatEventsService } from "./services/combat-events.service";
+import { DamageTextService } from "./services/damage-text.service";
+import { CharacterPortraitWidget } from "./ui/character-portrait.widget";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
+import { XPBarWidget } from "./ui/xp-bar.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
@@ -33,12 +36,15 @@ export class CombatScene extends Scene {
   private readonly fog: Fog;
   private readonly enemyManager = this.addEntity(new EnemyManager());
   private readonly collisionService = this.addService(new CollisionService());
-  private readonly progressionService = this.addService(new ProgressionService());
 
   private readonly floatingLights: FloatingLightSphere[] = [];
 
   constructor() {
     super();
+
+    this.addService(new CombatEventsService());
+    this.addService(new ProgressionService());
+    this.addService(new DamageTextService());
 
     // Add volumetric fog for atmospheric effect
     this.fog = new Fog(0x2a2a3a, 10, 120); // Dark blue-gray fog, starts at distance 5, ends at 80
@@ -103,6 +109,8 @@ export class CombatScene extends Scene {
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
     this.addWidget(new VirtualJoystickWidget());
+    this.addWidget(new CharacterPortraitWidget());
+    this.addWidget(new XPBarWidget());
 
     // Create floating light spheres for ambient lighting
     const lightPositions = [
@@ -186,17 +194,6 @@ export class CombatScene extends Scene {
 
     // Apply fog to the scene
     this.game.sceneRoot.fog = this.fog;
-
-    // Listen to progression events for logging
-    this.progressionService.levelUp.subscribe((event) => {
-      console.log(`🎉 Level Up! ${event.previousLevel} → ${event.newLevel} (${event.xpToNextLevel} XP to next level)`);
-    });
-
-    this.progressionService.xpGained.subscribe((event) => {
-      console.log(`💎 +${event.amount} XP (Total: ${event.totalXP}, Level: ${event.currentLevel})`);
-    });
-
-    this.addEntity(new XPCrystalEntity(50));
 
     this.enemyManager.spawn();
   }

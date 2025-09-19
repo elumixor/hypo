@@ -27,7 +27,7 @@ export class PlayerStatsWidget extends Widget {
     // Create status bars
     this.healthBar.barWidth = 290;
     this.healthBar.barHeight = 30;
-    this.healthBar.position.set(0, -30);
+    this.healthBar.position.set(0, -27);
     this.healthBar.color = 0x00ff00; // Green
     this.healthBar.maxValue = this.health.maxHealth;
     this.healthBar.value = this.health.health;
@@ -40,7 +40,7 @@ export class PlayerStatsWidget extends Widget {
     this.energyBar.value = this.energy.energy;
 
     // Create dash charge indicator
-    this.dashChargeIndicator.position.set(0, -75);
+    this.dashChargeIndicator.position.set(0, -85);
     this.dashChargeIndicator.maxCharges = this.dash.maxCharges;
     this.dashChargeIndicator.chargeRegenTime = this.dash.chargeRegenTime;
 
@@ -88,8 +88,11 @@ export class PlayerStatsWidget extends Widget {
     // Update status bars
     this.container.scale.set(scale);
 
-    // Position at bottom-left with 15px margin
-    this.container.position.set(-width / 2 + 15, height / 2 - 15);
+    // Position next to the character portrait (portrait takes ~100px width)
+    // Leave space for portrait (80px radius + margin) and position above XP bar
+    const portraitSpace = 110; // Space for character portrait
+    const xpBarSpace = 30; // Space for XP bar at bottom
+    this.container.position.set(-width / 2 + portraitSpace, height / 2 - xpBarSpace);
   }
 
   override destroy() {
