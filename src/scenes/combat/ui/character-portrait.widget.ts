@@ -16,43 +16,39 @@ export class CharacterPortraitWidget extends Widget {
     await super.init();
 
     // Create the circular background
-    this.portraitBg.circle(0, 0, 40)
-      .fill({ color: 0x333333 })
-      .stroke({ color: 0x666666, width: 2 });
-    
+    this.portraitBg.circle(0, 0, 40).fill({ color: 0x333333 }).stroke({ color: 0x666666, width: 2 });
+
     this.portraitContainer.addChild(this.portraitBg);
 
     // Load and setup Helios portrait
     const heliosTexture = resources.get("sprites/characters/helios");
     this.portraitSprite = new Sprite(heliosTexture);
-    
+
     // Make the sprite circular by clipping
     this.portraitSprite.anchor.set(0.5);
     this.portraitSprite.width = 76;
     this.portraitSprite.height = 76;
-    
+
     // Create a circular mask for the portrait
     const portraitMask = new Graphics();
     portraitMask.circle(0, 0, 38).fill({ color: 0xffffff });
     this.portraitContainer.addChild(portraitMask);
     this.portraitSprite.mask = portraitMask;
-    
+
     this.portraitContainer.addChild(this.portraitSprite);
 
     // Create level badge (small circle at bottom of portrait)
-    this.levelBg.circle(0, 0, 12)
-      .fill({ color: 0x4a90e2 })
-      .stroke({ color: 0x2c5aa0, width: 1 });
-    
+    this.levelBg.circle(0, 0, 12).fill({ color: 0x4a90e2 }).stroke({ color: 0x2c5aa0, width: 1 });
+
     this.levelBadge.addChild(this.levelBg);
-    
+
     // Setup level text
     this.levelText.anchor.set(0.5);
     this.levelText.style.fontSize = 14;
     this.levelText.style.fill = "#ffffff";
     this.levelText.style.fontWeight = "bold";
     this.levelBadge.addChild(this.levelText);
-    
+
     // Position level badge at bottom of portrait
     this.levelBadge.position.set(0, 35);
     this.portraitContainer.addChild(this.levelBadge);
@@ -64,7 +60,7 @@ export class CharacterPortraitWidget extends Widget {
     const progression = this.getService(ProgressionService);
     progression.levelUp.subscribe(this.updateLevel);
     progression.xpGained.subscribe(this.updateLevel);
-    
+
     // Set initial level
     this.levelText.text = progression.currentLevel.toString();
 
@@ -81,11 +77,8 @@ export class CharacterPortraitWidget extends Widget {
     // Position at bottom-left corner with margin
     const margin = 20;
     const portraitRadius = 40;
-    
-    this.portraitContainer.position.set(
-      -width / 2 + margin + portraitRadius,
-      height / 2 - margin - portraitRadius
-    );
+
+    this.portraitContainer.position.set(-width / 2 + margin + portraitRadius, height / 2 - margin - portraitRadius);
   }
 
   override destroy() {

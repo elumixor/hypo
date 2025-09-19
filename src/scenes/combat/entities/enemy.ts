@@ -121,11 +121,11 @@ export class Enemy extends Entity {
     const projectile = cast(Projectile, event.other.entity);
     const damage = projectile.damage;
     this.health.health -= damage;
-    
+
     // Emit damage event through the service
     const combatEvents = this.getService(CombatEventsService);
     combatEvents.dealDamage(this, damage, this.transform.group.position.clone());
-    
+
     projectile.destroy();
   };
 

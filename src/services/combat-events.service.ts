@@ -1,6 +1,6 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { Service, Entity } from "@engine";
-import { Vector3 } from "three";
+import { type Entity, Service } from "@engine";
+import type { Vector3 } from "three";
 
 export interface DamageEvent {
   entity: Entity;
