@@ -56,4 +56,14 @@ export class CollisionService extends Service {
       }
     }
   }
+
+  logGroups() {
+    const groups = Array.from(this.collisionMatrix.keys());
+    const table = groups.map((group) => {
+      const row: Record<string, unknown> = { Group: group };
+      for (const other of groups) row[other] = this.collisionMatrix.get(group)?.has(other) ?? false;
+      return row;
+    });
+    console.table(table);
+  }
 }

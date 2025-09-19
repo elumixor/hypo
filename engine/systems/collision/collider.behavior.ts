@@ -56,7 +56,6 @@ export class ColliderBehavior extends Behavior {
         wireframe: true,
         transparent: true,
         opacity: 0.4,
-        depthTest: false,
       });
 
       // Create mesh
