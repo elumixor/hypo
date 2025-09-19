@@ -22,7 +22,5 @@ export class GameHypo extends Game {
     if (__DEV__) {
       await this.loadScene(new CombatScene()); // temporary, instantly load combat scene
     }
-
-    console.log(resources.get("models/rocks").scene.children);
   }
 }
