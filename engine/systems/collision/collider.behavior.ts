@@ -12,15 +12,35 @@ export interface CollisionEvent {
 export class ColliderBehavior extends Behavior {
   private transform!: TransformBehavior;
   private debugMesh?: Mesh;
+  private _radius: number;
   readonly currentCollisions = new Set<ColliderBehavior>();
 
   readonly collided = new EventEmitter<CollisionEvent>();
 
   constructor(
     readonly collisionGroup: string,
-    readonly radius = 1,
+    radius = 1,
   ) {
     super();
+    this._radius = radius;
+  }
+
+  get radius() {
+    return this._radius;
+  }
+
+  set radius(value: number) {
+    this._radius = value;
+
+    // Update debug mesh if shown
+    if (!this.debugMesh) return;
+
+    // Dispose old geometry
+    this.debugMesh.geometry.dispose();
+
+    // Create new geometry with updated radius
+    const geometry = new SphereGeometry(this._radius, 8, 6);
+    this.debugMesh.geometry = geometry;
   }
 
   override async init() {
