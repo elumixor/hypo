@@ -1,6 +1,6 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Entity, TransformBehavior } from "@engine";
-import { XPCrystalEntity } from "entities/xp-crystal.entity";
+import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
 import { Enemy } from "./enemy";
 import { Player } from "./player";
 

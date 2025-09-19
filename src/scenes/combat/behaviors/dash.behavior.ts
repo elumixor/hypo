@@ -1,17 +1,48 @@
+import { EventEmitter } from "@elumixor/event-emitter";
 import { Behavior, TransformBehavior } from "@engine";
 import { Vector3 } from "three";
+import { type CharacterStats, defaultCharacterStats } from "../character-stats";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
 
-export class DashBehavior extends Behavior {
-  private readonly dashDistance = 8;
-  private readonly dashDuration = 0.1; // seconds
-  private readonly cooldownDuration = 0.5; // seconds
+export interface DashChargeEvent {
+  currentCharges: number;
+  maxCharges: number;
+  chargeTimers: readonly number[];
+}
 
+export class DashBehavior extends Behavior {
+  // Events
+  readonly chargeChanged = new EventEmitter<DashChargeEvent>();
+
+  // Configuration
+  private readonly config: CharacterStats["dash"];
+
+  // State
   private transform!: TransformBehavior;
   isDashing = false;
-  private cooldownRemaining = 0;
   private dashTimeRemaining = 0;
   private readonly dashDirection = new Vector3();
+
+  // Charge system
+  private readonly chargeTimers: number[];
+
+  constructor(stats: CharacterStats = defaultCharacterStats) {
+    super();
+    this.config = stats.dash;
+    this.chargeTimers = Array(this.config.maxCharges).fill(0);
+  }
+
+  get currentCharges() {
+    return this.chargeTimers.filter((t) => t === 0).length;
+  }
+
+  get maxCharges() {
+    return this.config.maxCharges;
+  }
+
+  get chargeRegenTime() {
+    return this.config.chargeRegenTime;
+  }
 
   override async init() {
     await super.init();
@@ -20,6 +51,9 @@ export class DashBehavior extends Behavior {
 
     // Subscribe to dash event if we haven't already
     this.input.dashActivated.subscribe(this.attemptDash);
+
+    // Emit initial charge state
+    this.emitChargeChanged();
   }
 
   override get input() {
@@ -29,16 +63,21 @@ export class DashBehavior extends Behavior {
   override update(dt: number) {
     super.update(dt);
 
-    // Update cooldown
-    if (this.cooldownRemaining > 0) this.cooldownRemaining -= dt / 1000;
+    const deltaTime = dt / 1000;
+
+    // Update charge timers
+    for (const [i, currentTimer] of this.chargeTimers.entries())
+      this.chargeTimers[i] = Math.max(currentTimer - deltaTime, 0);
+
+    this.emitChargeChanged();
 
     // Update dash
     if (this.isDashing && this.dashTimeRemaining > 0) {
-      this.dashTimeRemaining -= dt / 1000;
+      this.dashTimeRemaining -= deltaTime;
 
       // Apply dash movement
-      const dashSpeed = this.dashDistance / this.dashDuration;
-      const movement = this.dashDirection.clone().multiplyScalar((dashSpeed * dt) / 1000);
+      const dashSpeed = this.config.dashDistance / this.config.dashDuration;
+      const movement = this.dashDirection.clone().multiplyScalar(dashSpeed * deltaTime);
       this.transform.group.position.add(movement);
 
       if (this.dashTimeRemaining <= 0) this.isDashing = false;
@@ -46,8 +85,8 @@ export class DashBehavior extends Behavior {
   }
 
   private readonly attemptDash = () => {
-    // Check if dash is available (not on cooldown and not currently dashing)
-    if (this.cooldownRemaining > 0 || this.isDashing) return;
+    // Check if dash is available (has charges and not currently dashing)
+    if (this.currentCharges <= 0 || this.isDashing) return;
 
     // Get dash direction from movement input, or use forward direction if no input
     const { x, y } = this.input.playerMovement.value;
@@ -63,9 +102,25 @@ export class DashBehavior extends Behavior {
 
     // Start dash
     this.isDashing = true;
-    this.dashTimeRemaining = this.dashDuration;
+    this.dashTimeRemaining = this.config.dashDuration;
 
-    // Start cooldown
-    this.cooldownRemaining = this.cooldownDuration;
+    // Start recharge timer for this charge
+    const nextAvailableSlot = this.chargeTimers.indexOf(0);
+    if (nextAvailableSlot !== -1) this.chargeTimers[nextAvailableSlot] = this.config.chargeRegenTime;
+
+    this.emitChargeChanged();
   };
+
+  private emitChargeChanged() {
+    this.chargeChanged.emit({
+      currentCharges: this.currentCharges,
+      maxCharges: this.config.maxCharges,
+      chargeTimers: [...this.chargeTimers], // Create a copy for readonly access
+    });
+  }
+
+  override destroy() {
+    this.input.dashActivated.unsubscribe(this.attemptDash);
+    super.destroy();
+  }
 }

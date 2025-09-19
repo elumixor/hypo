@@ -55,6 +55,8 @@ export class Player extends Entity {
   }
 
   private readonly onCollision = ({ other }: CollisionEvent) => {
+    if (other.collisionGroup !== CollisionGroup.EnemyProjectile) return;
+
     const projectile = cast(Projectile, other.entity);
     this.health.health -= projectile.damage;
     projectile.destroy();

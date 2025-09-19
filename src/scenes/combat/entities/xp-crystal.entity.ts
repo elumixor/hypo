@@ -1,14 +1,14 @@
-import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior } from "@engine";
+import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior, ticker } from "@engine";
 import { BoxGeometry, Mesh, MeshStandardMaterial } from "three";
 import { destroy } from "utils";
-import { CollisionGroup } from "../scenes/combat/collision-group";
-import { Player } from "../scenes/combat/entities/player";
-import { ProgressionService } from "../services/progression.service";
+import { ProgressionService } from "../../../services/progression.service";
+import { CollisionGroup } from "../collision-group";
+import { Player } from "./player";
 
 export class XPCrystalEntity extends Entity {
   private readonly transform = this.addBehavior(new TransformBehavior());
-  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 2)); // Larger radius for easier pickup
-  
+  private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 5)); // Larger radius for easier pickup
+
   private readonly mesh: Mesh;
   private readonly xpValue: number;
 
@@ -17,12 +17,12 @@ export class XPCrystalEntity extends Entity {
     this.xpValue = xpValue;
 
     // Create small blue cube
-    const geometry = new BoxGeometry(0.5, 0.5, 0.5);
-    const material = new MeshStandardMaterial({ 
+    const geometry = new BoxGeometry(2, 2, 2);
+    const material = new MeshStandardMaterial({
       color: 0x0066ff,
       emissive: 0x002244,
       metalness: 0.8,
-      roughness: 0.2
+      roughness: 0.2,
     });
     this.mesh = new Mesh(geometry, material);
     this.mesh.castShadow = true;
@@ -31,6 +31,7 @@ export class XPCrystalEntity extends Entity {
   override async init() {
     await super.init();
 
+    this.transform.group.position.y = 5; // Slightly above ground
     // Add mesh to the transform group
     this.transform.group.add(this.mesh);
 
@@ -47,10 +48,11 @@ export class XPCrystalEntity extends Entity {
     this.mesh.rotation.z += dt * 0.002;
 
     // Add slight hover animation
-    this.mesh.position.y = Math.sin(Date.now() * 0.008) * 0.1;
+    this.mesh.position.y = Math.sin(ticker.lastTime * 0.008) * 0.1;
   }
 
   private readonly onCollision = (event: CollisionEvent) => {
+    console.log("XP Crystal collided with", event.other.entity);
     // Check if collided with player
     const player = cast(Player, event.other.entity);
     if (!player) return;

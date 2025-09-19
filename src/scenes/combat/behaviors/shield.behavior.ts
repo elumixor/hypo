@@ -75,6 +75,8 @@ export class ShieldBehavior extends Behavior {
   }
 
   private readonly onShieldCollision = ({ other }: CollisionEvent) => {
+    if (other.collisionGroup !== CollisionGroup.EnemyProjectile) return;
+
     const projectile = cast(Projectile, other.entity);
     const damage = projectile.damage;
 
