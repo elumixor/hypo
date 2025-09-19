@@ -1,5 +1,6 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Service } from "@engine";
+import { GameStateService } from "systems/game-state";
 
 export interface LevelUpEvent {
   newLevel: number;
@@ -13,12 +14,13 @@ export interface XPGainEvent {
   currentLevel: number;
 }
 
-export class ProgressionService extends Service {
+export class CharacterProgressionService extends Service {
   readonly levelUp = new EventEmitter<LevelUpEvent>();
   readonly xpGained = new EventEmitter<XPGainEvent>();
 
   private _currentXP = 0;
   private _currentLevel = 1;
+  private gameStateService!: GameStateService;
 
   get currentXP() {
     return this._currentXP;
@@ -30,6 +32,28 @@ export class ProgressionService extends Service {
 
   get xpToNextLevel() {
     return this.xpForLevel(this._currentLevel + 1) - this._currentXP;
+  }
+
+  override async init() {
+    await super.init();
+    this.gameStateService = this.getService(GameStateService);
+    this.initializeFromSave();
+  }
+
+  initializeFromSave() {
+    const savedState = this.gameStateService.characterProgression;
+    if (savedState) {
+      this._currentXP = savedState.currentXP;
+      this._currentLevel = savedState.currentLevel;
+    } else {
+      this.resetProgression();
+    }
+  }
+
+  resetProgression() {
+    this._currentXP = 0;
+    this._currentLevel = 1;
+    this.saveProgression();
   }
 
   addXP(amount: number) {
@@ -52,6 +76,8 @@ export class ProgressionService extends Service {
       totalXP: this._currentXP,
       currentLevel: this._currentLevel,
     });
+
+    this.saveProgression();
   }
 
   xpForLevel(level: number): number {
@@ -66,5 +92,14 @@ export class ProgressionService extends Service {
       level++;
     }
     return level;
+  }
+
+  private saveProgression() {
+    if (this.gameStateService) {
+      this.gameStateService.saveCharacterProgression({
+        currentXP: this._currentXP,
+        currentLevel: this._currentLevel,
+      });
+    }
   }
 }

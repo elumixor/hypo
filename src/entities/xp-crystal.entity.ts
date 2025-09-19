@@ -1,35 +1,39 @@
 import { ColliderBehavior, type CollisionEvent, cast, Entity, TransformBehavior, ticker } from "@engine";
-import { CharacterProgressionService } from "services/character-progression.service";
-import { BoxGeometry, Mesh, MeshStandardMaterial, PointLight } from "three";
+import { BoxGeometry, Mesh, MeshStandardMaterial } from "three";
 import { destroy } from "utils";
-import { CollisionGroup } from "../collision-group";
-import { Player } from "./player";
+import { CollisionGroup } from "../scenes/combat/collision-group";
+import { Player } from "../scenes/combat/entities/player";
+import { CharacterProgressionService } from "../services/character-progression.service";
 
 export class XPCrystalEntity extends Entity {
   private readonly transform = this.addBehavior(new TransformBehavior());
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.PickUps, 5)); // Larger radius for easier pickup
 
   private readonly mesh: Mesh;
-  // Add point light for crystal glow
-  private readonly light = new PointLight(0x0066ff, 30.0, 100);
+  private readonly xpValue: number;
 
-  constructor(private readonly xpValue: number) {
+  constructor(xpValue = 10) {
     super();
+    this.xpValue = xpValue;
 
     // Create small blue cube
-    const geometry = new BoxGeometry(1, 1, 1);
+    const geometry = new BoxGeometry(0.5, 0.5, 0.5);
     const material = new MeshStandardMaterial({
-      emissive: 0x66aaff,
+      color: 0x0066ff,
+      emissive: 0x002244,
+      metalness: 0.8,
+      roughness: 0.2,
     });
     this.mesh = new Mesh(geometry, material);
+    this.mesh.castShadow = true;
   }
 
   override async init() {
     await super.init();
 
     this.transform.group.position.y = 5; // Slightly above ground
-    // Add mesh and light to the transform group
-    this.transform.group.add(this.mesh, this.light);
+    // Add mesh to the transform group
+    this.transform.group.add(this.mesh);
 
     // Listen for collision with player
     this.collider.collided.subscribe(this.onCollision);
@@ -64,7 +68,6 @@ export class XPCrystalEntity extends Entity {
   override destroy() {
     this.collider.collided.unsubscribe(this.onCollision);
     destroy(this.mesh);
-    destroy(this.light);
     super.destroy();
   }
 }

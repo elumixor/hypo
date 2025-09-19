@@ -2,6 +2,8 @@ import { nonNullAssert } from "@elumixor/frontils";
 import { type ResizeData, Widget } from "@engine";
 import { Text as PixiText } from "pixi.js";
 import { CombatScene } from "scenes/combat/combat.scene";
+import { SafeZoneScene } from "scenes/safe-zone/safe-zone.scene";
+import { LevelProgressionService } from "services/level-progression.service";
 import { ResourcesLoaderService } from "services/resources-loader.service";
 import { SaveLoadService } from "services/save-load.service";
 import { Button } from "ui/button";
@@ -57,12 +59,28 @@ export class MainMenuWidget extends Widget {
   private setupButtonHandlers() {
     this.newGameButton.clicked.subscribe(() => {
       this.saveLoadService.startNewGame();
-      this.game.loadScene(new CombatScene());
+      const levelProgressionService = this.getService(LevelProgressionService);
+      levelProgressionService.resetProgression();
+      const initialLevel = levelProgressionService.currentLevel;
+
+      if (initialLevel.levelType === "safe_zone") {
+        this.game.loadScene(new SafeZoneScene(initialLevel));
+      } else {
+        this.game.loadScene(new CombatScene(initialLevel));
+      }
     });
 
     this.resumeGameButton.clicked.subscribe(() => {
       this.saveLoadService.resumeLastGame();
-      this.game.loadScene(new CombatScene());
+      const levelProgressionService = this.getService(LevelProgressionService);
+      levelProgressionService.initializeFromSave();
+      const currentLevel = levelProgressionService.currentLevel;
+
+      if (currentLevel.levelType === "safe_zone") {
+        this.game.loadScene(new SafeZoneScene(currentLevel));
+      } else {
+        this.game.loadScene(new CombatScene(currentLevel));
+      }
     });
 
     this.loadGameButton.clicked.subscribe(() => {
@@ -73,7 +91,16 @@ export class MainMenuWidget extends Widget {
       // Should be non-null, as button is hidden otherwise
       nonNullAssert(lastSave);
       this.saveLoadService.loadGame(lastSave);
-      this.game.loadScene(new CombatScene());
+
+      const levelProgressionService = this.getService(LevelProgressionService);
+      levelProgressionService.initializeFromSave();
+      const currentLevel = levelProgressionService.currentLevel;
+
+      if (currentLevel.levelType === "safe_zone") {
+        this.game.loadScene(new SafeZoneScene(currentLevel));
+      } else {
+        this.game.loadScene(new CombatScene(currentLevel));
+      }
     });
 
     this.settingsButton.clicked.subscribe(() => {

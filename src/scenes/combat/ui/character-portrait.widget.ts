@@ -1,7 +1,7 @@
 import { type ResizeData, Widget } from "@engine";
 import { Container, Graphics, Sprite, Text } from "pixi.js";
 import { resources } from "resources";
-import { ProgressionService } from "services/progression.service";
+import { CharacterProgressionService } from "services/character-progression.service";
 import { textStyle } from "ui/fonts";
 
 export class CharacterPortraitWidget extends Widget {
@@ -72,7 +72,7 @@ export class CharacterPortraitWidget extends Widget {
     this.addChild(this.portraitContainer);
 
     // Subscribe to level changes
-    const progression = this.getService(ProgressionService);
+    const progression = this.getService(CharacterProgressionService);
     progression.levelUp.subscribe(this.updateLevel);
     progression.xpGained.subscribe(this.updateLevel);
 
@@ -84,7 +84,7 @@ export class CharacterPortraitWidget extends Widget {
   }
 
   private readonly updateLevel = () => {
-    const progression = this.getService(ProgressionService);
+    const progression = this.getService(CharacterProgressionService);
     this.levelText.text = progression.currentLevel.toString();
   };
 
@@ -103,7 +103,22 @@ export class CharacterPortraitWidget extends Widget {
   }
 
   override destroy() {
+    // Unsubscribe from progression events
+    const progression = this.getService(CharacterProgressionService);
+    progression.levelUp.unsubscribe(this.updateLevel);
+    progression.xpGained.unsubscribe(this.updateLevel);
+
+    // Unsubscribe from resize events
     this.game.resized.unsubscribe(this.resize);
+
+    // Clean up graphics objects
+    if (this.portraitBg) {
+      this.portraitBg.destroy();
+    }
+    if (this.levelBg) {
+      this.levelBg.destroy();
+    }
+
     super.destroy();
   }
 }

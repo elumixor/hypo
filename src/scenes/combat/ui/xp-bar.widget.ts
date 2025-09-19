@@ -1,9 +1,9 @@
 import { type ResizeData, Widget } from "@engine";
 import { Container, Graphics } from "pixi.js";
-import { ProgressionService } from "services/progression.service";
+import { CharacterProgressionService } from "services/character-progression.service";
 
 export class XPBarWidget extends Widget {
-  private progression!: ProgressionService;
+  private progression!: CharacterProgressionService;
   private readonly xpBarContainer = new Container();
   private readonly xpBarBg = new Graphics();
   private readonly xpBarFill = new Graphics();
@@ -12,6 +12,9 @@ export class XPBarWidget extends Widget {
 
   override async init() {
     await super.init();
+
+    // Get progression service first
+    this.progression = this.getService(CharacterProgressionService);
 
     // Create XP bar background
     this.xpBarBg
@@ -25,8 +28,7 @@ export class XPBarWidget extends Widget {
     this.xpBarContainer.addChild(this.xpBarBg, this.xpBarFill);
     this.addChild(this.xpBarContainer);
 
-    // Subscribe to XP changes
-    this.progression = this.getService(ProgressionService);
+    // Subscribe to XP changes AFTER graphics are initialized
     this.progression.xpGained.subscribe(this.updateXPBar);
     this.progression.levelUp.subscribe(this.updateXPBar);
 
@@ -38,9 +40,11 @@ export class XPBarWidget extends Widget {
   }
 
   private readonly updateXPBar = () => {
-    const progression = this.getService(ProgressionService);
-    const currentXP = progression.currentXP;
-    const currentLevel = progression.currentLevel;
+    // Guard against calls before initialization or after destruction
+    if (!this.progression || !this.xpBarFill || !this.xpBarBg) return;
+
+    const currentXP = this.progression.currentXP;
+    const currentLevel = this.progression.currentLevel;
 
     // Calculate XP for current level and next level
     const xpForCurrentLevel = this.progression.xpForLevel(currentLevel);
@@ -58,6 +62,9 @@ export class XPBarWidget extends Widget {
   };
 
   private resize({ width, height }: ResizeData) {
+    // Guard against calls before initialization
+    if (!this.xpBarBg || !this.xpBarFill) return;
+
     // XP bar spans full width at bottom with small margins
     const margin = 10;
     this.barWidth = width - margin * 2;
@@ -77,7 +84,23 @@ export class XPBarWidget extends Widget {
   }
 
   override destroy() {
+    // Unsubscribe from progression events
+    if (this.progression) {
+      this.progression.xpGained.unsubscribe(this.updateXPBar);
+      this.progression.levelUp.unsubscribe(this.updateXPBar);
+    }
+
+    // Unsubscribe from resize events
     this.game.resized.unsubscribe(this.resize);
+
+    // Clean up graphics objects
+    if (this.xpBarFill) {
+      this.xpBarFill.destroy();
+    }
+    if (this.xpBarBg) {
+      this.xpBarBg.destroy();
+    }
+
     super.destroy();
   }
 }
