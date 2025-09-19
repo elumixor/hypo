@@ -1,4 +1,5 @@
 import { Game } from "@engine";
+import { resources } from "resources";
 import { CombatScene } from "scenes/combat/combat.scene";
 import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
 import { ResourcesLoaderService } from "services/resources-loader.service";
