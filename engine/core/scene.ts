@@ -7,6 +7,7 @@ import type { Entity } from "./entity";
 import type { Game } from "./game";
 import type { Service } from "./service";
 import type { Widget } from "./widget";
+import type { Effects, EffectsConfig } from "../../src/rendering/effects";
 
 export abstract class Scene {
   protected _game?: Game;
@@ -19,6 +20,10 @@ export abstract class Scene {
   readonly sceneRoot = new Group();
 
   input?: InputMappingContext;
+
+  // Optional post-processing effects
+  protected effects?: Effects;
+  protected effectsConfig?: EffectsConfig;
 
   get game() {
     if (!this._game) throw new Error("Scene is not part of a game yet");
@@ -35,6 +40,16 @@ export abstract class Scene {
     return this.game.camera;
   }
 
+  /** Get the effects instance if enabled */
+  getEffects() {
+    return this.effects;
+  }
+
+  /** Check if effects are enabled for this scene */
+  hasEffects() {
+    return !!this.effects;
+  }
+
   private get initialized() {
     return !!this._game;
   }
@@ -45,6 +60,22 @@ export abstract class Scene {
 
     this.game.uiRoot.addChild(this.uiRoot);
     this.game.sceneRoot.add(this.sceneRoot);
+
+    // Initialize effects if config is provided
+    if (this.effectsConfig) {
+      const { Effects } = await import("../../src/rendering/effects");
+      this.effects = new Effects(
+        this.game.sceneRoot,
+        this.game.camera,
+        this.game.threeRenderer,
+        this.effectsConfig
+      );
+      
+      // Subscribe to resize events
+      this.game.resized.subscribe(({ width, height }) => {
+        this.effects?.resize(width, height);
+      });
+    }
 
     await Promise.all([
       ...this.services.map((s) => s.init()),
@@ -62,6 +93,12 @@ export abstract class Scene {
   destroy() {
     this.game.uiRoot.removeChild(this.uiRoot);
     this.game.sceneRoot.remove(this.sceneRoot);
+
+    // Clean up effects
+    if (this.effects) {
+      this.effects.destroy();
+      this.effects = undefined;
+    }
 
     for (const service of this.services) service.destroy();
     for (const entity of Array.from(this.entities.values())) entity.destroy();
@@ -119,5 +156,10 @@ export abstract class Scene {
 
   getBehaviors<T extends Behavior>(behaviorClass: Constructor<T>): T[] {
     return this.entities.flatMap((e) => e.getBehaviors(behaviorClass));
+  }
+
+  /** Configure post-processing effects for this scene. Must be called before init() */
+  protected configureEffects(config: EffectsConfig) {
+    this.effectsConfig = config;
   }
 }

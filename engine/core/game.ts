@@ -129,12 +129,16 @@ export abstract class Game {
   }
 
   private update(dt: number) {
-    // Render ThreeJS scene with its own context
-    this.threeRenderer.render(this.sceneRoot, this.camera);
-
-    // Update all the services and the current scene
+    // Update all the services and the current scene first
     for (const service of this.services) service.update(dt);
     this._currentScene?.update(dt);
+
+    // Render ThreeJS scene - use effects if available, otherwise direct rendering
+    if (this._currentScene?.hasEffects()) {
+      this._currentScene.getEffects()?.render(dt / 1000);
+    } else {
+      this.threeRenderer.render(this.sceneRoot, this.camera);
+    }
   }
 
   private resize() {

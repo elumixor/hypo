@@ -13,6 +13,7 @@ import {
   MeshStandardMaterial,
   PlaneGeometry,
   SphereGeometry,
+  Vector2,
 } from "three";
 import { destroy } from "utils";
 import { CollisionGroup } from "./collision-group";
@@ -23,6 +24,7 @@ import { Player } from "./entities/player";
 import { RockManager } from "./entities/rock-manager";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
 import { VirtualJoystickWidget } from "./ui/virtual-joystick.widget";
+import { EffectsControlWidget } from "./ui/effects-control.widget";
 
 export class CombatScene extends Scene {
   private readonly ambientLight: AmbientLight;
@@ -38,6 +40,25 @@ export class CombatScene extends Scene {
 
   constructor() {
     super();
+
+    // Configure post-processing effects
+    this.configureEffects({
+      bloom: {
+        enabled: true,
+        intensity: 1.5,
+        radius: 0.4,
+      },
+      chromaticAberration: {
+        enabled: true,
+        offset: new Vector2(0.001, 0.001),
+      },
+      depthOfField: {
+        enabled: false, // Can be enabled dynamically
+        focusDistance: 0.02,
+        focalLength: 0.02,
+        bokehScale: 2.0,
+      },
+    });
 
     // Add volumetric fog for atmospheric effect
     this.fog = new Fog(0x2a2a3a, 5, 80); // Dark blue-gray fog, starts at distance 5, ends at 80
@@ -102,6 +123,11 @@ export class CombatScene extends Scene {
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
     this.addWidget(new VirtualJoystickWidget());
+    
+    // Add effects control widget for debugging/demo purposes
+    if (__DEV__) {
+      this.addWidget(new EffectsControlWidget());
+    }
 
     // Create floating light spheres for ambient lighting
     this.createFloatingLights();
@@ -192,6 +218,45 @@ export class CombatScene extends Scene {
     // All enemies are dead, reload the scene
     this.enemyManager.spawn();
   };
+
+  // Runtime effect control methods
+  toggleBloom() {
+    const effects = this.getEffects();
+    if (effects) {
+      const config = effects.getConfig();
+      const bloomEnabled = !config.bloom?.enabled;
+      effects.enableEffect('bloom', bloomEnabled);
+      console.log(`Bloom effect ${bloomEnabled ? 'enabled' : 'disabled'}`);
+    }
+  }
+
+  toggleChromaticAberration() {
+    const effects = this.getEffects();
+    if (effects) {
+      const config = effects.getConfig();
+      const caEnabled = !config.chromaticAberration?.enabled;
+      effects.enableEffect('chromaticAberration', caEnabled);
+      console.log(`Chromatic aberration effect ${caEnabled ? 'enabled' : 'disabled'}`);
+    }
+  }
+
+  toggleDepthOfField() {
+    const effects = this.getEffects();
+    if (effects) {
+      const config = effects.getConfig();
+      const dofEnabled = !config.depthOfField?.enabled;
+      effects.enableEffect('depthOfField', dofEnabled);
+      console.log(`Depth of field effect ${dofEnabled ? 'enabled' : 'disabled'}`);
+    }
+  }
+
+  setBloomIntensity(intensity: number) {
+    const effects = this.getEffects();
+    if (effects) {
+      effects.setBloomIntensity(intensity);
+      console.log(`Bloom intensity set to ${intensity}`);
+    }
+  }
 
   override destroy() {
     // Clean up lights
