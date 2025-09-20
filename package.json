@@ -20,7 +20,8 @@
     "gsap": "^3.13.0",
     "pixi.js": "^8.4.1",
     "postprocessing": "^6.37.8",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "troika-three-text": "^0.52.4"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.4",

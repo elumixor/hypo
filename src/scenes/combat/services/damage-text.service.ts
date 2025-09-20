@@ -1,16 +1,11 @@
 import { Service } from "@engine";
 import { gsap } from "gsap";
-import { Scene } from "three";
-import { CSS3DObject, CSS3DRenderer } from "three/addons/renderers/CSS3DRenderer.js";
+import { Text } from "troika-three-text";
 import { CombatEventsService, type DamageEvent } from "./combat-events.service";
 
-// TODO: I think it's very inefficient to create a new CSS3DRenderer, new Scene, and render all texts every frame.
-// todo: we should use troika-3d-text: https://github.com/protectwise/troika/tree/main/packages/troika-three-text
-// we can then also have some nice .woff/.otf fonts :)
+// Reworked to use troika-3d-text for better performance and WebGL-rendered text
 export class DamageTextService extends Service {
-  private readonly css3DRenderer = new CSS3DRenderer();
-  private readonly css3DScene = new Scene(); // Separate scene for CSS3D elements
-  private readonly damageElements: { element: HTMLElement; object: CSS3DObject; timeline: gsap.core.Timeline }[] = [];
+  private readonly damageTexts: { text: Text; timeline: gsap.core.Timeline }[] = [];
   private readonly combatEvents = this.require(CombatEventsService);
 
   // Enable tick updates
@@ -19,65 +14,51 @@ export class DamageTextService extends Service {
   override async init() {
     await super.init();
 
-    // Setup CSS3D renderer
-    this.css3DRenderer.setSize(window.innerWidth, window.innerHeight);
-    this.css3DRenderer.domElement.style.position = "absolute";
-    this.css3DRenderer.domElement.style.top = "0";
-    this.css3DRenderer.domElement.style.pointerEvents = "none"; // Don't block mouse interactions
-    this.css3DRenderer.domElement.style.zIndex = "1"; // Above 3D scene but below UI
-    document.body.appendChild(this.css3DRenderer.domElement);
-
-    // Handle window resize
-    window.addEventListener("resize", this.onResize);
-
     // Subscribe to damage events
     this.on(this.combatEvents.damageDealt, this.showDamageText.bind(this));
   }
 
-  private readonly onResize = () => {
-    this.css3DRenderer.setSize(window.innerWidth, window.innerHeight);
-  };
-
   private showDamageText({ damage, position }: DamageEvent) {
-    // Create HTML element for damage text
-    const element = document.createElement("div");
-    element.innerHTML = `-${damage}`;
-    element.style.cssText = `
-      color: #ff6b6b;
-      font-size: 16px;
-      font-weight: bold;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
-      pointer-events: none;
-      user-select: none;
-      font-family: 'Arial', sans-serif;
-      white-space: nowrap;
-      text-align: center;
-    `;
+    // Create troika-3d-text Text object
+    const text = new Text();
 
-    // Create CSS3D object
-    const object = new CSS3DObject(element);
-    object.scale.setScalar(0.01); // Start small
+    // Configure text properties
+    text.text = `-${damage}`;
+    text.fontSize = 0.3;
+    text.color = 0xff6b6b; // Red color for damage
+    text.fontWeight = "bold";
+    text.textAlign = "center";
+    text.anchorX = "center";
+    text.anchorY = "middle";
 
-    // Position the text above the entity (add height offset)
-    object.position.copy(position);
-    object.position.y += 1.5; // Position above entity
+    // Position the text above the entity
+    text.position.copy(position);
+    text.position.y += 1.5;
 
     // Add slight random offset to prevent overlap
-    object.position.x += (Math.random() - 0.5) * 0.3;
-    object.position.z += (Math.random() - 0.5) * 0.3;
+    text.position.x += (Math.random() - 0.5) * 0.3;
+    text.position.z += (Math.random() - 0.5) * 0.3;
 
-    // Make the object always face the camera (billboard effect), but only on the Y axis
+    // Make the text always face the camera (billboard effect)
     if (this.scene) {
-      object.lookAt(this.scene.camera.position);
-      object.rotation.x = 0;
-      object.rotation.z = 0;
+      text.lookAt(this.scene.camera.position);
+      text.rotation.x = 0;
+      text.rotation.z = 0;
     }
 
-    this.css3DScene.add(object); // Create animation with GSAP
+    // Update the text rendering
+    text.sync();
+
+    // Add to scene
+    if (this.scene) {
+      this.scene.sceneRoot.add(text);
+    }
+
+    // Create animation with GSAP
     const timeline = gsap.timeline();
     const animationData = {
-      y: position.y + 1.5, // Start above the entity
-      scale: 0.1,
+      y: position.y + 1.5,
+      scale: 1,
       opacity: 1,
     };
 
@@ -85,16 +66,22 @@ export class DamageTextService extends Service {
       .to(animationData, {
         duration: 0.15,
         y: position.y + 2.5,
-        scale: 0.05,
+        scale: 1.2,
         ease: "power2.out",
         onUpdate: () => {
-          object.position.y = animationData.y;
-          object.scale.setScalar(animationData.scale);
-          element.style.opacity = animationData.opacity.toString();
+          text.position.y = animationData.y;
+          text.scale.setScalar(animationData.scale);
+          // For troika text, we can set fillOpacity for transparency
+          text.fillOpacity = animationData.opacity;
+
           // Maintain billboard effect during animation
           if (this.scene) {
-            object.lookAt(this.scene.camera.position);
+            text.lookAt(this.scene.camera.position);
+            text.rotation.x = 0;
+            text.rotation.z = 0;
           }
+
+          text.sync();
         },
       })
       .to(
@@ -102,57 +89,56 @@ export class DamageTextService extends Service {
         {
           duration: 0.3,
           y: position.y + 3.5,
-          scale: 0.1,
+          scale: 0.8,
           opacity: 0,
           ease: "power1.in",
           onUpdate: () => {
-            object.position.y = animationData.y;
-            object.scale.setScalar(animationData.scale);
-            element.style.opacity = animationData.opacity.toString();
+            text.position.y = animationData.y;
+            text.scale.setScalar(animationData.scale);
+            text.fillOpacity = animationData.opacity;
+
             // Maintain billboard effect during animation
             if (this.scene) {
-              object.lookAt(this.scene.camera.position);
+              text.lookAt(this.scene.camera.position);
+              text.rotation.x = 0;
+              text.rotation.z = 0;
             }
+
+            text.sync();
           },
         },
         0.15,
       )
       .call(() => {
         // Cleanup
-        this.css3DScene.remove(object);
-        const index = this.damageElements.findIndex((item) => item.object === object);
-        if (index !== -1) {
-          this.damageElements.splice(index, 1);
+        if (this.scene) {
+          this.scene.sceneRoot.remove(text);
         }
-        element.remove();
+        text.dispose();
+        const index = this.damageTexts.findIndex((item) => item.text === text);
+        if (index !== -1) {
+          this.damageTexts.splice(index, 1);
+        }
       });
 
-    this.damageElements.push({ element, object, timeline });
+    this.damageTexts.push({ text, timeline });
   }
 
   override update(dt: number) {
     super.update(dt);
-
-    // Render CSS3D elements if scene is available
-    if (this.scene) this.css3DRenderer.render(this.css3DScene, this.scene.camera);
+    // Text objects are now part of the main scene, no separate rendering needed
   }
 
   override destroy() {
-    // Clean up all damage elements and timelines
-    for (const { element, object, timeline } of this.damageElements) {
+    // Clean up all damage text objects and timelines
+    for (const { text, timeline } of this.damageTexts) {
       timeline.kill();
-      this.css3DScene.remove(object);
-      element.remove();
+      if (this.scene) {
+        this.scene.sceneRoot.remove(text);
+      }
+      text.dispose();
     }
-    this.damageElements.length = 0;
-
-    // Remove event listener
-    window.removeEventListener("resize", this.onResize);
-
-    // Remove CSS3D renderer from DOM
-    if (this.css3DRenderer.domElement.parentNode) {
-      this.css3DRenderer.domElement.parentNode.removeChild(this.css3DRenderer.domElement);
-    }
+    this.damageTexts.length = 0;
 
     super.destroy();
   }
