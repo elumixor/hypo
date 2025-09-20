@@ -1,7 +1,7 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Behavior } from "@engine";
+import { RuntimeCombatService } from "services/runtime-combat.service";
 import { Vector3 } from "three";
-import { type CharacterStats, defaultCharacterStats } from "../character-stats";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
 
 export interface DashChargeEvent {
@@ -10,52 +10,77 @@ export interface DashChargeEvent {
   chargeTimers: readonly number[];
 }
 
-// todo: overall charges logic, recharge logic should be moved to a skills service
-// because we are basically emitting events here for UI
-// This behavior should only handle the actual dash movement of the entity
+/**
+ * Dash behavior that handles the actual movement/animation while delegating
+ * charge logic to RuntimeCombatService
+ */
 export class DashBehavior extends Behavior {
   // Events
   readonly chargeChanged = new EventEmitter<DashChargeEvent>();
 
-  private readonly config: CharacterStats["dash"];
+  private readonly combatService = this.require(RuntimeCombatService);
+  private characterId?: string;
 
-  // State
+  // Movement state
   private readonly dashDirection = new Vector3();
-  private readonly chargeTimers: number[];
   private isDashing = false;
   private dashTimeRemaining = 0;
 
-  get currentCharges() {
-    return this.chargeTimers.filter((t) => t === 0).length;
-  }
-
-  get maxCharges() {
-    return this.config.maxCharges;
-  }
-
-  get chargeRegenTime() {
-    return this.config.chargeRegenTime;
-  }
-
-  // fixme: This should be retrieved from the character stats service
-  constructor(stats: CharacterStats = defaultCharacterStats) {
-    super();
-    this.config = stats.dash;
-    this.chargeTimers = Array(this.config.maxCharges).fill(0);
-  }
+  // Dash configuration (retrieved from combat service)
+  private dashDistance = 8;
+  private dashDuration = 0.1;
 
   override async init() {
     await super.init();
 
-    // Subscribe to dash event if we haven't already
-    this.on(this.input.dashActivated, this.attemptDash.bind(this));
+    // Try to determine character ID from entity
+    this.characterId = this.entity.name === "Player" ? "helios" : undefined;
 
-    // Emit initial charge state
-    this.emitChargeChanged();
+    if (this.characterId) {
+      // Get dash configuration from combat service
+      const state = this.combatService.getCharacterState(this.characterId);
+      if (state) {
+        this.dashDistance = state.dashDistance;
+        this.dashDuration = 0.1; // Fixed duration for now
+      }
+
+      // Subscribe to dash charge updates
+      this.combatService.dashChargesChanged.subscribe((event) => {
+        if (event.characterId === this.characterId) {
+          this.chargeChanged.emit({
+            currentCharges: event.currentCharges,
+            maxCharges: event.maxCharges,
+            chargeTimers: event.chargeTimers,
+          });
+        }
+      });
+
+      // Emit initial charge state
+      this.emitChargeChanged();
+    }
+
+    // Subscribe to dash event
+    this.on(this.input.dashActivated, this.attemptDash.bind(this));
   }
 
   override get input() {
     return super.input as CombatInputMappingContext;
+  }
+
+  get currentCharges() {
+    if (this.characterId) {
+      const state = this.combatService.getCharacterState(this.characterId);
+      return state?.currentDashCharges ?? 0;
+    }
+    return 0;
+  }
+
+  get maxCharges() {
+    if (this.characterId) {
+      const state = this.combatService.getCharacterState(this.characterId);
+      return state?.maxDashCharges ?? 0;
+    }
+    return 0;
   }
 
   override update(dt: number) {
@@ -63,27 +88,25 @@ export class DashBehavior extends Behavior {
 
     const deltaTime = dt / 1000;
 
-    // Update charge timers
-    for (const [i, currentTimer] of this.chargeTimers.entries())
-      this.chargeTimers[i] = Math.max(currentTimer - deltaTime, 0);
-
-    this.emitChargeChanged();
-
-    // Update dash
+    // Update dash movement
     if (this.isDashing && this.dashTimeRemaining > 0) {
       this.dashTimeRemaining -= deltaTime;
 
       // Apply dash movement
-      const dashSpeed = this.config.dashDistance / this.config.dashDuration;
+      const dashSpeed = this.dashDistance / this.dashDuration;
       const movement = this.dashDirection.clone().multiplyScalar(dashSpeed * deltaTime);
       this.transform.group.position.add(movement);
 
-      if (this.dashTimeRemaining <= 0) this.isDashing = false;
+      if (this.dashTimeRemaining <= 0) {
+        this.isDashing = false;
+      }
     }
   }
 
   private attemptDash() {
-    // Check if dash is available (has charges and not currently dashing)
+    if (!this.characterId) return;
+
+    // Check if dash is available through combat service
     if (this.currentCharges <= 0 || this.isDashing) return;
 
     // Get dash direction from movement input, or use forward direction if no input
@@ -98,22 +121,24 @@ export class DashBehavior extends Behavior {
       this.dashDirection.applyEuler(this.transform.group.rotation);
     }
 
-    // Start dash
-    this.isDashing = true;
-    this.dashTimeRemaining = this.config.dashDuration;
-
-    // Start recharge timer for this charge
-    const nextAvailableSlot = this.chargeTimers.indexOf(0);
-    if (nextAvailableSlot !== -1) this.chargeTimers[nextAvailableSlot] = this.config.chargeRegenTime;
-
-    this.emitChargeChanged();
+    // Use dash charge through combat service
+    if (this.combatService.useDashCharge(this.characterId)) {
+      // Start dash movement
+      this.isDashing = true;
+      this.dashTimeRemaining = this.dashDuration;
+    }
   }
 
   private emitChargeChanged() {
-    this.chargeChanged.emit({
-      currentCharges: this.currentCharges,
-      maxCharges: this.config.maxCharges,
-      chargeTimers: [...this.chargeTimers], // Create a copy for readonly access
-    });
+    if (this.characterId) {
+      const state = this.combatService.getCharacterState(this.characterId);
+      if (state) {
+        this.chargeChanged.emit({
+          currentCharges: state.currentDashCharges,
+          maxCharges: state.maxDashCharges,
+          chargeTimers: [...state.dashChargeTimers],
+        });
+      }
+    }
   }
 }

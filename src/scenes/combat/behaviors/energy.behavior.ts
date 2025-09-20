@@ -1,5 +1,6 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { Behavior, type TimeoutHandle, timeout } from "@engine";
+import { Behavior } from "@engine";
+import { RuntimeCombatService } from "services/runtime-combat.service";
 
 export interface EnergyEvent {
   energy: number;
@@ -7,12 +8,16 @@ export interface EnergyEvent {
   maxEnergy: number;
 }
 
-// todo: should be moved to player stats/skills/abilities service - no need to be sitting on the entity
+/**
+ * Energy behavior that bridges the old entity-based energy system with the new combat service
+ * Most energy logic is now centralized in RuntimeCombatService
+ */
 export class EnergyBehavior extends Behavior {
   readonly energyChanged = new EventEmitter<EnergyEvent>();
   readonly energyDepleted = new EventEmitter();
 
-  private rechargeTimeout?: TimeoutHandle;
+  private readonly combatService = this.require(RuntimeCombatService);
+  private characterId?: string;
 
   constructor(
     private _energy: number,
@@ -23,35 +28,70 @@ export class EnergyBehavior extends Behavior {
     super();
   }
 
+  override async init() {
+    await super.init();
+
+    // Try to determine character ID from entity
+    this.characterId = this.entity.name === "Player" ? "helios" : undefined;
+
+    if (this.characterId) {
+      // Subscribe to combat service updates for this character
+      this.combatService.energyChanged.subscribe((event) => {
+        if (event.characterId === this.characterId) {
+          this._energy = event.currentEnergy;
+          this.energyChanged.emit({
+            energy: event.currentEnergy,
+            diff: event.diff,
+            maxEnergy: event.maxEnergy,
+          });
+
+          if (event.currentEnergy === 0) {
+            this.energyDepleted.emit();
+          }
+        }
+      });
+    }
+  }
+
   get energy() {
+    if (this.characterId) {
+      const state = this.combatService.getCharacterState(this.characterId);
+      return state?.currentEnergy ?? this._energy;
+    }
     return this._energy;
   }
 
   set energy(value: number) {
-    const newEnergy = clamp(value, 0, this.maxEnergy);
-    const diff = newEnergy - this._energy;
-    if (diff === 0) return; // No change
+    if (this.characterId) {
+      // Delegate to combat service
+      const currentEnergy = this.energy;
+      const diff = value - currentEnergy;
+      this.combatService.modifyEnergy(this.characterId, diff);
+    } else {
+      // Fallback to old behavior for non-character entities
+      const clampedValue = Math.max(0, Math.min(value, this.maxEnergy));
+      const diff = clampedValue - this._energy;
+      this._energy = clampedValue;
 
-    this._energy = newEnergy;
-    this.energyChanged.emit({ energy: this._energy, diff, maxEnergy: this.maxEnergy });
-
-    if (diff < 0) {
-      this.enabled = false;
-
-      // After a delay, re-enable energy regeneration
-      this.rechargeTimeout?.cancel();
-      this.rechargeTimeout = timeout(this.rechargeDelay, () => {
-        this.enabled = true;
+      this.energyChanged.emit({
+        energy: this._energy,
+        diff,
+        maxEnergy: this.maxEnergy,
       });
-    }
 
-    if (this._energy === 0) this.energyDepleted.emit();
+      if (this._energy === 0) {
+        this.energyDepleted.emit();
+      }
+    }
   }
 
   override update(dt: number) {
     super.update(dt);
 
-    // Slowly regenerate energy over time
-    this.energy += this.energyRegenRate * (dt / 1000);
+    // Energy regeneration is now handled by RuntimeCombatService
+    // This is kept for backward compatibility with non-character entities
+    if (!this.characterId && this._energy < this.maxEnergy) {
+      this.energy += this.energyRegenRate * (dt / 1000);
+    }
   }
 }

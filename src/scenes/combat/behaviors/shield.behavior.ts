@@ -1,9 +1,9 @@
 import { Behavior, ColliderBehavior, type CollisionEvent } from "@engine";
 import { CollisionGroup } from "collision-group";
+import { RuntimeCombatService } from "services/runtime-combat.service";
 import { Mesh, MeshBasicMaterial, SphereGeometry } from "three";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
 import { Projectile } from "../entities/projectile";
-import { EnergyBehavior } from "./energy.behavior";
 
 export class ShieldBehavior extends Behavior {
   // Parameters
@@ -14,8 +14,9 @@ export class ShieldBehavior extends Behavior {
   // Our behaviors
   private readonly shieldCollider = new ColliderBehavior(CollisionGroup.Shield, this.shieldRadius);
 
-  // Required behaviors
-  private readonly energy = this.require(EnergyBehavior);
+  // Required services
+  private readonly combatService = this.require(RuntimeCombatService);
+  private characterId?: string;
 
   // Objects
   // Semi transparent blue sphere
@@ -41,6 +42,9 @@ export class ShieldBehavior extends Behavior {
   override async init() {
     await super.init();
 
+    // Try to determine character ID from entity
+    this.characterId = this.entity.name === "Player" ? "helios" : undefined;
+
     // Add the shield collider behavior to the entity
     this.entity.addBehavior(this.shieldCollider);
 
@@ -62,15 +66,21 @@ export class ShieldBehavior extends Behavior {
   override update(dt: number) {
     super.update(dt);
 
-    // When active, drain energy over time
-    this.energy.energy -= this.activeDrain * (dt / 1000);
+    if (!this.enabled || !this.characterId) return;
 
-    // If we run out of energy, disable the shield
-    if (this.energy.energy <= 0) this.enabled = false;
+    // When active, drain energy over time through combat service
+    const energyDrain = this.activeDrain * (dt / 1000);
+    this.combatService.modifyEnergy(this.characterId, -energyDrain);
+
+    // Check if we ran out of energy
+    const state = this.combatService.getCharacterState(this.characterId);
+    if (state && state.currentEnergy <= 0) {
+      this.enabled = false;
+    }
   }
 
   private onShieldCollision({ other }: CollisionEvent) {
-    if (other.collisionGroup !== CollisionGroup.EnemyProjectile) return;
+    if (other.collisionGroup !== CollisionGroup.EnemyProjectile || !this.characterId) return;
 
     const projectile = other.entity.as(Projectile);
     const damage = projectile.damage;
@@ -78,13 +88,18 @@ export class ShieldBehavior extends Behavior {
     // Drain additional energy on collision
     const damageAsEnergy = this.damageToEnergy * damage;
 
-    const currentEnergy = this.energy.energy;
-    this.energy.energy -= damageAsEnergy;
+    const state = this.combatService.getCharacterState(this.characterId);
+    if (!state) return;
+
+    const currentEnergy = state.currentEnergy;
+    this.combatService.modifyEnergy(this.characterId, -damageAsEnergy);
 
     const damageLeft = Math.max(0, damageAsEnergy - currentEnergy);
     if (damageLeft > 0) {
       projectile.damage = damageLeft; // Reduce projectile damage by absorbed amount
       this.enabled = false; // Disable shield if we run out of energy
-    } else projectile.destroy(); // Remove the projectile if fully absorbed
+    } else {
+      projectile.destroy(); // Remove the projectile if fully absorbed
+    }
   }
 }

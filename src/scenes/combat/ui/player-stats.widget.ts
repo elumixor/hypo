@@ -1,15 +1,15 @@
 import { type ResizeData, Widget } from "@engine";
+import {
+  type DashChargesChangedEvent,
+  type EnergyChangedEvent,
+  type HealthChangedEvent,
+  RuntimeCombatService,
+} from "services/runtime-combat.service";
 import { StatusBar } from "ui/status-bar";
-import { DashBehavior, type DashChargeEvent } from "../behaviors/dash.behavior";
-import { EnergyBehavior } from "../behaviors/energy.behavior";
-import { HealthBehavior } from "../behaviors/health.behavior";
-import { Player } from "../entities/player";
 import { DashChargeIndicator } from "./dash-charge-indicator";
 
 export class PlayerStatsWidget extends Widget {
-  private health!: HealthBehavior;
-  private energy!: EnergyBehavior;
-  private dash!: DashBehavior;
+  private readonly combatService = this.require(RuntimeCombatService);
 
   private readonly healthBar = new StatusBar();
   private readonly energyBar = new StatusBar();
@@ -18,61 +18,93 @@ export class PlayerStatsWidget extends Widget {
   override async init() {
     await super.init();
 
-    // Find player and get health and energy behaviors
-    // fixme: But should be a service of player stats and service of player abilities (later will not be just dash)
-    const player = this.scene.getEntity(Player);
-    this.health = player.getBehavior(HealthBehavior);
-    this.energy = player.getBehavior(EnergyBehavior);
-    this.dash = player.getBehavior(DashBehavior);
+    // Get the active character from combat service
+    const activeCharacter = this.combatService.getActiveCharacter();
+    if (!activeCharacter) return;
 
     // Create status bars
     this.healthBar.barWidth = 290;
     this.healthBar.barHeight = 30;
     this.healthBar.position.set(0, -27);
     this.healthBar.color = 0x00ff00; // Green
-    this.healthBar.maxValue = this.health.maxHealth;
-    this.healthBar.value = this.health.health;
+    this.healthBar.maxValue = activeCharacter.maxHealth;
+    this.healthBar.value = activeCharacter.currentHealth;
 
     this.energyBar.barWidth = 290;
     this.energyBar.barHeight = 15;
     this.energyBar.position.set(0, -55);
     this.energyBar.color = 0x0080ff; // Blue
-    this.energyBar.maxValue = this.energy.maxEnergy;
-    this.energyBar.value = this.energy.energy;
+    this.energyBar.maxValue = activeCharacter.maxEnergy;
+    this.energyBar.value = activeCharacter.currentEnergy;
 
     // Create dash charge indicator
     this.dashChargeIndicator.position.set(0, -85);
-    this.dashChargeIndicator.maxCharges = this.dash.maxCharges;
-    this.dashChargeIndicator.chargeRegenTime = this.dash.chargeRegenTime;
+    this.dashChargeIndicator.maxCharges = activeCharacter.maxDashCharges;
+    this.dashChargeIndicator.chargeRegenTime = activeCharacter.dashRegenTime;
 
     // Add status bars and dash indicator to container
     this.addChild(this.healthBar, this.energyBar, this.dashChargeIndicator);
 
-    // Listen to health and energy changes
-    this.onImmediate(this.health.healthChanged, this.updateHealthDisplay.bind(this));
-    this.onImmediate(this.energy.energyChanged, this.updateEnergyDisplay.bind(this));
-    this.onImmediate(this.dash.chargeChanged, this.updateDashDisplay.bind(this));
+    // Listen to combat service events
+    this.onImmediate(this.combatService.healthChanged, this.updateHealthDisplay.bind(this));
+    this.onImmediate(this.combatService.energyChanged, this.updateEnergyDisplay.bind(this));
+    this.onImmediate(this.combatService.dashChargesChanged, this.updateDashDisplay.bind(this));
+    this.onImmediate(this.combatService.activeCharacterChanged, this.updateActiveCharacter.bind(this));
 
     // Listen to resize events
     this.onImmediate(this.game.resized, this.resize.bind(this));
   }
 
-  private updateHealthDisplay() {
-    this.healthBar.value = this.health.health;
-    this.updateHealthColor();
+  private updateHealthDisplay(event: HealthChangedEvent) {
+    // Only update for the active character
+    const activeCharacter = this.combatService.getActiveCharacter();
+    if (!activeCharacter || event.characterId !== activeCharacter.characterId) return;
+
+    this.healthBar.value = event.currentHealth;
+    this.healthBar.maxValue = event.maxHealth;
+    this.updateHealthColor(event.currentHealth, event.maxHealth);
   }
 
-  private updateEnergyDisplay() {
-    this.energyBar.value = this.energy.energy;
+  private updateEnergyDisplay(event: EnergyChangedEvent) {
+    // Only update for the active character
+    const activeCharacter = this.combatService.getActiveCharacter();
+    if (!activeCharacter || event.characterId !== activeCharacter.characterId) return;
+
+    this.energyBar.value = event.currentEnergy;
+    this.energyBar.maxValue = event.maxEnergy;
   }
 
-  private updateDashDisplay(event: DashChargeEvent) {
+  private updateDashDisplay(event: DashChargesChangedEvent) {
+    // Only update for the active character
+    const activeCharacter = this.combatService.getActiveCharacter();
+    if (!activeCharacter || event.characterId !== activeCharacter.characterId) return;
+
     this.dashChargeIndicator.maxCharges = event.maxCharges;
     this.dashChargeIndicator.updateChargeTimers(event.chargeTimers);
   }
 
-  private updateHealthColor() {
-    const healthPercent = this.health.health / this.health.maxHealth;
+  private updateActiveCharacter() {
+    // When active character changes, update all displays
+    const activeCharacter = this.combatService.getActiveCharacter();
+    if (!activeCharacter) return;
+
+    // Update health bar
+    this.healthBar.value = activeCharacter.currentHealth;
+    this.healthBar.maxValue = activeCharacter.maxHealth;
+    this.updateHealthColor(activeCharacter.currentHealth, activeCharacter.maxHealth);
+
+    // Update energy bar
+    this.energyBar.value = activeCharacter.currentEnergy;
+    this.energyBar.maxValue = activeCharacter.maxEnergy;
+
+    // Update dash indicator
+    this.dashChargeIndicator.maxCharges = activeCharacter.maxDashCharges;
+    this.dashChargeIndicator.chargeRegenTime = activeCharacter.dashRegenTime;
+    this.dashChargeIndicator.updateChargeTimers(activeCharacter.dashChargeTimers);
+  }
+
+  private updateHealthColor(currentHealth: number, maxHealth: number) {
+    const healthPercent = currentHealth / maxHealth;
     let color = 0x00ff00; // Green
     if (healthPercent < 0.3)
       color = 0xff0000; // Red
