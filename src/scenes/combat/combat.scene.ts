@@ -76,8 +76,8 @@ export class CombatScene extends Scene {
     await this.sceneBuilder.buildFromConfig(this.sceneConfig);
 
     // Get entity references that were created by the scene builder
-    this.player = this.getEntity(Player);
-    this.portal = this.getEntity(Portal);
+    this.player = this.sceneBuilder.getPlayer();
+    this.portal = this.sceneBuilder.getPortal();
 
     this.levelProgressionService = this.getService(LevelProgressionService);
 
@@ -102,6 +102,10 @@ export class CombatScene extends Scene {
 
     // Listen to all enemies cleared event
     this.on(this.enemyManager.enemiesCleared, this.onAllEnemiesCleared.bind(this));
+
+    // Configure enemy spawn points from scene config
+    const enemySpawnPoints = this.sceneBuilder.getEnemySpawnPoints(this.sceneConfig);
+    this.enemyManager.setSpawnPoints(enemySpawnPoints);
 
     // Configure post-processing effects from scene config
     if (this.sceneConfig.environment.effects) {

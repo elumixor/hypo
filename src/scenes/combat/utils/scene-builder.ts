@@ -21,6 +21,9 @@ import type { SceneConfig, LightConfig, Transform3D } from "../../configs";
  * Builds scene elements from configuration
  */
 export class SceneBuilder {
+  private player?: Player;
+  private portal?: Portal;
+
   constructor(private readonly scene: Scene) {}
 
   /**
@@ -41,6 +44,26 @@ export class SceneBuilder {
     
     // Build spawn points
     this.buildSpawnPoints(config.spawnPoints);
+  }
+
+  /**
+   * Get the player entity created by the builder
+   */
+  getPlayer(): Player {
+    if (!this.player) {
+      throw new Error("No player spawn point found in scene configuration");
+    }
+    return this.player;
+  }
+
+  /**
+   * Get the portal entity created by the builder
+   */
+  getPortal(): Portal {
+    if (!this.portal) {
+      throw new Error("No portal spawn point found in scene configuration");
+    }
+    return this.portal;
   }
 
   /**
@@ -96,8 +119,9 @@ export class SceneBuilder {
     // Setup skybox
     if (envConfig.skybox) {
       const skyboxGeometry = new SphereGeometry(1000, 32, 16);
+      const skyboxTexture = resources.get(envConfig.skybox.texture as any);
       const skyboxMaterial = new MeshBasicMaterial({
-        map: resources.get(envConfig.skybox.texture as any),
+        map: skyboxTexture as any,
         side: BackSide,
         fog: false
       });
@@ -209,15 +233,15 @@ export class SceneBuilder {
   }
 
   private buildPlayerSpawn(position: Transform3D): void {
-    const player = new Player();
-    player.position.set(position.x, position.y, position.z);
-    this.scene.addEntity(player);
+    this.player = new Player();
+    this.player.position.set(position.x, position.y, position.z);
+    this.scene.addEntity(this.player);
   }
 
   private buildPortalSpawn(position: Transform3D): void {
-    const portal = new Portal();
-    portal.position.set(position.x, position.y, position.z);
-    this.scene.addEntity(portal);
+    this.portal = new Portal();
+    this.portal.position.set(position.x, position.y, position.z);
+    this.scene.addEntity(this.portal);
   }
 
   /**

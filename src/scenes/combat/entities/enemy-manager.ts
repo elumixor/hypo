@@ -3,6 +3,7 @@ import { Entity, TransformBehavior } from "@engine";
 import { Enemy } from "./enemy";
 import { Player } from "./player";
 import { XPCrystal } from "./xp-crystal";
+import type { Transform3D } from "../../configs";
 
 // TODO: this should not be an Entity - does not need to be physically in the scene
 // It can be a Service, or just a plain class on the CombatScene, or simply code in the scene itself
@@ -15,6 +16,14 @@ export class EnemyManager extends Entity {
 
   // Configuration
   private readonly enemyCount = 3;
+  private enemySpawnPoints: Transform3D[] = [];
+
+  /**
+   * Set the enemy spawn points from configuration
+   */
+  setSpawnPoints(spawnPoints: Transform3D[]): void {
+    this.enemySpawnPoints = spawnPoints;
+  }
 
   override async init() {
     await super.init();
@@ -24,10 +33,35 @@ export class EnemyManager extends Entity {
   }
 
   spawn() {
-    for (let i = 0; i < this.enemyCount; i++) this.spawnEnemy();
+    const spawnCount = Math.min(this.enemyCount, this.enemySpawnPoints.length);
+    
+    // If we have configured spawn points, use them, otherwise fall back to random placement
+    if (this.enemySpawnPoints.length > 0) {
+      for (let i = 0; i < spawnCount; i++) {
+        this.spawnEnemyAtPoint(this.enemySpawnPoints[i]!);
+      }
+    } else {
+      // Fallback to random spawning
+      for (let i = 0; i < this.enemyCount; i++) {
+        this.spawnEnemyRandom();
+      }
+    }
   }
 
-  private spawnEnemy() {
+  private spawnEnemyAtPoint(spawnPoint: Transform3D) {
+    const enemy = new Enemy();
+
+    enemy.x = spawnPoint.x;
+    enemy.y = spawnPoint.y;
+    enemy.z = spawnPoint.z;
+
+    // Listen to enemy death
+    enemy.died.subscribe(() => this.onEnemyDied(enemy));
+
+    this.scene.addEntity(enemy);
+  }
+
+  private spawnEnemyRandom() {
     const enemy = new Enemy();
 
     // Set random position around player
