@@ -16,6 +16,8 @@ export class DamageTextService extends Service {
   // Enable tick updates
   protected override _enabled = true;
 
+  private readonly combatEvents = this.require(CombatEventsService);
+
   override async init() {
     await super.init();
 
