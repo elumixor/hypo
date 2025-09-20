@@ -1,7 +1,6 @@
-import { Behavior, ColliderBehavior, type CollisionEvent, cast, TransformBehavior } from "@engine";
+import { Behavior, ColliderBehavior, type CollisionEvent } from "@engine";
+import { CollisionGroup } from "collision-group";
 import { Mesh, MeshBasicMaterial, SphereGeometry } from "three";
-import { destroy } from "utils";
-import { CollisionGroup } from "../collision-group";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
 import { Projectile } from "../entities/projectile";
 import { EnergyBehavior } from "./energy.behavior";
@@ -13,11 +12,10 @@ export class ShieldBehavior extends Behavior {
   private readonly shieldRadius = 5; // Radius of the shield sphere
 
   // Our behaviors
-  private readonly shieldCollider = new ColliderBehavior(CollisionGroup.Player, this.shieldRadius);
+  private readonly shieldCollider = new ColliderBehavior(CollisionGroup.Shield, this.shieldRadius);
 
   // Required behaviors
-  private transform!: TransformBehavior;
-  private energy!: EnergyBehavior;
+  private readonly energy = this.require(EnergyBehavior);
 
   // Objects
   // Semi transparent blue sphere
@@ -36,7 +34,7 @@ export class ShieldBehavior extends Behavior {
 
     this.shieldCollider.enabled = value;
 
-    if (value) this.transform.group.add(this.shieldMesh);
+    if (value) this.transform.addChild(this.shieldMesh);
     else this.shieldMesh.removeFromParent();
   }
 
@@ -46,9 +44,6 @@ export class ShieldBehavior extends Behavior {
     // Add the shield collider behavior to the entity
     this.entity.addBehavior(this.shieldCollider);
 
-    this.transform = this.getBehavior(TransformBehavior);
-    this.energy = this.getBehavior(EnergyBehavior);
-
     // Start disabled
     this.enabled = false;
 
@@ -56,12 +51,12 @@ export class ShieldBehavior extends Behavior {
     await this.shieldCollider.init();
 
     // Listen to collision events
-    this.shieldCollider.collided.subscribe(this.onShieldCollision);
+    this.on(this.shieldCollider.collided, this.onShieldCollision.bind(this));
 
     // Listen to input
     const { shield } = this.input as CombatInputMappingContext;
-    shield.on.subscribe(this.onShieldActivated);
-    shield.off.subscribe(this.onShieldDeactivated);
+    this.on(shield.on, () => (this.enabled = true));
+    this.on(shield.off, () => (this.enabled = false));
   }
 
   override update(dt: number) {
@@ -74,10 +69,10 @@ export class ShieldBehavior extends Behavior {
     if (this.energy.energy <= 0) this.enabled = false;
   }
 
-  private readonly onShieldCollision = ({ other }: CollisionEvent) => {
+  private onShieldCollision({ other }: CollisionEvent) {
     if (other.collisionGroup !== CollisionGroup.EnemyProjectile) return;
 
-    const projectile = cast(Projectile, other.entity);
+    const projectile = other.entity.as(Projectile);
     const damage = projectile.damage;
 
     // Drain additional energy on collision
@@ -91,25 +86,5 @@ export class ShieldBehavior extends Behavior {
       projectile.damage = damageLeft; // Reduce projectile damage by absorbed amount
       this.enabled = false; // Disable shield if we run out of energy
     } else projectile.destroy(); // Remove the projectile if fully absorbed
-  };
-
-  private readonly onShieldActivated = () => {
-    this.enabled = true;
-  };
-
-  private readonly onShieldDeactivated = () => {
-    this.enabled = false;
-  };
-
-  override destroy() {
-    // Clean up events
-    this.shieldCollider.collided.unsubscribe(this.onShieldCollision);
-    const { shield } = this.input as CombatInputMappingContext;
-    shield.on.unsubscribe(this.onShieldActivated);
-    shield.off.unsubscribe(this.onShieldDeactivated);
-
-    destroy(this.shieldMesh);
-
-    super.destroy();
   }
 }

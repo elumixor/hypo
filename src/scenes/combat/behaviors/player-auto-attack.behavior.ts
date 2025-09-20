@@ -3,34 +3,26 @@ import { Enemy } from "../entities/enemy";
 import { Projectile } from "../entities/projectile";
 
 export class PlayerAutoAttackBehavior extends Behavior {
-  private transform!: TransformBehavior;
+  private readonly attackCooldown = 0.3;
   private lastAttackTime = 0;
-  private readonly attackCooldown = 300; // 1 second between attacks
-
-  override async init() {
-    await super.init();
-
-    this.transform = this.entity.getBehavior(TransformBehavior);
-  }
 
   override update(dt: number) {
     super.update(dt);
 
-    this.lastAttackTime += dt;
+    this.lastAttackTime += dt / 1000;
 
     // Check if we can attack
-    if (this.lastAttackTime >= this.attackCooldown) {
-      const closestEnemy = this.findClosestEnemy();
+    if (this.lastAttackTime <= this.attackCooldown) return;
 
-      if (closestEnemy) {
-        this.attack(closestEnemy);
-        this.lastAttackTime = 0;
-      }
+    const closestEnemy = this.findClosestEnemy();
+    if (closestEnemy) {
+      this.attack(closestEnemy);
+      this.lastAttackTime = 0;
     }
   }
 
-  private findClosestEnemy(): Enemy | null {
-    let closestEnemy: Enemy | null = null;
+  private findClosestEnemy() {
+    let closestEnemy: Enemy | undefined;
     let closestDistance = Infinity;
 
     // Iterate over all enemies in the scene
@@ -52,8 +44,8 @@ export class PlayerAutoAttackBehavior extends Behavior {
 
     // Create projectile from player position to enemy position
     const projectile = new Projectile(
-      this.transform.group.position.clone(),
-      targetTransform.group.position.clone(),
+      this.transform.position.clone(),
+      targetTransform.position.clone(),
       true, // This is a player projectile
     );
 

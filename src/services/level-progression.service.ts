@@ -48,15 +48,8 @@ export class LevelProgressionService extends Service {
   };
 
   private readonly sampledCombatLevels: Map<number, number[]> = new Map();
-  private gameStateService!: GameStateService;
-  private characterProgressionService!: CharacterProgressionService;
-
-  override async init() {
-    await super.init();
-
-    this.gameStateService = this.getService(GameStateService);
-    this.characterProgressionService = this.getService(CharacterProgressionService);
-  }
+  private readonly gameStateService = this.require(GameStateService);
+  private readonly characterProgressionService = this.require(CharacterProgressionService);
 
   get currentLevel(): LevelConfig {
     return this.getLevelConfig(this.state.currentWorld, this.state.currentLevel);

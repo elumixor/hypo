@@ -4,4 +4,3 @@ export * from "./behaviors";
 export * from "./core";
 export * from "./effects";
 export * from "./systems";
-export * from "./utils";

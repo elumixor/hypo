@@ -4,12 +4,7 @@ import { SaveLoadService } from "services/save-load.service";
 import type { CharacterProgressionState } from "./game-state";
 
 export class GameStateService extends Service {
-  private saveLoadService!: SaveLoadService;
-
-  override async init() {
-    await super.init();
-    this.saveLoadService = this.getService(SaveLoadService);
-  }
+  private readonly saveLoadService = this.require(SaveLoadService);
 
   get state() {
     return this.saveLoadService.currentSavedGame?.state;

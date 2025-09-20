@@ -4,12 +4,13 @@ import { type InputMappingContext, InputService } from "@engine/systems/input";
 import { Container } from "pixi.js";
 import { Group } from "three";
 import type { Behavior } from "./behavior";
+import { EngineObject } from "./engine-object";
 import type { Entity } from "./entity";
 import type { Game } from "./game";
 import type { Service } from "./service";
 import type { Widget } from "./widget";
 
-export abstract class Scene {
+export class Scene extends EngineObject {
   protected _game?: Game;
 
   readonly entities = [] as Entity[];
@@ -26,7 +27,6 @@ export abstract class Scene {
     if (!this._game) throw new Error("Scene is not part of a game yet");
     return this._game;
   }
-
   set game(game: Game) {
     this._game = game;
     for (const service of this.services) service.game = game;
@@ -41,7 +41,9 @@ export abstract class Scene {
     return !!this._game;
   }
 
-  async init() {
+  override async init() {
+    await super.init();
+
     // Set the input context if we have one. The input service is always available as global on the Game
     if (this.input) this.getService(InputService).context = this.input;
 
@@ -55,13 +57,15 @@ export abstract class Scene {
     ]);
   }
 
-  update(dt: number) {
-    for (const service of this.services) service.update(dt);
+  override update(dt: number) {
+    super.update(dt);
+
+    for (const service of this.services) if (service.enabled) service.update(dt);
     for (const entity of this.entities) if (entity.enabled) entity.update(dt);
-    for (const widget of this.widgets) widget.update(dt);
+    for (const widget of this.widgets) if (widget.enabled) widget.update(dt);
   }
 
-  destroy() {
+  override destroy() {
     this.game.uiRoot.removeChild(this.uiRoot);
     this.game.sceneRoot.remove(this.sceneRoot);
 
@@ -71,6 +75,8 @@ export abstract class Scene {
     for (const service of this.services) service.destroy();
     for (const entity of this.entities) entity.destroy();
     for (const widget of this.widgets) widget.destroy();
+
+    super.destroy();
   }
 
   addEntity<T extends Entity>(entity: T) {
@@ -97,8 +103,8 @@ export abstract class Scene {
 
   removeWidget(widget: Widget) {
     if (!this.widgets.includes(widget)) return;
-    widget.destroy();
     this.widgets.remove(widget);
+    widget.destroy();
   }
 
   addService<T extends Service>(service: T) {

@@ -1,27 +1,25 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { ColliderBehavior, type CollisionEvent, cast, delay, Entity, TransformBehavior, ticker } from "@engine";
+import { ColliderBehavior, type CollisionEvent, delay, Entity, ticker } from "@engine";
 import { gsap } from "gsap";
 import { resources } from "resources";
 import { type Object3D, Vector3 } from "three";
-import { destroy } from "utils";
-import { HealthBehavior } from "../behaviors/health.behavior";
-import { CollisionGroup } from "../collision-group";
+import { CollisionGroup } from "../../../collision-group";
+import { HealthBehavior, type HealthEvent } from "../behaviors/health.behavior";
 import { CombatEventsService } from "../services/combat-events.service";
 import { Player } from "./player";
 import { Projectile } from "./projectile";
 
 export class Enemy extends Entity {
-  readonly enemyDied = new EventEmitter();
-
-  // Self behaviors
-  private readonly transform = this.addBehavior(new TransformBehavior());
+  readonly died = new EventEmitter();
 
   // Add collision behavior
   private readonly collider = this.addBehavior(new ColliderBehavior(CollisionGroup.Enemy));
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
-  // Referenced behaviors
-  private playerTransform!: TransformBehavior;
+  private readonly combatEvents = this.require(CombatEventsService);
+
+  // Reference to a player, as a target (should be refactored later probably)
+  private player!: Player;
 
   // Enemy AI properties
   private readonly speed = 10;
@@ -32,15 +30,13 @@ export class Enemy extends Entity {
     await super.init();
 
     // Find player in the scene
-    this.playerTransform = this.scene.getEntity(Player).getBehavior(TransformBehavior);
+    this.player = this.scene.getEntity(Player);
 
     // Listen to collision events
-    this.collider.collided.subscribe(this.onCollision);
+    this.on(this.collider.collided, this.onCollision.bind(this));
 
     // Listen to health changes to emit death event
-    this.health.healthChanged.subscribe((event) => {
-      if (!event.isAlive) this.enemyDied.emit();
-    });
+    this.on(this.health.healthChanged, this.onHealthChanged.bind(this));
 
     // Load the drone model for enemy (same as player for now)
     const { scene } = resources.get("models/drone");
@@ -52,8 +48,8 @@ export class Enemy extends Entity {
     });
 
     // Add model to transform behavior's group
-    this.transform.group.add(this.model);
-    this.transform.group.position.y = 5;
+    this.addChild(this.model);
+    this.y = 5;
 
     void this.startLoop();
   }
@@ -79,7 +75,7 @@ export class Enemy extends Entity {
     const distance = direction.length();
 
     // Rotation tween
-    gsap.to(this.transform.group.rotation, {
+    gsap.to(this.rotation, {
       y: Math.atan2(direction.x, direction.z),
       duration: 0.3,
       ease: "power1.inOut",
@@ -95,10 +91,9 @@ export class Enemy extends Entity {
   }
 
   private getNextTargetPosition() {
-    const playerPos = this.playerTransform.group.position;
     const angle = Math.random() * Math.PI * 2; // Random angle
-    const x = playerPos.x + Math.cos(angle) * this.radius;
-    const z = playerPos.z + Math.sin(angle) * this.radius;
+    const x = this.player.x + Math.cos(angle) * this.radius;
+    const z = this.player.z + Math.sin(angle) * this.radius;
 
     return new Vector3(x, 5, z);
   }
@@ -108,30 +103,32 @@ export class Enemy extends Entity {
     for (const time of [0, 0.2, 0.5]) {
       await delay(time);
       if (!this.health.isAlive) return; // Stop shooting if dead
+
       const projectile = new Projectile(
-        this.transform.group.position.clone(),
-        this.playerTransform.group.position.clone(),
+        this.transform.position.clone(),
+        this.player.position.clone(),
         false, // This is an enemy projectile
       );
+
       this.scene.addEntity(projectile);
     }
   }
 
-  private readonly onCollision = (event: CollisionEvent) => {
-    const projectile = cast(Projectile, event.other.entity);
+  private onCollision(event: CollisionEvent) {
+    const projectile = event.other.entity.as(Projectile);
     const damage = projectile.damage;
     this.health.health -= damage;
 
     // Emit damage event through the service
-    const combatEvents = this.getService(CombatEventsService);
-    combatEvents.dealDamage(this, damage, this.transform.group.position.clone());
+    this.combatEvents.dealDamage(this, damage, this.position);
 
     projectile.destroy();
-  };
+  }
 
-  override destroy() {
-    this.collider.collided.unsubscribe(this.onCollision);
-    destroy(this.model);
-    super.destroy();
+  private onHealthChanged({ isAlive }: HealthEvent) {
+    if (isAlive) return;
+
+    this.died.emit();
+    this.destroy();
   }
 }

@@ -18,7 +18,8 @@ export class PlayerStatsWidget extends Widget {
   override async init() {
     await super.init();
 
-    // Find player and get health and energy components
+    // Find player and get health and energy behaviors
+    // fixme: But should be a service of player stats and service of player abilities (later will not be just dash)
     const player = this.scene.getEntity(Player);
     this.health = player.getBehavior(HealthBehavior);
     this.energy = player.getBehavior(EnergyBehavior);
@@ -48,27 +49,27 @@ export class PlayerStatsWidget extends Widget {
     this.addChild(this.healthBar, this.energyBar, this.dashChargeIndicator);
 
     // Listen to health and energy changes
-    this.health.healthChanged.subscribeImmediate(this.updateHealthDisplay);
-    this.energy.energyChanged.subscribeImmediate(this.updateEnergyDisplay);
-    this.dash.chargeChanged.subscribeImmediate(this.updateDashDisplay);
+    this.onImmediate(this.health.healthChanged, this.updateHealthDisplay.bind(this));
+    this.onImmediate(this.energy.energyChanged, this.updateEnergyDisplay.bind(this));
+    this.onImmediate(this.dash.chargeChanged, this.updateDashDisplay.bind(this));
 
     // Listen to resize events
-    this.game.resized.subscribeImmediate(this.resize.bind(this));
+    this.onImmediate(this.game.resized, this.resize.bind(this));
   }
 
-  private readonly updateHealthDisplay = () => {
+  private updateHealthDisplay() {
     this.healthBar.value = this.health.health;
     this.updateHealthColor();
-  };
+  }
 
-  private readonly updateEnergyDisplay = () => {
+  private updateEnergyDisplay() {
     this.energyBar.value = this.energy.energy;
-  };
+  }
 
-  private readonly updateDashDisplay = (event: DashChargeEvent) => {
+  private updateDashDisplay(event: DashChargeEvent) {
     this.dashChargeIndicator.maxCharges = event.maxCharges;
     this.dashChargeIndicator.updateChargeTimers(event.chargeTimers);
-  };
+  }
 
   private updateHealthColor() {
     const healthPercent = this.health.health / this.health.maxHealth;
@@ -93,15 +94,5 @@ export class PlayerStatsWidget extends Widget {
     const portraitSpace = 110; // Space for character portrait
     const xpBarSpace = 30; // Space for XP bar at bottom
     this.container.position.set(-width / 2 + portraitSpace, height / 2 - xpBarSpace);
-  }
-
-  override destroy() {
-    // Clean up resize subscription
-    this.game.resized.unsubscribe(this.resize);
-    this.health.healthChanged.unsubscribe(this.updateHealthDisplay);
-    this.energy.energyChanged.unsubscribe(this.updateEnergyDisplay);
-    this.dash.chargeChanged.unsubscribe(this.updateDashDisplay);
-
-    super.destroy();
   }
 }

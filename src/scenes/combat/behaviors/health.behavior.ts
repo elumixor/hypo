@@ -7,6 +7,7 @@ export interface HealthEvent {
   isAlive: boolean;
 }
 
+// todo: should be moved to player stats/skills/abilities service - no need to be sitting on the entity
 export class HealthBehavior extends Behavior {
   readonly healthChanged = new EventEmitter<HealthEvent>();
 

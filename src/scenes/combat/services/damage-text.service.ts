@@ -4,10 +4,17 @@ import { Scene } from "three";
 import { CSS3DObject, CSS3DRenderer } from "three/addons/renderers/CSS3DRenderer.js";
 import { CombatEventsService, type DamageEvent } from "./combat-events.service";
 
+// TODO: I think it's very inefficient to create a new CSS3DRenderer, new Scene, and render all texts every frame.
+// todo: we should use troika-3d-text: https://github.com/protectwise/troika/tree/main/packages/troika-three-text
+// we can then also have some nice .woff/.otf fonts :)
 export class DamageTextService extends Service {
   private readonly css3DRenderer = new CSS3DRenderer();
   private readonly css3DScene = new Scene(); // Separate scene for CSS3D elements
   private readonly damageElements: { element: HTMLElement; object: CSS3DObject; timeline: gsap.core.Timeline }[] = [];
+  private readonly combatEvents = this.require(CombatEventsService);
+
+  // Enable tick updates
+  protected override _enabled = true;
 
   override async init() {
     await super.init();
@@ -24,15 +31,14 @@ export class DamageTextService extends Service {
     window.addEventListener("resize", this.onResize);
 
     // Subscribe to damage events
-    const combatEvents = this.getService(CombatEventsService);
-    combatEvents.damageDealt.subscribe(this.showDamageText);
+    this.on(this.combatEvents.damageDealt, this.showDamageText.bind(this));
   }
 
   private readonly onResize = () => {
     this.css3DRenderer.setSize(window.innerWidth, window.innerHeight);
   };
 
-  private readonly showDamageText = ({ damage, position }: DamageEvent) => {
+  private showDamageText({ damage, position }: DamageEvent) {
     // Create HTML element for damage text
     const element = document.createElement("div");
     element.innerHTML = `-${damage}`;
@@ -60,9 +66,11 @@ export class DamageTextService extends Service {
     object.position.x += (Math.random() - 0.5) * 0.3;
     object.position.z += (Math.random() - 0.5) * 0.3;
 
-    // Make the object always face the camera (billboard effect)
+    // Make the object always face the camera (billboard effect), but only on the Y axis
     if (this.scene) {
       object.lookAt(this.scene.camera.position);
+      object.rotation.x = 0;
+      object.rotation.z = 0;
     }
 
     this.css3DScene.add(object); // Create animation with GSAP
@@ -120,15 +128,13 @@ export class DamageTextService extends Service {
       });
 
     this.damageElements.push({ element, object, timeline });
-  };
+  }
 
   override update(dt: number) {
     super.update(dt);
 
     // Render CSS3D elements if scene is available
-    if (this.scene) {
-      this.css3DRenderer.render(this.css3DScene, this.scene.camera);
-    }
+    if (this.scene) this.css3DRenderer.render(this.css3DScene, this.scene.camera);
   }
 
   override destroy() {

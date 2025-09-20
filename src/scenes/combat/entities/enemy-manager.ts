@@ -1,9 +1,11 @@
 import { EventEmitter } from "@elumixor/event-emitter";
 import { Entity, TransformBehavior } from "@engine";
-import { XPCrystalEntity } from "scenes/combat/entities/xp-crystal.entity";
 import { Enemy } from "./enemy";
 import { Player } from "./player";
+import { XPCrystal } from "./xp-crystal";
 
+// TODO: this should not be an Entity - does not need to be physically in the scene
+// It can be a Service, or just a plain class on the CombatScene, or simply code in the scene itself
 export class EnemyManager extends Entity {
   // Public events
   readonly enemiesCleared = new EventEmitter();
@@ -13,9 +15,6 @@ export class EnemyManager extends Entity {
 
   // Configuration
   private readonly enemyCount = 3;
-
-  // State
-  private readonly enemies: Enemy[] = [];
 
   override async init() {
     await super.init();
@@ -35,35 +34,30 @@ export class EnemyManager extends Entity {
     const playerPos = this.playerTransform.group.position;
     const angle = Math.random() * Math.PI * 2; // Random angle around player
     const distance = 10 + Math.random() * 10; // Random distance between 10-20 units
-    const x = playerPos.x + Math.cos(angle) * distance;
-    const z = playerPos.z + Math.sin(angle) * distance;
 
-    const enemyTransform = enemy.getBehavior(TransformBehavior);
-    enemyTransform.group.position.set(x, 5, z);
+    enemy.x = playerPos.x + Math.cos(angle) * distance;
+    enemy.y = 5; // fixme: 5... magic constant in many places -> move to some config at least
+    enemy.z = playerPos.z + Math.sin(angle) * distance;
 
     // Listen to enemy death
-    enemy.enemyDied.subscribe(() => this.onEnemyDied(enemy));
+    enemy.died.subscribe(() => this.onEnemyDied(enemy));
 
-    this.enemies.push(enemy);
     this.scene.addEntity(enemy);
   }
 
   private onEnemyDied(enemy: Enemy) {
     // Get enemy position before removing it
-    const enemyTransform = enemy.getBehavior(TransformBehavior);
-    const enemyPosition = enemyTransform.group.position.clone();
+    const enemyPosition = enemy.position.clone();
 
-    this.enemies.remove(enemy);
     this.scene.removeEntity(enemy);
 
     // Spawn XP crystal at enemy position
-    const xpCrystal = new XPCrystalEntity(150); // Give 150 XP per enemy
-    const crystalTransform = xpCrystal.getBehavior(TransformBehavior);
-    crystalTransform.group.position.copy(enemyPosition);
-    crystalTransform.group.position.y = 1; // Slightly above ground
+    const xpCrystal = new XPCrystal(150); // Give 150 XP per enemy. todo: this should be retrieved from enemy data
+    xpCrystal.position.copy(enemyPosition);
+    xpCrystal.y = 5; // Slightly above ground
     this.scene.addEntity(xpCrystal);
 
     // Check if all enemies are cleared
-    if (this.enemies.isEmpty) this.enemiesCleared.emit();
+    if (this.scene.getEntities(Enemy).isEmpty) this.enemiesCleared.emit();
   }
 }

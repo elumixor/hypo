@@ -11,7 +11,4 @@ export interface GameState {
 
   // Character progression data
   characterProgression?: CharacterProgressionState;
-
-  // For future expansion
-  data: null;
 }

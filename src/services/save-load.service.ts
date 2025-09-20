@@ -33,7 +33,7 @@ export class SaveLoadService extends Service {
   }
 
   startNewGame() {
-    this.savedGames.unshift({ timestamp: Date.now(), state: { data: null } });
+    this.savedGames.unshift({ timestamp: Date.now(), state: {} });
     this.saveSlotsToStorage();
   }
 

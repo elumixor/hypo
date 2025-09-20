@@ -2,36 +2,30 @@ import { Behavior, type TransformBehavior } from "@engine";
 import { Vector3 } from "three";
 
 export class CameraFollowBehavior extends Behavior {
-  offset = new Vector3(1, 1, 1).multiplyScalar(20); // Offset for isometric view
-  followSpeed = 0.02; // How quickly camera follows (higher = faster)
+  offset = new Vector3(1, 1, 1).multiplyScalar(20);
+  followSpeed = 10;
+  targetTransform?: TransformBehavior;
 
   private readonly targetPosition = new Vector3(); // Position to interpolate to
-  private _targetTransform?: TransformBehavior;
 
-  get targetTransform(): TransformBehavior | undefined {
-    return this._targetTransform;
-  }
-  set targetTransform(transform: TransformBehavior) {
-    this._targetTransform = transform;
+  updateInstantly() {
+    if (!this.targetTransform) return;
 
-    // Calculate target camera position based on player position + offset
-    this.targetPosition.copy(transform.group.position).add(this.offset);
+    const { camera } = this.entity.scene;
 
-    // Smoothly interpolate camera position
-    this.entity.scene.camera.position.copy(this.targetPosition);
-    this.entity.scene.camera.lookAt(transform.group.position);
+    camera.position.copy(this.targetTransform.position).add(this.offset);
+    camera.lookAt(this.targetTransform.position);
   }
 
   override update(dt: number) {
     super.update(dt);
 
-    const { targetTransform } = this;
-    if (!targetTransform) return;
+    if (!this.targetTransform) return;
 
     // Calculate target camera position based on player position + offset
-    this.targetPosition.copy(targetTransform.group.position).add(this.offset);
+    this.targetPosition.copy(this.targetTransform.position).add(this.offset);
 
     // Smoothly interpolate camera position
-    this.entity.scene.camera.position.lerp(this.targetPosition, this.followSpeed * dt);
+    this.entity.scene.camera.position.lerp(this.targetPosition, (this.followSpeed * dt) / 1000);
   }
 }

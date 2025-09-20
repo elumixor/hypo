@@ -18,9 +18,10 @@ export class CharacterProgressionService extends Service {
   readonly levelUp = new EventEmitter<LevelUpEvent>();
   readonly xpGained = new EventEmitter<XPGainEvent>();
 
+  private readonly gameStateService = this.require(GameStateService);
+
   private _currentXP = 0;
   private _currentLevel = 1;
-  private gameStateService!: GameStateService;
 
   get currentXP() {
     return this._currentXP;
@@ -36,7 +37,6 @@ export class CharacterProgressionService extends Service {
 
   override async init() {
     await super.init();
-    this.gameStateService = this.getService(GameStateService);
     this.initializeFromSave();
   }
 

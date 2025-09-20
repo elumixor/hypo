@@ -7,41 +7,32 @@ export class VirtualJoystickWidget extends Widget {
   private readonly background = new Graphics();
   private readonly knob = new Graphics();
 
-  private inputService!: InputService;
+  private readonly inputService = this.require(InputService);
   private readonly currentDirection = new Vector2();
   private readonly maxDistance = 60;
   private readonly knobRadius = 20;
   private readonly backgroundRadius = 60;
 
-  private scale = 1;
-
   override async init() {
     await super.init();
 
-    this.inputService = this.getService(InputService);
-
-    this.background.clear();
     this.background
-      .circle(0, 0, this.backgroundRadius * this.scale)
+      .circle(0, 0, this.backgroundRadius)
       .fill({ color: 0x333333, alpha: 0.5 })
-      .stroke({ color: 0x666666, width: 2 * this.scale, alpha: 0.7 });
+      .stroke({ color: 0x666666, width: 2, alpha: 0.7 });
 
-    this.knob.clear();
-    this.knob
-      .circle(0, 0, this.knobRadius * this.scale)
-      .fill({ color: 0x666666, alpha: 0.8 })
-      .stroke({ color: 0x999999, width: 2 * this.scale });
+    this.knob.circle(0, 0, this.knobRadius).fill({ color: 0x666666, alpha: 0.8 }).stroke({ color: 0x999999, width: 2 });
 
-    this.container.addChild(this.background, this.knob);
+    this.addChild(this.background, this.knob);
 
     // Setup interaction for joystick
     this.background.eventMode = "static";
 
     // Listen to resize events
-    this.game.resized.subscribeImmediate(this.resize.bind(this));
+    this.onImmediate(this.game.resized, this.resize.bind(this));
 
     // Start hidden
-    this.container.visible = false;
+    this.visible = false;
 
     // Listen to window pointerdown to show joystick
     window.addEventListener("pointerdown", this.onWindowPointerDown);
@@ -94,7 +85,7 @@ export class VirtualJoystickWidget extends Widget {
 
   private updateJoystickPosition(x: number, y: number) {
     const distance = Math.sqrt(x * x + y * y);
-    const maxDist = this.maxDistance * this.scale;
+    const maxDist = this.maxDistance;
 
     if (distance <= maxDist) {
       this.knob.position.set(x, y);
@@ -114,28 +105,25 @@ export class VirtualJoystickWidget extends Widget {
   private resize({ width, height }: ResizeData) {
     // Calculate scale based on screen size
     const minDimension = Math.min(width, height);
-    this.scale = Math.max(0.8, Math.min(1.2, minDimension / 600));
+    this.scale.set(Math.max(0.8, Math.min(1.2, minDimension / 600)));
 
     // Update graphics scale
     this.background.clear();
     this.background
-      .circle(0, 0, this.backgroundRadius * this.scale)
+      .circle(0, 0, this.backgroundRadius)
       .fill({ color: 0x333333, alpha: 0.5 })
-      .stroke({ color: 0x666666, width: 2 * this.scale, alpha: 0.7 });
+      .stroke({ color: 0x666666, width: 2, alpha: 0.7 });
 
     this.knob.clear();
-    this.knob
-      .circle(0, 0, this.knobRadius * this.scale)
-      .fill({ color: 0x666666, alpha: 0.8 })
-      .stroke({ color: 0x999999, width: 2 * this.scale });
+    this.knob.circle(0, 0, this.knobRadius).fill({ color: 0x666666, alpha: 0.8 }).stroke({ color: 0x999999, width: 2 });
   }
 
   override destroy() {
-    this.game.resized.unsubscribe(this.resize);
     window.removeEventListener("pointerdown", this.onWindowPointerDown);
     window.removeEventListener("pointermove", this.onJoystickMove);
     window.removeEventListener("pointerup", this.onJoystickEnd);
     window.removeEventListener("pointercancel", this.onJoystickEnd);
+
     this.background.off("pointerup", this.onJoystickEnd);
     this.background.off("pointerupoutside", this.onJoystickEnd);
 
