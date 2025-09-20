@@ -1,1 +1,1 @@
-export * from "./destroy";
+// No exports yet
