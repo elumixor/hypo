@@ -1,12 +1,17 @@
 import { Entity } from "@engine";
 import { resources } from "resources";
 import { StaticSceneObject } from "../../../entities/static-scene-object";
+import type { ObstacleConfig } from "../../configs";
 
 /**
- * Manages rock placement in the combat scene
+ * Manages obstacle placement in the combat scene based on configuration
  */
-export class RockManager extends Entity {
-  private readonly rocks: StaticSceneObject[] = [];
+export class ObstacleManager extends Entity {
+  private readonly obstacles: StaticSceneObject[] = [];
+
+  constructor(private readonly obstacleConfigs: ObstacleConfig[]) {
+    super();
+  }
 
   override async init() {
     await super.init();
@@ -15,46 +20,53 @@ export class RockManager extends Entity {
     const { scene } = resources.get("models/rocks");
     const rockMeshes = scene.children;
 
-    // Define placement positions around the level (50x50 ground)
-    // Place rocks in a scattered pattern, avoiding the center where combat happens
-    const positions = [
-      // Outer ring
-      { x: -18, z: -18, scale: 1.2 },
-      { x: 20, z: -15, scale: 0.8 },
-      { x: -15, z: 22, scale: 1.5 },
-      { x: 18, z: 20, scale: 1.0 },
-      { x: -22, z: 5, scale: 1.1 },
-      { x: 25, z: -5, scale: 0.9 },
-      { x: 5, z: -20, scale: 1.3 },
-      { x: -8, z: 18, scale: 1.0 },
-      // Inner positions (further from center but still accessible)
-      { x: -12, z: -10, scale: 0.7 },
-      { x: 15, z: -8, scale: 1.1 },
-      { x: -10, z: 12, scale: 0.9 },
-      { x: 12, z: 10, scale: 1.2 },
-    ];
+    // Place obstacles based on configuration
+    for (let i = 0; i < this.obstacleConfigs.length; i++) {
+      const config = this.obstacleConfigs[i];
+      if (!config) continue;
 
-    // Place rocks using different models and positions
-    for (let i = 0; i < positions.length; i++) {
-      const position = positions[i];
-      if (!position) continue;
+      // For now, only handle rock type obstacles
+      if (config.type !== 'rock') continue;
 
       // Cycle through available rock models
       const rockMesh = rockMeshes[i % rockMeshes.length];
       if (!rockMesh) continue;
 
-      // Create static scene object for this rock
-      const rock = new StaticSceneObject(rockMesh);
+      // Create static scene object for this obstacle
+      const obstacle = new StaticSceneObject(rockMesh);
 
-      // Position and scale the rock
-      rock.position.set(position.x, 0, position.z);
-      rock.scale.setScalar(position.scale * 5);
+      // Apply transform from configuration
+      obstacle.position.set(config.position.x, config.position.y, config.position.z);
+      
+      // Apply scale
+      const scale = config.position.scale ?? 1.0;
+      if (config.position.scaleX || config.position.scaleY || config.position.scaleZ) {
+        obstacle.scale.set(
+          (config.position.scaleX ?? 1.0) * 5,
+          (config.position.scaleY ?? 1.0) * 5,
+          (config.position.scaleZ ?? 1.0) * 5
+        );
+      } else {
+        obstacle.scale.setScalar(scale * 5);
+      }
 
-      // Add some random rotation for variety
-      rock.rotation.set(0, Math.random() * Math.PI * 2, 0);
+      // Apply rotation
+      obstacle.rotation.set(
+        config.position.rotationX ?? 0,
+        config.position.rotationY ?? 0,
+        config.position.rotationZ ?? 0
+      );
 
-      this.rocks.push(rock);
-      this.scene.addEntity(rock);
+      this.obstacles.push(obstacle);
+      this.scene.addEntity(obstacle);
     }
+  }
+
+  override destroy() {
+    for (const obstacle of this.obstacles) {
+      obstacle.destroy();
+    }
+    this.obstacles.length = 0;
+    super.destroy();
   }
 }
