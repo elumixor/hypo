@@ -26,6 +26,7 @@ import { Portal } from "./entities/portal";
 import { RockManager } from "./entities/rock-manager";
 import { CombatEventsService } from "./services/combat-events.service";
 import { DamageTextService } from "./services/damage-text.service";
+import { ProjectilePoolService } from "./services/projectile-pool.service";
 import { CharacterPortraitWidget } from "./ui/character-portrait.widget";
 import { LevelInfoWidget } from "./ui/level-info.widget";
 import { PlayerStatsWidget } from "./ui/player-stats.widget";
@@ -53,6 +54,7 @@ export class CombatScene extends Scene {
 
     this.addService(new CombatEventsService());
     this.addService(new DamageTextService());
+    this.addService(new ProjectilePoolService());
 
     // Add volumetric fog for atmospheric effect
     this.fog = new Fog(0x2a2a3a, 10, 120); // Dark blue-gray fog, starts at distance 5, ends at 80

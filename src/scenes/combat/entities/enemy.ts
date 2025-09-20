@@ -6,6 +6,7 @@ import { type Object3D, Vector3 } from "three";
 import { CollisionGroup } from "../../../collision-group";
 import { HealthBehavior, type HealthEvent } from "../behaviors/health.behavior";
 import { CombatEventsService } from "../services/combat-events.service";
+import { ProjectilePoolService } from "../services/projectile-pool.service";
 import { Player } from "./player";
 import { Projectile } from "./projectile";
 
@@ -17,6 +18,7 @@ export class Enemy extends Entity {
   private readonly health = this.addBehavior(new HealthBehavior(30)); // Enemy has 30 HP
 
   private readonly combatEvents = this.require(CombatEventsService);
+  private readonly projectilePool = this.require(ProjectilePoolService);
 
   // Reference to a player, as a target (should be refactored later probably)
   private player!: Player;
@@ -104,7 +106,7 @@ export class Enemy extends Entity {
       await delay(time);
       if (!this.health.isAlive) return; // Stop shooting if dead
 
-      const projectile = new Projectile(
+      const projectile = this.projectilePool.getProjectile(
         this.transform.position.clone(),
         this.player.position.clone(),
         false, // This is an enemy projectile
@@ -122,7 +124,7 @@ export class Enemy extends Entity {
     // Emit damage event through the service
     this.combatEvents.dealDamage(this, damage, this.position);
 
-    projectile.destroy();
+    projectile.returnToPool();
   }
 
   private onHealthChanged({ isAlive }: HealthEvent) {

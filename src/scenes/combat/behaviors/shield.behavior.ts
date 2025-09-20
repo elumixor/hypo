@@ -85,6 +85,6 @@ export class ShieldBehavior extends Behavior {
     if (damageLeft > 0) {
       projectile.damage = damageLeft; // Reduce projectile damage by absorbed amount
       this.enabled = false; // Disable shield if we run out of energy
-    } else projectile.destroy(); // Remove the projectile if fully absorbed
+    } else projectile.returnToPool(); // Remove the projectile if fully absorbed
   }
 }

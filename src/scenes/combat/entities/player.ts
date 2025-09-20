@@ -57,7 +57,7 @@ export class Player extends Entity {
 
     const projectile = other.entity.as(Projectile);
     this.health.health -= projectile.damage;
-    projectile.destroy();
+    projectile.returnToPool();
   }
 
   override update(dt: number) {
