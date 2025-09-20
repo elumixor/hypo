@@ -18,8 +18,8 @@ export class StaticSceneObject extends Entity {
     const size = box.getSize(new Vector3());
     const radius = Math.max(size.x, size.y, size.z) * 0.5;
 
-    // Add collider with calculated radius
-    this.addBehavior(new ColliderBehavior(CollisionGroup.Static, radius));
+    // Add collider with calculated radius and mark as static
+    this.addBehavior(new ColliderBehavior(CollisionGroup.Static, radius, true));
 
     // Enable shadow casting for all meshes in the object
     this.mesh.traverse((child) => {

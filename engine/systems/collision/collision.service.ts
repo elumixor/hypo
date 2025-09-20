@@ -1,10 +1,15 @@
 import { Service } from "@engine/core";
 import { ColliderBehavior } from "./collider.behavior";
+import { separateColliders } from "./collision-resolution";
+import { SpatialGrid } from "./spatial-grid";
 
 export class CollisionService extends Service {
   protected override _enabled = true;
 
   private readonly collisionMatrix: Map<string, Set<string>> = new Map();
+  private readonly spatialGrid = new SpatialGrid(10); // 10 unit cell size
+  private readonly staticColliders = new Set<ColliderBehavior>();
+  private staticCollidersInitialized = false;
 
   addCollisionGroup(group: string, collidesWith: string[]) {
     this.collisionMatrix.set(group, new Set(collidesWith));
@@ -23,6 +28,28 @@ export class CollisionService extends Service {
     if (!this.scene) throw new Error("CollisionService has no scene");
 
     const colliders = this.scene.getBehaviors(ColliderBehavior);
+
+    // Initialize static colliders only once
+    if (!this.staticCollidersInitialized) {
+      this.initializeStaticColliders(colliders);
+      this.staticCollidersInitialized = true;
+    }
+
+    // Clear spatial grid and rebuild with current positions
+    this.spatialGrid.clear();
+
+    // Insert static colliders (they don't move but we need them in the grid)
+    for (const staticCollider of this.staticColliders) {
+      this.spatialGrid.insert(staticCollider);
+    }
+
+    // Insert dynamic colliders
+    for (const collider of colliders) {
+      if (!collider.isStatic) {
+        this.spatialGrid.insert(collider);
+      }
+    }
+
     const previousCollisions = new Map<ColliderBehavior, Set<ColliderBehavior>>();
 
     // Store previous collision state
@@ -32,37 +59,78 @@ export class CollisionService extends Service {
       collider.currentCollisions.clear();
     }
 
-    // Check all pairs of colliders
-    for (let i = 0; i < colliders.length; i++) {
-      for (let j = i + 1; j < colliders.length; j++) {
-        const colliderA = colliders[i];
-        const colliderB = colliders[j];
+    // Check collisions using spatial grid
+    for (const collider of colliders) {
+      if (!collider.isStatic) {
+        // Only check dynamic colliders for collisions
+        const candidates = this.spatialGrid.query(collider);
 
-        if (!colliderA || !colliderB) continue;
+        for (const other of candidates) {
+          // Skip if they don't belong to colliding groups
+          if (!this.collisionMatrix.get(collider.collisionGroup)?.has(other.collisionGroup)) continue;
 
-        // Skip if they don't belong to colliding groups
-        if (!this.collisionMatrix.get(colliderA.collisionGroup)?.has(colliderB.collisionGroup)) continue;
+          // Check if they intersect
+          const distance = collider.transform.position.distanceToSquared(other.transform.position);
+          const radius = collider.radius * collider.transformScale + other.radius * other.transformScale;
+          const intersects = distance < radius * radius;
 
-        // Check if they intersect
-        const distance = colliderA.transform.position.distanceToSquared(colliderB.transform.position);
-        const radius = colliderA.radius * colliderA.transformScale + colliderB.radius * colliderB.transformScale;
-        const intersects = distance < radius * radius;
+          if (!intersects) continue;
 
-        if (!intersects) continue;
+          // Record the collision for both colliders
+          collider.currentCollisions.add(other);
+          other.currentCollisions.add(collider);
 
-        // Record the collision for both colliders
-        colliderA.currentCollisions.add(colliderB);
-        colliderB.currentCollisions.add(colliderA);
+          // Emit collision events if this is a new collision
+          const prevCollisions = previousCollisions.get(collider);
 
-        // Emit collision events if this is a new collision
-        const prevCollisionsA = previousCollisions.get(colliderA);
+          if (prevCollisions && !prevCollisions.has(other)) {
+            collider.collided.emit({ other, self: collider });
+            other.collided.emit({ other: collider, self: other });
+          }
 
-        if (prevCollisionsA && !prevCollisionsA.has(colliderB)) {
-          colliderA.collided.emit({ other: colliderB, self: colliderA });
-          colliderB.collided.emit({ other: colliderA, self: colliderB });
+          // Apply collision resolution to separate overlapping colliders
+          separateColliders(collider, other);
         }
       }
     }
+  }
+
+  /**
+   * Initialize static colliders - called only once
+   */
+  private initializeStaticColliders(colliders: ColliderBehavior[]): void {
+    for (const collider of colliders) {
+      if (collider.isStatic) {
+        this.staticColliders.add(collider);
+      }
+    }
+  }
+
+  /**
+   * Get potential collision targets for a collider at a given position
+   * Useful for movement prediction
+   */
+  getCollisionCandidates(collider: ColliderBehavior): ColliderBehavior[] {
+    const candidates = this.spatialGrid.query(collider);
+    return Array.from(candidates).filter((other) =>
+      this.collisionMatrix.get(collider.collisionGroup)?.has(other.collisionGroup),
+    );
+  }
+
+  /**
+   * Add a new static collider to the system
+   */
+  addStaticCollider(collider: ColliderBehavior): void {
+    if (collider.isStatic) {
+      this.staticColliders.add(collider);
+    }
+  }
+
+  /**
+   * Remove a static collider from the system
+   */
+  removeStaticCollider(collider: ColliderBehavior): void {
+    this.staticColliders.delete(collider);
   }
 
   /** Utility function to log the collision matrix as a table to the console */
