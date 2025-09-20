@@ -1,7 +1,7 @@
 import { Service } from "@engine";
 import type { LevelProgressionState } from "services/level-progression.service";
 import { SaveLoadService } from "services/save-load.service";
-import type { CharacterProgressionState } from "./game-state";
+import type { CharacterProgressionState, CharacterStatusState } from "./game-state";
 
 export class GameStateService extends Service {
   private saveLoadService!: SaveLoadService;
@@ -23,6 +23,10 @@ export class GameStateService extends Service {
     return this.state?.characterProgression;
   }
 
+  get characterStatus(): CharacterStatusState | undefined {
+    return this.state?.characterStatus;
+  }
+
   saveLevelProgression(progressionState: LevelProgressionState) {
     const currentSave = this.saveLoadService.currentSavedGame;
     if (currentSave) {
@@ -35,6 +39,14 @@ export class GameStateService extends Service {
     const currentSave = this.saveLoadService.currentSavedGame;
     if (currentSave) {
       currentSave.state.characterProgression = progressionState;
+      this.saveLoadService.saveGame();
+    }
+  }
+
+  saveCharacterStatus(statusState: CharacterStatusState) {
+    const currentSave = this.saveLoadService.currentSavedGame;
+    if (currentSave) {
+      currentSave.state.characterStatus = statusState;
       this.saveLoadService.saveGame();
     }
   }

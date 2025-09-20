@@ -3,8 +3,10 @@ import { CombatScene } from "scenes/combat/combat.scene";
 import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
 import { SafeZoneScene } from "scenes/safe-zone/safe-zone.scene";
 import { CharacterProgressionService } from "services/character-progression.service";
+import { CharacterStatusService } from "services/character-status.service";
 import { LevelProgressionService } from "services/level-progression.service";
 import { ResourcesLoaderService } from "services/resources-loader.service";
+import { RuntimeCombatService } from "services/runtime-combat.service";
 import { SaveLoadService } from "services/save-load.service";
 import { GameStateService } from "systems/game-state";
 
@@ -17,6 +19,8 @@ export class GameHypo extends Game {
     this.addService(new GameStateService());
     this.addService(new LevelProgressionService());
     this.addService(new CharacterProgressionService());
+    this.addService(new CharacterStatusService());
+    this.addService(new RuntimeCombatService());
   }
 
   override async start() {
