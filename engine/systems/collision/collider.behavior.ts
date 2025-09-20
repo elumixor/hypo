@@ -20,6 +20,7 @@ export class ColliderBehavior extends Behavior {
   constructor(
     readonly collisionGroup: string,
     private _radius = 1,
+    readonly isStatic = false,
   ) {
     super();
   }
