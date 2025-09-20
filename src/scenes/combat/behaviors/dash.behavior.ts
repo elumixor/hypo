@@ -1,5 +1,5 @@
 import { EventEmitter } from "@elumixor/event-emitter";
-import { Behavior, TransformBehavior } from "@engine";
+import { Behavior } from "@engine";
 import { Vector3 } from "three";
 import { type CharacterStats, defaultCharacterStats } from "../character-stats";
 import type { CombatInputMappingContext } from "../combat-input-mapping.context";
@@ -10,27 +10,20 @@ export interface DashChargeEvent {
   chargeTimers: readonly number[];
 }
 
+// todo: overall charges logic, recharge logic should be moved to a skills service
+// because we are basically emitting events here for UI
+// This behavior should only handle the actual dash movement of the entity
 export class DashBehavior extends Behavior {
   // Events
   readonly chargeChanged = new EventEmitter<DashChargeEvent>();
 
-  // Configuration
   private readonly config: CharacterStats["dash"];
 
   // State
-  private transform!: TransformBehavior;
-  isDashing = false;
-  private dashTimeRemaining = 0;
   private readonly dashDirection = new Vector3();
-
-  // Charge system
   private readonly chargeTimers: number[];
-
-  constructor(stats: CharacterStats = defaultCharacterStats) {
-    super();
-    this.config = stats.dash;
-    this.chargeTimers = Array(this.config.maxCharges).fill(0);
-  }
+  private isDashing = false;
+  private dashTimeRemaining = 0;
 
   get currentCharges() {
     return this.chargeTimers.filter((t) => t === 0).length;
@@ -44,13 +37,18 @@ export class DashBehavior extends Behavior {
     return this.config.chargeRegenTime;
   }
 
+  // fixme: This should be retrieved from the character stats service
+  constructor(stats: CharacterStats = defaultCharacterStats) {
+    super();
+    this.config = stats.dash;
+    this.chargeTimers = Array(this.config.maxCharges).fill(0);
+  }
+
   override async init() {
     await super.init();
 
-    this.transform = this.getBehavior(TransformBehavior);
-
     // Subscribe to dash event if we haven't already
-    this.input.dashActivated.subscribe(this.attemptDash);
+    this.on(this.input.dashActivated, this.attemptDash.bind(this));
 
     // Emit initial charge state
     this.emitChargeChanged();
@@ -84,7 +82,7 @@ export class DashBehavior extends Behavior {
     }
   }
 
-  private readonly attemptDash = () => {
+  private attemptDash() {
     // Check if dash is available (has charges and not currently dashing)
     if (this.currentCharges <= 0 || this.isDashing) return;
 
@@ -109,7 +107,7 @@ export class DashBehavior extends Behavior {
     if (nextAvailableSlot !== -1) this.chargeTimers[nextAvailableSlot] = this.config.chargeRegenTime;
 
     this.emitChargeChanged();
-  };
+  }
 
   private emitChargeChanged() {
     this.chargeChanged.emit({
@@ -117,10 +115,5 @@ export class DashBehavior extends Behavior {
       maxCharges: this.config.maxCharges,
       chargeTimers: [...this.chargeTimers], // Create a copy for readonly access
     });
-  }
-
-  override destroy() {
-    this.input.dashActivated.unsubscribe(this.attemptDash);
-    super.destroy();
   }
 }

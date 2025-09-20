@@ -3,7 +3,7 @@ import { type Entity, Service } from "@engine";
 import type { Vector3 } from "three";
 
 export interface DamageEvent {
-  entity: Entity;
+  target: Entity;
   damage: number;
   position: Vector3;
 }
@@ -11,7 +11,7 @@ export interface DamageEvent {
 export class CombatEventsService extends Service {
   readonly damageDealt = new EventEmitter<DamageEvent>();
 
-  dealDamage(entity: Entity, damage: number, position: Vector3) {
-    this.damageDealt.emit({ entity, damage, position });
+  dealDamage(target: Entity, damage: number, position: Vector3) {
+    this.damageDealt.emit({ target, damage, position });
   }
 }

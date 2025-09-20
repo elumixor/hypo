@@ -1,6 +1,7 @@
 import { Game } from "@engine";
 import { CombatScene } from "scenes/combat/combat.scene";
 import { MainMenuScene } from "scenes/main-menu/main-menu.scene";
+import { SafeZoneScene } from "scenes/safe-zone/safe-zone.scene";
 import { CharacterProgressionService } from "services/character-progression.service";
 import { LevelProgressionService } from "services/level-progression.service";
 import { ResourcesLoaderService } from "services/resources-loader.service";
@@ -32,7 +33,6 @@ export class GameHypo extends Game {
       const initialLevel = levelProgressionService.currentLevel;
 
       if (initialLevel.levelType === "safe_zone") {
-        const { SafeZoneScene } = await import("scenes/safe-zone/safe-zone.scene");
         await this.loadScene(new SafeZoneScene(initialLevel));
       } else {
         await this.loadScene(new CombatScene(initialLevel));

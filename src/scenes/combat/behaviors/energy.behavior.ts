@@ -7,6 +7,7 @@ export interface EnergyEvent {
   maxEnergy: number;
 }
 
+// todo: should be moved to player stats/skills/abilities service - no need to be sitting on the entity
 export class EnergyBehavior extends Behavior {
   readonly energyChanged = new EventEmitter<EnergyEvent>();
   readonly energyDepleted = new EventEmitter();

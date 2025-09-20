@@ -15,8 +15,6 @@ export class RockManager extends Entity {
     const { scene } = resources.get("models/rocks");
     const rockMeshes = scene.children;
 
-    console.log(`Found ${rockMeshes.length} rock models`);
-
     // Define placement positions around the level (50x50 ground)
     // Place rocks in a scattered pattern, avoiding the center where combat happens
     const positions = [
@@ -37,29 +35,26 @@ export class RockManager extends Entity {
     ];
 
     // Place rocks using different models and positions
-    for (let i = 0; i < positions.length && i < rockMeshes.length * 1.5; i++) {
+    for (let i = 0; i < positions.length; i++) {
       const position = positions[i];
       if (!position) continue;
 
       // Cycle through available rock models
-      const rockIndex = i % rockMeshes.length;
-      const rockMesh = rockMeshes[rockIndex];
+      const rockMesh = rockMeshes[i % rockMeshes.length];
       if (!rockMesh) continue;
 
       // Create static scene object for this rock
       const rock = new StaticSceneObject(rockMesh);
 
       // Position and scale the rock
-      rock.setPosition(position.x, 0, position.z);
-      rock.setScale(position.scale * 5);
+      rock.position.set(position.x, 0, position.z);
+      rock.scale.setScalar(position.scale * 5);
 
       // Add some random rotation for variety
-      rock.setRotation(0, Math.random() * Math.PI * 2, 0);
+      rock.rotation.set(0, Math.random() * Math.PI * 2, 0);
 
       this.rocks.push(rock);
       this.scene.addEntity(rock);
     }
-
-    console.log(`Placed ${this.rocks.length} rocks in the scene`);
   }
 }

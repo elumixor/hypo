@@ -3,7 +3,7 @@ import { Container, Graphics } from "pixi.js";
 import { CharacterProgressionService } from "services/character-progression.service";
 
 export class XPBarWidget extends Widget {
-  private progression!: CharacterProgressionService;
+  private readonly progression = this.require(CharacterProgressionService);
   private readonly xpBarContainer = new Container();
   private readonly xpBarBg = new Graphics();
   private readonly xpBarFill = new Graphics();
@@ -12,9 +12,6 @@ export class XPBarWidget extends Widget {
 
   override async init() {
     await super.init();
-
-    // Get progression service first
-    this.progression = this.getService(CharacterProgressionService);
 
     // Create XP bar background
     this.xpBarBg

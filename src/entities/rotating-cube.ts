@@ -8,15 +8,7 @@ import { BoxGeometry, Mesh, MeshBasicMaterial } from "three";
 // - reusable
 // - parameterized
 export class RotatingCube extends Entity {
-  private readonly cube: Mesh;
-
-  constructor() {
-    super();
-
-    const boxGeometry = new BoxGeometry(3, 3, 3);
-    const basicMaterial = new MeshBasicMaterial({ color: 0x0095dd });
-    this.cube = new Mesh(boxGeometry, basicMaterial);
-  }
+  private readonly cube = new Mesh(new BoxGeometry(3, 3, 3), new MeshBasicMaterial({ color: 0x0095dd }));
 
   override async init() {
     await super.init();
@@ -33,10 +25,10 @@ export class RotatingCube extends Entity {
   }
 
   override destroy(): void {
-    super.destroy();
-
     // Clean up
     this.cube.removeFromParent();
     this.cube.geometry.dispose();
+
+    super.destroy();
   }
 }

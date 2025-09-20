@@ -1,4 +1,5 @@
 import { CollisionService, Effects, Scene } from "@engine";
+import { collisionGroups } from "collision-group";
 import { resources } from "resources";
 import { HealthBehavior } from "scenes/combat/behaviors/health.behavior";
 import { DeathScene } from "scenes/death/death.scene";
@@ -17,8 +18,6 @@ import {
   SphereGeometry,
   Vector2,
 } from "three";
-import { destroy } from "utils";
-import { CollisionGroup } from "./collision-group";
 import { CombatInputMappingContext } from "./combat-input-mapping.context";
 import { EnemyManager } from "./entities/enemy-manager";
 import { FloatingLightSphere } from "./entities/floating-light-sphere";
@@ -48,6 +47,7 @@ export class CombatScene extends Scene {
 
   private readonly levelInfoWidget?: LevelInfoWidget;
 
+  // fixme: we shouldn't pass level config here, should be from service
   constructor(private levelConfig?: LevelConfig) {
     super();
 
@@ -90,29 +90,20 @@ export class CombatScene extends Scene {
     // Subscribe to player death
     const player = this.getEntity(Player);
     const playerHealth = player.getBehavior(HealthBehavior);
-    playerHealth.healthChanged.subscribe((event) => {
-      if (!event.isAlive) this.onPlayerDied();
+    this.on(playerHealth.healthChanged, ({ isAlive }) => {
+      if (!isAlive) this.onPlayerDied();
     });
 
     // Add enemy manager
 
     // Listen to all enemies cleared event
-    this.enemyManager.enemiesCleared.subscribe(this.onAllEnemiesCleared);
+    this.on(this.enemyManager.enemiesCleared, this.onAllEnemiesCleared.bind(this));
 
     // Setup collision groups
-    this.collisionService.addCollisionGroup(CollisionGroup.Player, [
-      CollisionGroup.EnemyProjectile,
-      CollisionGroup.PickUps,
-    ]);
-    this.collisionService.addCollisionGroup(CollisionGroup.Enemy, [CollisionGroup.PlayerProjectile]);
+    for (const [source, targets] of Object.entries(collisionGroups))
+      this.collisionService.addCollisionGroup(source, targets);
 
-    // Static objects (rocks) should collide with both player and enemy projectiles
-    this.collisionService.addCollisionGroup(CollisionGroup.Static, [
-      CollisionGroup.PlayerProjectile,
-      CollisionGroup.EnemyProjectile,
-    ]);
-
-    this.collisionService.logGroups();
+    this.collisionService.logCollisionMatrix();
 
     // Add UI widgets
     this.addWidget(new PlayerStatsWidget());
@@ -122,22 +113,21 @@ export class CombatScene extends Scene {
 
     // Create floating light spheres for ambient lighting
     const lightPositions = [
-      { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 10.0 }, // Warm white
-      { x: 20, y: 15, z: 8, color: 0xaaddff, intensity: 8 }, // Cool blue
-      { x: 5, y: 18, z: -18, color: 0xffffaa, intensity: 12 }, // Bright yellow
-      { x: -8, y: 14, z: 15, color: 0xffaadd, intensity: 9 }, // Pink
+      { x: -15, y: 12, z: -10, color: 0xffddaa, intensity: 1.0 }, // Warm white
+      { x: 20, y: 15, z: 8, color: 0x00ddff, intensity: 0.8 }, // Cool blue
+      { x: 5, y: 18, z: -18, color: 0xffffaa, intensity: 1.2 }, // Bright yellow
+      { x: -8, y: 14, z: 15, color: 0xffaadd, intensity: 0.9 }, // Pink
     ];
 
     for (const pos of lightPositions) {
       const light = new FloatingLightSphere(
         pos.color,
         pos.intensity,
-        200, // distance
         0.0008 + Math.random() * 0.0004, // slightly different float speeds
         1.5 + Math.random(), // random amplitude
       );
 
-      light.setPosition(pos.x, pos.y, pos.z);
+      light.position.copy(pos);
       this.floatingLights.push(light);
       this.addEntity(light);
     }
@@ -154,6 +144,7 @@ export class CombatScene extends Scene {
 
     this.levelProgressionService = this.getService(LevelProgressionService);
 
+    // fixme: we shouldn't configure this here (most likely). Level progression service is game-wide
     // Initialize level progression service from save data if available
     if (!this.levelConfig) {
       // If no level config provided, get it from progression service
@@ -164,7 +155,7 @@ export class CombatScene extends Scene {
     }
 
     // Listen to portal reaching event
-    this.portal.reached.subscribe(this.onPortalReached);
+    this.on(this.portal.reached, this.onPortalReached.bind(this));
 
     // Configure post-processing effects
     this.effects = new Effects(this.game.sceneRoot, this.game.camera, this.game.threeRenderer, {
@@ -236,7 +227,7 @@ export class CombatScene extends Scene {
     this.enemyManager.spawn();
   };
 
-  private readonly onPortalReached = () => {
+  private onPortalReached() {
     const nextLevel = this.levelProgressionService.nextLevel();
 
     if (nextLevel.levelType === "safe_zone") {
@@ -253,19 +244,12 @@ export class CombatScene extends Scene {
       // Regular combat or boss level
       this.game.loadScene(new CombatScene(nextLevel));
     }
-  };
+  }
 
   override destroy() {
-    this.portal.reached.unsubscribe(this.onPortalReached);
-
     // Clean up lights
-    this.ambientLight.removeFromParent();
-    this.directionalLight.removeFromParent();
+    this.ambientLight.dispose();
     this.directionalLight.dispose();
-
-    // Clean up ground mesh and skybox
-    destroy(this.groundMesh);
-    destroy(this.skybox);
 
     // Clear fog
     if (this.game.sceneRoot.fog) this.game.sceneRoot.fog = null;

@@ -2,12 +2,16 @@ import { Service } from "@engine/core";
 import { ColliderBehavior } from "./collider.behavior";
 
 export class CollisionService extends Service {
-  readonly collisionMatrix: Map<string, Set<string>> = new Map();
+  protected override _enabled = true;
+
+  private readonly collisionMatrix: Map<string, Set<string>> = new Map();
 
   addCollisionGroup(group: string, collidesWith: string[]) {
     this.collisionMatrix.set(group, new Set(collidesWith));
+
     for (const targetGroup of collidesWith) {
       const existing = this.collisionMatrix.get(targetGroup);
+
       if (existing) existing.add(group);
       else this.collisionMatrix.set(targetGroup, new Set([group]));
     }
@@ -40,7 +44,11 @@ export class CollisionService extends Service {
         if (!this.collisionMatrix.get(colliderA.collisionGroup)?.has(colliderB.collisionGroup)) continue;
 
         // Check if they intersect
-        if (!colliderA.intersects(colliderB)) continue;
+        const distance = colliderA.transform.position.distanceToSquared(colliderB.transform.position);
+        const radius = colliderA.radius * colliderA.transformScale + colliderB.radius * colliderB.transformScale;
+        const intersects = distance < radius * radius;
+
+        if (!intersects) continue;
 
         // Record the collision for both colliders
         colliderA.currentCollisions.add(colliderB);
@@ -57,13 +65,17 @@ export class CollisionService extends Service {
     }
   }
 
-  logGroups() {
+  /** Utility function to log the collision matrix as a table to the console */
+  logCollisionMatrix() {
     const groups = Array.from(this.collisionMatrix.keys());
+
     const table = groups.map((group) => {
       const row: Record<string, unknown> = { Group: group };
+
       for (const other of groups) row[other] = this.collisionMatrix.get(group)?.has(other) ?? false;
       return row;
     });
+
     console.table(table);
   }
 }

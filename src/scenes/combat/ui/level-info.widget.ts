@@ -8,6 +8,7 @@ export class LevelInfoWidget extends Widget {
   private readonly levelText = new PixiText({ text: "", style: textStyle.basic });
   private readonly sampleText = new PixiText({ text: "", style: textStyle.basic });
 
+  // todo: we should get level config from service
   constructor(private levelConfig: LevelConfig) {
     super();
 
@@ -21,6 +22,12 @@ export class LevelInfoWidget extends Widget {
 
     // Update display
     this.updateDisplay();
+  }
+
+  override async init() {
+    await super.init();
+
+    this.onImmediate(this.game.resized, this.onResize.bind(this));
   }
 
   updateLevel(levelConfig: LevelConfig) {
@@ -44,18 +51,7 @@ export class LevelInfoWidget extends Widget {
     this.sampleText.y = this.levelText.y + this.levelText.height + 2;
   }
 
-  override async init() {
-    await super.init();
-    this.game.resized.subscribeImmediate(this.onResize);
-  }
-
-  private readonly onResize = ({ width, height }: { width: number; height: number }) => {
-    // Position in top-right corner with some padding
-    this.container.position.set(width / 2 - 220, -height / 2 + 20);
-  };
-
-  override destroy() {
-    this.game.resized.unsubscribe(this.onResize);
-    super.destroy();
+  private onResize({ width, height }: { width: number; height: number }) {
+    this.position.set(width / 2 - 220, -height / 2 + 20);
   }
 }
