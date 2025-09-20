@@ -11,23 +11,73 @@ export class Projectile extends Entity {
   private readonly targetPosition = new Vector3();
   private readonly speed = 3;
   private readonly maxLifetime = 5000; // 5 seconds
-  private readonly collider;
+  private collider: ColliderBehavior;
   private lifetime = 0;
+  private readonly startPosition = new Vector3();
 
-  constructor(
-    private readonly startPosition: Vector3,
-    targetPosition: Vector3,
-    isPlayerProjectile = false,
-    // biome-ignore lint/style/useConsistentMemberAccessibility: We declare a field that is public and not readonly
-    public damage = 10,
-  ) {
+  // biome-ignore lint/style/useConsistentMemberAccessibility: We declare a field that is public and not readonly
+  public damage = 10;
+
+  constructor(startPosition: Vector3, targetPosition: Vector3, isPlayerProjectile = false, damage = 10) {
     super();
 
     this.collider = this.addBehavior(
       new ColliderBehavior(isPlayerProjectile ? CollisionGroup.PlayerProjectile : CollisionGroup.EnemyProjectile),
     );
 
+    this.configure(startPosition, targetPosition, isPlayerProjectile, damage);
+  }
+
+  /**
+   * Configure this projectile for use (called when getting from pool or creating new)
+   */
+  configure(startPosition: Vector3, targetPosition: Vector3, isPlayerProjectile: boolean, damage: number): void {
+    this.startPosition.copy(startPosition);
     this.targetPosition.copy(targetPosition);
+    this.damage = damage;
+    this.lifetime = 0;
+
+    // Remove existing collider and add new one with correct group
+    if (this.collider) {
+      this.removeBehavior(this.collider);
+    }
+
+    this.collider = this.addBehavior(
+      new ColliderBehavior(isPlayerProjectile ? CollisionGroup.PlayerProjectile : CollisionGroup.EnemyProjectile),
+    );
+  }
+
+  /**
+   * Reset this projectile to initial state (called when returning to pool)
+   */
+  reset(): void {
+    this.lifetime = 0;
+    this.damage = 10;
+    this.startPosition.set(0, 0, 0);
+    this.targetPosition.set(0, 0, 0);
+    this.direction.set(0, 0, 0);
+    this.position.set(0, 0, 0);
+
+    // Remove from scene if it's still there
+    if (this.scene?.entities.includes(this)) {
+      this.scene.removeEntity(this);
+    }
+  }
+
+  /**
+   * Return this projectile to the pool instead of destroying it
+   */
+  returnToPool(): void {
+    // Use dynamic search to get the service
+    const services = this.scene?.services;
+    const poolService = services?.find((s) => s.constructor.name === "ProjectilePoolService") as unknown;
+
+    if (poolService && typeof poolService === "object" && "releaseProjectile" in poolService) {
+      (poolService as { releaseProjectile: (projectile: Projectile) => void }).releaseProjectile(this);
+    } else {
+      // Fallback to normal destroy if no pool service
+      this.destroy();
+    }
   }
 
   override async init() {
@@ -43,8 +93,8 @@ export class Projectile extends Entity {
 
     // Listen for collisions
     this.on(this.collider.collided, ({ other }) => {
-      // If hit static object (rocks), just destroy the projectile
-      if (other.collisionGroup === CollisionGroup.Static) this.destroy();
+      // If hit static object (rocks), return to pool
+      if (other.collisionGroup === CollisionGroup.Static) this.returnToPool();
     });
   }
 
@@ -57,7 +107,7 @@ export class Projectile extends Entity {
     const moveAmount = this.speed * dt * 0.01;
     this.position.add(this.direction.clone().multiplyScalar(moveAmount));
 
-    // Destroy after max lifetime
-    if (this.lifetime >= this.maxLifetime) this.destroy();
+    // Return to pool after max lifetime
+    if (this.lifetime >= this.maxLifetime) this.returnToPool();
   }
 }

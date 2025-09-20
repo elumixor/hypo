@@ -1,10 +1,11 @@
 import { Behavior, TransformBehavior } from "@engine";
 import { Enemy } from "../entities/enemy";
-import { Projectile } from "../entities/projectile";
+import { ProjectilePoolService } from "../services/projectile-pool.service";
 
 export class PlayerAutoAttackBehavior extends Behavior {
   private readonly attackCooldown = 0.3;
   private lastAttackTime = 0;
+  private readonly projectilePool = this.require(ProjectilePoolService);
 
   override update(dt: number) {
     super.update(dt);
@@ -43,7 +44,7 @@ export class PlayerAutoAttackBehavior extends Behavior {
     const targetTransform = target.getBehavior(TransformBehavior);
 
     // Create projectile from player position to enemy position
-    const projectile = new Projectile(
+    const projectile = this.projectilePool.getProjectile(
       this.transform.position.clone(),
       targetTransform.position.clone(),
       true, // This is a player projectile
