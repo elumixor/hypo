@@ -1,0 +1,13 @@
+[project]
+name = "unreal-mcp-server"
+version = "0.1.0"
+description = "Unreal Engine MCP Server"
+requires-python = ">=3.10"
+dependencies = [
+    "fastmcp>=0.1.0",
+    "mcp>=0.1.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
